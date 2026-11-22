@@ -1,22 +1,20 @@
-import { GoogleGenAI, type Part } from '@google/genai';
+import { type Part } from '@google/genai';
 import { NextResponse, type NextRequest } from 'next/server';
-import { decryptSecret, isServerEncryptionAvailable } from '@/lib/crypto';
 import {
-  buildCandidateKeys,
-  checkSharedPoolRateLimit,
-  isRetryableGeminiKeyError,
-  markKeyCooldown,
-} from '@/lib/gemini-keys';
+  generateGeminiJson,
+  resolveTutorRequestAuth,
+  TutorHttpError,
+} from '@/lib/gemini-client';
 import { AI_PERSONAS, SCENARIOS } from '@/lib/scenarios';
-import { isSupabaseConfigured } from '@/lib/supabase/config';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import {
   buildConversationTurnPrompt,
   buildTutorSystemInstruction,
   parseTutorTurnOutput,
   TUTOR_RESPONSE_SCHEMA,
 } from '@/lib/tutor-prompt';
-import type { EnglishLevel, TutorMessage, UserProfile } from '@/types';
+import type { TutorMessage, UserProfile } from '@/types';
+
+export const maxDuration = 30;
 
 interface TurnPayload {
   scenarioId: string;
@@ -27,21 +25,6 @@ interface TurnPayload {
   profileOverride?: Partial<
     Pick<UserProfile, 'displayName' | 'englishLevel' | 'jobField' | 'hobbies'>
   >;
-}
-
-function getFallbackModels(): string[] {
-  const primary =
-    process.env.GEMINI_MODEL?.trim() || 'gemini-3.5-flash-lite';
-  const list = [
-    primary,
-    'gemini-3.5-flash-lite',
-    'gemini-3.1-flash-lite',
-    'gemini-3.8-flash',
-    'gemini-3.6-flash',
-    'gemini-3.5-flash',
-    'gemini-2.5-flash',
-  ];
-  return Array.from(new Set(list));
 }
 
 export async function POST(request: NextRequest) {
@@ -77,109 +60,10 @@ export async function POST(request: NextRequest) {
       payload = (await request.json()) as TurnPayload;
     }
 
-    let userId = 'local-demo-user';
-    let userPersonalKey: string | null =
-      request.headers.get('x-user-gemini-key')?.trim() || null;
-
-    let profile: Pick<
-      UserProfile,
-      'displayName' | 'englishLevel' | 'jobField' | 'hobbies'
-    > = {
-      displayName: payload.profileOverride?.displayName ?? 'Bạn',
-      englishLevel:
-        (payload.profileOverride?.englishLevel as EnglishLevel) ?? 'A0-A1',
-      jobField: payload.profileOverride?.jobField ?? '',
-      hobbies: payload.profileOverride?.hobbies ?? [],
-    };
-
-    if (isSupabaseConfigured()) {
-      const supabase = await createSupabaseServerClient();
-      if (!supabase) {
-        return NextResponse.json(
-          { error: 'Không thể kết nối Supabase.' },
-          { status: 500 }
-        );
-      }
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        return NextResponse.json(
-          { error: 'Vui lòng đăng nhập để sử dụng AI Tutor.' },
-          { status: 401 }
-        );
-      }
-
-      userId = user.id;
-
-      const { data: dbProfile } = await supabase
-        .from('profiles')
-        .select(
-          'display_name, english_level, job_field, hobbies, api_key_mode'
-        )
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (dbProfile) {
-        profile = {
-          displayName: dbProfile.display_name || profile.displayName,
-          englishLevel:
-            (dbProfile.english_level as EnglishLevel) || profile.englishLevel,
-          jobField: dbProfile.job_field || profile.jobField,
-          hobbies: Array.isArray(dbProfile.hobbies)
-            ? dbProfile.hobbies
-            : profile.hobbies,
-        };
-
-        if (
-          dbProfile.api_key_mode === 'personal' &&
-          !userPersonalKey &&
-          isServerEncryptionAvailable()
-        ) {
-          const { data: keyRow } = await supabase
-            .from('user_api_keys')
-            .select('encrypted_gemini_key')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          if (keyRow?.encrypted_gemini_key) {
-            try {
-              userPersonalKey = decryptSecret(keyRow.encrypted_gemini_key);
-            } catch {
-              // Ignore malformed stored secret and fallback cleanly
-            }
-          }
-        } else if (dbProfile.api_key_mode === 'system') {
-          userPersonalKey = null;
-        }
-      }
-    }
-
-    const candidates = buildCandidateKeys(userPersonalKey);
-    if (candidates.length === 0) {
-      return NextResponse.json(
-        {
-          error:
-            'Chưa có Gemini API Key. Hãy cấu hình GEMINI_API_KEYS trên server hoặc nhập API Key cá nhân trong mục Cài đặt.',
-        },
-        { status: 503 }
-      );
-    }
-
-    if (candidates[0].source === 'shared') {
-      const limitCheck = checkSharedPoolRateLimit(userId);
-      if (!limitCheck.allowed) {
-        return NextResponse.json(
-          {
-            error:
-              'Bạn đã đạt giới hạn lượt gọi AI dùng chung trong giờ này. Hãy thử lại sau hoặc nhập Gemini API Key cá nhân miễn phí trong Cài đặt để nói không giới hạn!',
-          },
-          { status: 429 }
-        );
-      }
-    }
+    const { userId, userPersonalKey, profile } = await resolveTutorRequestAuth(
+      request,
+      payload.profileOverride
+    );
 
     const scenario =
       SCENARIOS.find((s) => s.id === payload.scenarioId) ?? SCENARIOS[0];
@@ -211,65 +95,40 @@ export async function POST(request: NextRequest) {
     }
     parts.push({ text: promptText });
 
-    const models = getFallbackModels();
-    let lastError: unknown = null;
+    const result = await generateGeminiJson({
+      userId,
+      userPersonalKey,
+      parts,
+      systemInstruction,
+      responseSchema: TUTOR_RESPONSE_SCHEMA,
+      temperature: 0.65,
+      maxOutputTokens: audioBase64 ? 950 : 650,
+      speedMode: 'realtime',
+      timeoutMs: audioBase64 ? 15_000 : 12_000,
+    });
 
-    for (const candidate of candidates) {
-      const ai = new GoogleGenAI({ apiKey: candidate.key });
+    const parsed = parseTutorTurnOutput(result.rawText);
 
-      for (const model of models) {
-        try {
-          const response = await ai.models.generateContent({
-            model,
-            contents: [{ role: 'user', parts }],
-            config: {
-              systemInstruction,
-              responseMimeType: 'application/json',
-              responseSchema: TUTOR_RESPONSE_SCHEMA,
-              temperature: 0.7,
-            },
-          });
-
-          const rawText = response.text;
-          if (!rawText) {
-            throw new Error('Gemini trả về nội dung trống.');
-          }
-
-          const parsed = parseTutorTurnOutput(rawText);
-          return NextResponse.json({
-            ...parsed,
-            meta: {
-              keySource: candidate.source,
-              modelUsed: model,
-            },
-          });
-        } catch (err) {
-          lastError = err;
-          if (isRetryableGeminiKeyError(err)) {
-            if (candidate.source === 'shared') {
-              markKeyCooldown(candidate.key);
-            }
-            // Break inner model loop to switch to next API key in pool
-            break;
-          }
-          // Non-key error (e.g. model name unavailable) -> try fallback model
-        }
-      }
-    }
-
-    const message =
-      lastError instanceof Error
-        ? lastError.message
-        : 'Không thể nhận phản hồi từ Gemini.';
-    return NextResponse.json(
-      {
-        error: `Lỗi kết nối AI: ${message}`,
+    return NextResponse.json({
+      ...parsed,
+      pronunciation: audioBase64 ? parsed.pronunciation ?? null : null,
+      meta: {
+        keySource: result.keySource,
+        modelUsed: result.modelUsed,
+        latencyMs: result.latencyMs,
       },
-      { status: 502 }
-    );
+    });
   } catch (error) {
+    if (error instanceof TutorHttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
     const message =
-      error instanceof Error ? error.message : 'Lỗi máy chủ khi xử lý hội thoại.';
+      error instanceof Error
+        ? error.message
+        : 'Lỗi máy chủ khi xử lý hội thoại.';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

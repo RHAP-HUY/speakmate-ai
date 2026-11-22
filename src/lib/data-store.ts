@@ -338,9 +338,24 @@ export async function appendConversationMessages(
     natural_rewrite: m.naturalRewrite ?? null,
     coaching_tip: m.coachingTip ?? null,
     reply_hints: m.replyHints ?? [],
+    pronunciation: m.pronunciation ?? null,
   }));
 
-  await supabase.from('messages').insert(rows);
+  const { error } = await supabase.from('messages').insert(rows);
+  if (error && error.message?.toLowerCase().includes('pronunciation')) {
+    // Graceful fallback if existing Supabase DB hasn't run the pronunciation column migration yet
+    const legacyRows = rows.map((row) => ({
+      conversation_id: row.conversation_id,
+      user_id: row.user_id,
+      role: row.role,
+      english_text: row.english_text,
+      vietnamese_translation: row.vietnamese_translation,
+      natural_rewrite: row.natural_rewrite,
+      coaching_tip: row.coaching_tip,
+      reply_hints: row.reply_hints,
+    }));
+    await supabase.from('messages').insert(legacyRows);
+  }
 }
 
 export async function finishConversationRecord(params: {
@@ -348,6 +363,7 @@ export async function finishConversationRecord(params: {
   durationSeconds: number;
   messageCount: number;
   userMessagesSent: number;
+  summaryVi?: string | null;
 }): Promise<void> {
   const today = getTodayLocalDate();
   const yesterday = getYesterdayLocalDate();
@@ -366,6 +382,8 @@ export async function finishConversationRecord(params: {
               ...c,
               durationSeconds: safeDuration,
               messageCount: params.messageCount,
+              summaryVi:
+                params.summaryVi !== undefined ? params.summaryVi : c.summaryVi,
               endedAt: new Date().toISOString(),
             }
           : c
@@ -420,13 +438,18 @@ export async function finishConversationRecord(params: {
   } = await supabase.auth.getUser();
   if (!user) return;
 
+  const updatePayload: Record<string, unknown> = {
+    duration_seconds: safeDuration,
+    message_count: params.messageCount,
+    ended_at: new Date().toISOString(),
+  };
+  if (params.summaryVi !== undefined) {
+    updatePayload.summary_vi = params.summaryVi;
+  }
+
   await supabase
     .from('conversations')
-    .update({
-      duration_seconds: safeDuration,
-      message_count: params.messageCount,
-      ended_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq('id', params.conversationId)
     .eq('user_id', user.id);
 
@@ -477,6 +500,35 @@ export async function finishConversationRecord(params: {
       })
       .eq('id', user.id);
   }
+}
+
+export async function updateConversationSummary(
+  conversationId: string,
+  summaryVi: string
+): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    const convs = readLocalJson<ConversationRecord[]>(
+      STORAGE_KEYS.conversations,
+      []
+    );
+    writeLocalJson(
+      STORAGE_KEYS.conversations,
+      convs.map((c) => (c.id === conversationId ? { ...c, summaryVi } : c))
+    );
+    return;
+  }
+
+  const supabase = createSupabaseBrowserClient()!;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase
+    .from('conversations')
+    .update({ summary_vi: summaryVi })
+    .eq('id', conversationId)
+    .eq('user_id', user.id);
 }
 
 export async function listConversations(): Promise<ConversationRecord[]> {
@@ -578,6 +630,10 @@ export async function getConversationDetail(conversationId: string): Promise<{
       naturalRewrite: m.natural_rewrite,
       coachingTip: m.coaching_tip,
       replyHints: Array.isArray(m.reply_hints) ? m.reply_hints : [],
+      pronunciation:
+        m.pronunciation && typeof m.pronunciation === 'object'
+          ? m.pronunciation
+          : null,
       createdAt: m.created_at,
     })),
   };

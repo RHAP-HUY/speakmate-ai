@@ -11,10 +11,15 @@
 - **Hồ sơ cá nhân hóa (Onboarding) & Đồng bộ đa thiết bị:**
   - Lưu tên gọi, trình độ (`A0–A1`, `A2–B1`, `B2+`), công việc/lĩnh vực, sở thích, accent ưu tiên và mục tiêu phút/ngày lên **Supabase PostgreSQL** (Row Level Security theo từng người dùng).
 - **Cuộc gọi thoại AI thời gian thực (Gemini Audio + Edge Neural TTS):**
-  - Gửi trực tiếp âm thanh micro lên **Google Gemini (`gemini-2.5-flash`)** — hiểu tốt cả giọng người Việt mới học hoặc lúc chêm tiếng Việt khi bí từ.
+  - Gửi trực tiếp âm thanh micro (nén 32kbps tối ưu tốc độ) lên **Google Gemini (`gemini-3.5-flash-lite` với `thinkingConfig` độ trễ thấp + sticky model fallback)** — hiểu tốt cả giọng người Việt mới học hoặc lúc chêm tiếng Việt khi bí từ.
   - Hỗ trợ **2 chế độ Micro**: *Chạm để nói* (hoặc nhấn `Space`, phù hợp người mới A0–A1) và *Tự động rảnh tay (Hands-free)* tự ngắt khi ngừng nói.
   - Đọc phản hồi bằng giọng bản xứ **Mỹ (US), Anh (UK), Úc (AU), Canada (CA)** qua Microsoft Edge Neural TTS, tùy chỉnh tốc độ **0.75x – 1.1x** (tự động dự phòng bằng giọng trình duyệt nếu mất kết nối TTS).
   - **Phụ đề song ngữ Anh–Việt**, thẻ **"✨ Cách người bản xứ nói tự nhiên hơn"**, mẹo phát âm/ngữ pháp tiếng Việt và **3 gợi ý câu trả lời** kèm phiên âm dễ đọc.
+- **Chấm điểm phát âm từng câu & Chế độ luyện đọc nhại lại (Shadowing):**
+  - Tự động chấm điểm phát âm (`0–100`: Độ rõ âm, Trôi chảy, Ngữ điệu + phân tích từng từ kèm IPA & mẹo tiếng Việt) ngay sau mỗi lượt nói bằng micro.
+  - Tích hợp nút **"Đọc thử & Chấm điểm"** trên câu AI nói, câu sửa bản xứ, gợi ý trả lời và toàn bộ Sổ tay/Flashcard (kèm nút nghe lại chính giọng mình để so sánh).
+- **Báo cáo đánh giá sau cuộc gọi:**
+  - Tự động chấm 4 kỹ năng (*Phát âm, Trôi chảy, Ngữ pháp, Từ vựng*), ước lượng CEFR, tóm tắt điểm mạnh/điểm cần cải thiện, 3 câu sửa tiêu biểu và cụm từ nên lưu 1 chạm; lưu đồng bộ vào Lịch sử cuộc gọi.
 - **Linh hoạt API Key (Pool dùng chung + Key cá nhân theo từng tài khoản):**
   - Server hỗ trợ nhập **1 hoặc nhiều Gemini API Key** (`GEMINI_API_KEYS=key1,key2,...`) tự động xoay vòng & dự phòng khi chạm giới hạn lượt gọi miễn phí.
   - Mỗi người dùng có thể tự nhập **Gemini API Key cá nhân** trong mục **Cài đặt** (được mã hóa **AES-256-GCM** trước khi lưu vào Supabase).

@@ -30,6 +30,61 @@ export interface ReplyHint {
   phonetic?: string;
 }
 
+export type PronunciationWordStatus = 'good' | 'improve' | 'missing';
+
+export interface PronunciationWordFeedback {
+  word: string;
+  status: PronunciationWordStatus;
+  ipa?: string;
+  tipVi?: string;
+}
+
+export interface PronunciationAssessment {
+  overallScore: number;
+  accuracyScore: number;
+  fluencyScore: number;
+  intonationScore: number;
+  summaryVi: string;
+  wordFeedback: PronunciationWordFeedback[];
+}
+
+export interface PronunciationPracticeResult extends PronunciationAssessment {
+  targetSentence: string;
+  heardTranscript: string;
+  linkingTipVi?: string | null;
+}
+
+export interface ReportMistakeItem {
+  original: string;
+  better: string;
+  explanationVi: string;
+}
+
+export interface ReportKeyPhrase {
+  en: string;
+  vi: string;
+  phonetic?: string;
+}
+
+export interface ConversationReport {
+  overallScore: number;
+  cefrEstimate: string;
+  scores: {
+    pronunciation: number;
+    fluency: number;
+    grammar: number;
+    vocabulary: number;
+  };
+  headlineVi: string;
+  overviewVi: string;
+  strengthsVi: string[];
+  improvementsVi: string[];
+  topCorrections: ReportMistakeItem[];
+  recommendedPhrases: ReportKeyPhrase[];
+  nextStepVi: string;
+  generatedAt: string;
+}
+
 export interface TutorMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -38,6 +93,7 @@ export interface TutorMessage {
   naturalRewrite?: string | null;
   coachingTip?: string | null;
   replyHints?: ReplyHint[];
+  pronunciation?: PronunciationAssessment | null;
   createdAt: string;
 }
 

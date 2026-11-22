@@ -147,8 +147,13 @@ create table if not exists public.messages (
   natural_rewrite text,
   coaching_tip text,
   reply_hints jsonb not null default '[]'::jsonb,
+  pronunciation jsonb,
   created_at timestamptz not null default now()
 );
+
+-- Safe idempotent migration for existing databases
+alter table public.messages
+  add column if not exists pronunciation jsonb;
 
 create index if not exists idx_messages_conversation_created
   on public.messages (conversation_id, created_at asc);

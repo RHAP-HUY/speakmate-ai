@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Award,
   Calendar,
   ChevronDown,
   ChevronUp,
@@ -15,17 +16,23 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppNav } from '@/components/AppNav';
+import { CallReportView } from '@/components/CallReportView';
+import { PronunciationBadge, getScoreTone } from '@/components/PronunciationBadge';
 import { playNaturalVoice } from '@/lib/audio';
 import {
   getConversationDetail,
   getCurrentProfile,
   getDailyStats,
   listConversations,
+  savePhrase,
 } from '@/lib/data-store';
 import { AI_PERSONAS } from '@/lib/scenarios';
+import { parseConversationReport } from '@/lib/tutor-prompt';
 import type {
+  ConcreteAccent,
   ConversationRecord,
   DailyStat,
+  ReportKeyPhrase,
   TutorMessage,
   UserProfile,
 } from '@/types';
@@ -53,6 +60,7 @@ export default function HistoryPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [conversations, setConversations] = useState<ConversationRecord[]>([]);
   const [stats, setStats] = useState<DailyStat[]>([]);
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [detailCache, setDetailCache] = useState<Record<string, TutorMessage[]>>(
@@ -112,6 +120,23 @@ export default function HistoryPage() {
     });
   }
 
+  async function handleSaveReportPhrase(
+    phrase: ReportKeyPhrase,
+    category: string,
+    accent: ConcreteAccent
+  ) {
+    const key = phrase.en.toLowerCase();
+    if (savedKeys.has(key)) return;
+    await savePhrase({
+      englishPhrase: phrase.en,
+      vietnameseMeaning: phrase.vi,
+      phonetic: phrase.phonetic ?? null,
+      category,
+      accent,
+    });
+    setSavedKeys((prev) => new Set(prev).add(key));
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -137,7 +162,7 @@ export default function HistoryPage() {
             Tiến độ & Lịch sử Luyện nói
           </h1>
           <p className="text-sm text-slate-600">
-            Theo dõi thời gian nói mỗi ngày và xem lại từng câu AI đã sửa cho bạn.
+            Theo dõi thời gian nói mỗi ngày, báo cáo đánh giá sau cuộc gọi và điểm phát âm từng câu.
           </p>
         </div>
 
@@ -234,7 +259,7 @@ export default function HistoryPage() {
                 Chưa có lịch sử cuộc gọi nào
               </p>
               <p className="mt-1 text-xs text-slate-500 mb-4">
-                Bắt đầu một cuộc gọi ngắn 3 phút để xem tiến trình của bạn tại đây nhé!
+                Bắt đầu một cuộc gọi ngắn 3 phút để xem tiến trình và báo cáo đánh giá của bạn tại đây nhé!
               </p>
               <Link
                 href="/"
@@ -248,6 +273,11 @@ export default function HistoryPage() {
               {conversations.map((conv) => {
                 const isOpen = expandedId === conv.id;
                 const msgs = detailCache[conv.id] ?? [];
+                const parsedReport = parseConversationReport(conv.summaryVi);
+                const scoreTone =
+                  parsedReport && parsedReport.overallScore > 0
+                    ? getScoreTone(parsedReport.overallScore)
+                    : null;
 
                 return (
                   <div
@@ -267,6 +297,14 @@ export default function HistoryPage() {
                           <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
                             {conv.aiPersona} · {conv.accent}
                           </span>
+                          {parsedReport && scoreTone && (
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold ${scoreTone.pillLight}`}
+                            >
+                              <Award className="h-3 w-3" />
+                              {parsedReport.overallScore}/100 · {parsedReport.cefrEstimate}
+                            </span>
+                          )}
                         </div>
                         <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
                           <span>
@@ -288,69 +326,114 @@ export default function HistoryPage() {
                     </button>
 
                     {isOpen && (
-                      <div className="border-t border-slate-100 bg-slate-50/70 p-4 space-y-3">
-                        {loadingDetail === conv.id ? (
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Đang tải nội dung cuộc gọi...
+                      <div className="border-t border-slate-100 bg-slate-50/70 p-4 space-y-4">
+                        {/* Saved Post-Call Evaluation Report */}
+                        {parsedReport && (
+                          <div className="space-y-2">
+                            <div className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                              Báo cáo đánh giá buổi gọi
+                            </div>
+                            <CallReportView
+                              report={parsedReport}
+                              theme="light"
+                              savedKeys={savedKeys}
+                              onSpeak={(text) =>
+                                speakSentence(text, conv.accent)
+                              }
+                              onSavePhrase={(p) =>
+                                void handleSaveReportPhrase(
+                                  p,
+                                  conv.topicCategory,
+                                  conv.accent
+                                )
+                              }
+                            />
                           </div>
-                        ) : msgs.length === 0 ? (
-                          <p className="text-xs text-slate-500">
-                            Không có tin nhắn chi tiết trong cuộc gọi này.
-                          </p>
-                        ) : (
-                          msgs.map((m) => (
-                            <div
-                              key={m.id}
-                              className={`rounded-2xl p-3 text-sm ${
-                                m.role === 'user'
-                                  ? 'bg-indigo-600 text-white ml-6'
-                                  : 'bg-white border border-slate-200 text-slate-900 mr-6'
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <p className="font-medium">{m.englishText}</p>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    speakSentence(
-                                      m.naturalRewrite || m.englishText,
-                                      conv.accent
-                                    )
-                                  }
-                                  className={`shrink-0 rounded-lg p-1.5 cursor-pointer ${
+                        )}
+
+                        {/* Detailed Transcript */}
+                        <div className="space-y-3">
+                          <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                            Nội dung hội thoại & Chấm phát âm
+                          </div>
+
+                          {loadingDetail === conv.id ? (
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Đang tải nội dung cuộc gọi...
+                            </div>
+                          ) : msgs.length === 0 ? (
+                            <p className="text-xs text-slate-500">
+                              Không có tin nhắn chi tiết trong cuộc gọi này.
+                            </p>
+                          ) : (
+                            msgs.map((m) => (
+                              <div
+                                key={m.id}
+                                className={`flex flex-col ${
+                                  m.role === 'user' ? 'items-end' : 'items-start'
+                                }`}
+                              >
+                                <div
+                                  className={`w-full sm:max-w-[85%] rounded-2xl p-3 text-sm ${
                                     m.role === 'user'
-                                      ? 'bg-white/15 text-white hover:bg-white/25'
-                                      : 'bg-slate-100 text-indigo-600 hover:bg-slate-200'
+                                      ? 'bg-indigo-600 text-white'
+                                      : 'bg-white border border-slate-200 text-slate-900'
                                   }`}
                                 >
-                                  <Volume2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <p className="font-medium">{m.englishText}</p>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        speakSentence(
+                                          m.naturalRewrite || m.englishText,
+                                          conv.accent
+                                        )
+                                      }
+                                      className={`shrink-0 rounded-lg p-1.5 cursor-pointer ${
+                                        m.role === 'user'
+                                          ? 'bg-white/15 text-white hover:bg-white/25'
+                                          : 'bg-slate-100 text-indigo-600 hover:bg-slate-200'
+                                      }`}
+                                    >
+                                      <Volume2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
 
-                              {m.vietnameseTranslation && (
-                                <p className="mt-1 text-xs text-slate-500">
-                                  🇻🇳 {m.vietnameseTranslation}
-                                </p>
-                              )}
+                                  {m.vietnameseTranslation && (
+                                    <p className="mt-1 text-xs text-slate-500">
+                                      🇻🇳 {m.vietnameseTranslation}
+                                    </p>
+                                  )}
 
-                              {m.naturalRewrite && (
-                                <div className="mt-2 rounded-xl bg-emerald-500/20 px-2.5 py-1.5 text-xs text-emerald-100 flex items-center gap-1.5">
-                                  <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                                  <span>
-                                    Tự nhiên hơn: <strong>{m.naturalRewrite}</strong>
-                                  </span>
+                                  {m.naturalRewrite && (
+                                    <div className="mt-2 rounded-xl bg-emerald-500/20 px-2.5 py-1.5 text-xs text-emerald-100 flex items-center gap-1.5">
+                                      <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                                      <span>
+                                        Tự nhiên hơn:{' '}
+                                        <strong>{m.naturalRewrite}</strong>
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {m.coachingTip && (
+                                    <p className="mt-1.5 text-xs opacity-90">
+                                      💡 {m.coachingTip}
+                                    </p>
+                                  )}
                                 </div>
-                              )}
 
-                              {m.coachingTip && (
-                                <p className="mt-1.5 text-xs opacity-90">
-                                  💡 {m.coachingTip}
-                                </p>
-                              )}
-                            </div>
-                          ))
-                        )}
+                                {m.role === 'user' && m.pronunciation && (
+                                  <PronunciationBadge
+                                    assessment={m.pronunciation}
+                                    theme="light"
+                                  />
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

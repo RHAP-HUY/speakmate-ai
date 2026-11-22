@@ -154,3 +154,28 @@ export function pickSupportedAudioMimeType(): string {
   }
   return '';
 }
+
+/**
+ * Creates a speech-optimized MediaRecorder (32kbps) to keep audio payloads small
+ * and fast to upload/transcribe, with automatic fallback for strict mobile browsers.
+ */
+export function createSpeechRecorder(stream: MediaStream): MediaRecorder {
+  const mimeType = pickSupportedAudioMimeType();
+  const preferredOptions: MediaRecorderOptions = {
+    audioBitsPerSecond: 32_000,
+    ...(mimeType ? { mimeType } : {}),
+  };
+
+  try {
+    return new MediaRecorder(stream, preferredOptions);
+  } catch {
+    if (mimeType) {
+      try {
+        return new MediaRecorder(stream, { mimeType });
+      } catch {
+        // Fall through to browser default
+      }
+    }
+    return new MediaRecorder(stream);
+  }
+}

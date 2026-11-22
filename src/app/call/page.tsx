@@ -9,15 +9,23 @@ import {
   Mic,
   MicOff,
   PhoneOff,
+  RotateCcw,
   Send,
   Sparkles,
   Volume2,
+  Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { CallReportView } from '@/components/CallReportView';
+import { PronunciationBadge } from '@/components/PronunciationBadge';
 import {
-  pickSupportedAudioMimeType,
+  PronunciationPracticeModal,
+  type PronunciationPracticeTarget,
+} from '@/components/PronunciationPracticeModal';
+import {
+  createSpeechRecorder,
   playNaturalVoice,
   stopVoicePlayback,
 } from '@/lib/audio';
@@ -28,11 +36,29 @@ import {
   getCurrentProfile,
   getLocalPersonalKey,
   savePhrase,
+  updateConversationSummary,
 } from '@/lib/data-store';
 import { AI_PERSONAS, pickPersona, SCENARIOS } from '@/lib/scenarios';
-import type { AiPersona, ReplyHint, TutorMessage, UserProfile } from '@/types';
+import {
+  buildFallbackConversationReport,
+  serializeConversationReport,
+} from '@/lib/tutor-prompt';
+import type {
+  AiPersona,
+  ConversationReport,
+  ReplyHint,
+  ReportKeyPhrase,
+  TutorMessage,
+  UserProfile,
+} from '@/types';
 
-type CallPhase = 'initializing' | 'idle' | 'recording' | 'thinking' | 'speaking' | 'ended';
+type CallPhase =
+  | 'initializing'
+  | 'idle'
+  | 'recording'
+  | 'thinking'
+  | 'speaking'
+  | 'ended';
 type MicMode = 'tap' | 'handsfree';
 
 function formatTimer(seconds: number): string {
@@ -68,6 +94,19 @@ function CallStudioInner() {
   const [micLevel, setMicLevel] = useState<number>(0);
   const [autoListenTick, setAutoListenTick] = useState<number>(0);
 
+  // Speed telemetry & pronunciation practice modal
+  const [lastTurnMeta, setLastTurnMeta] = useState<{
+    latencyMs: number;
+    modelUsed: string;
+  } | null>(null);
+  const [practiceTarget, setPracticeTarget] =
+    useState<PronunciationPracticeTarget | null>(null);
+
+  // Post-call evaluation report
+  const [callReport, setCallReport] = useState<ConversationReport | null>(null);
+  const [reportLoading, setReportLoading] = useState<boolean>(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+
   // Refs for stable audio / timer callbacks
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -83,6 +122,7 @@ function CallStudioInner() {
   const speedRef = useRef<number>(0.85);
   const micModeRef = useRef<MicMode>('tap');
   const phaseRef = useRef<CallPhase>('initializing');
+  const practiceOpenRef = useRef<boolean>(false);
   const startedInitRef = useRef<boolean>(false);
 
   useEffect(() => {
@@ -101,6 +141,10 @@ function CallStudioInner() {
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
+
+  useEffect(() => {
+    practiceOpenRef.current = Boolean(practiceTarget);
+  }, [practiceTarget]);
 
   // Call duration timer
   useEffect(() => {
@@ -147,19 +191,21 @@ function CallStudioInner() {
   const speakAiSentence = useCallback(
     async (text: string, customSpeed?: number, autoListenAfter = false) => {
       const p = personaRef.current;
-      setPhase('speaking');
+      setPhase((prev) => (prev === 'ended' ? 'ended' : 'speaking'));
       await playNaturalVoice({
         text,
         voice: p.edgeVoice,
         browserLang: p.browserLang,
         speed: customSpeed ?? speedRef.current,
-        onStart: () => setPhase('speaking'),
+        onStart: () =>
+          setPhase((prev) => (prev === 'ended' ? 'ended' : 'speaking')),
         onEnd: () => {
           setPhase((prev) => (prev === 'ended' ? 'ended' : 'idle'));
           if (
             autoListenAfter &&
             micModeRef.current === 'handsfree' &&
-            phaseRef.current !== 'ended'
+            phaseRef.current !== 'ended' &&
+            !practiceOpenRef.current
           ) {
             setAutoListenTick((t) => t + 1);
           }
@@ -186,7 +232,8 @@ function CallStudioInner() {
           personaId: personaRef.current.id,
           isStart: opts.isStart,
           userText: opts.userText,
-          history: messagesRef.current.map((m) => ({
+          // Keep payload lean: only send recent 8 turns
+          history: messagesRef.current.slice(-8).map((m) => ({
             role: m.role,
             englishText: m.englishText,
           })),
@@ -228,6 +275,16 @@ function CallStudioInner() {
           throw new Error(data.error || 'Không thể kết nối AI Tutor.');
         }
 
+        if (
+          typeof data.meta?.latencyMs === 'number' &&
+          typeof data.meta?.modelUsed === 'string'
+        ) {
+          setLastTurnMeta({
+            latencyMs: data.meta.latencyMs,
+            modelUsed: data.meta.modelUsed,
+          });
+        }
+
         const nowIso = new Date().toISOString();
         const newMessages: TutorMessage[] = [];
 
@@ -238,6 +295,7 @@ function CallStudioInner() {
             englishText: data.userTranscript,
             naturalRewrite: data.naturalRewrite,
             coachingTip: data.coachingTip,
+            pronunciation: data.pronunciation ?? null,
             createdAt: nowIso,
           });
         }
@@ -256,11 +314,14 @@ function CallStudioInner() {
         setMessages((prev) => [...prev, ...newMessages]);
         setReplyHints(data.replyHints ?? []);
 
+        // Persist in background so TTS audio starts immediately without DB latency
         if (conversationIdRef.current) {
-          await appendConversationMessages(
+          void appendConversationMessages(
             conversationIdRef.current,
             newMessages
-          );
+          ).catch(() => {
+            // Non-blocking persistence error
+          });
         }
 
         await speakAiSentence(data.aiReplyEn, undefined, true);
@@ -322,18 +383,28 @@ function CallStudioInner() {
   }, []);
 
   const startRecording = useCallback(async () => {
-    if (phaseRef.current === 'thinking' || phaseRef.current === 'ended') return;
+    if (
+      phaseRef.current === 'thinking' ||
+      phaseRef.current === 'ended' ||
+      practiceOpenRef.current
+    ) {
+      return;
+    }
     setErrorMsg(null);
     stopVoicePlayback();
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        },
+      });
       streamRef.current = stream;
 
-      const mimeType = pickSupportedAudioMimeType();
-      const recorder = mimeType
-        ? new MediaRecorder(stream, { mimeType })
-        : new MediaRecorder(stream);
+      const recorder = createSpeechRecorder(stream);
 
       chunksRef.current = [];
       recordStartRef.current = Date.now();
@@ -350,7 +421,7 @@ function CallStudioInner() {
         });
         cleanupRecordingResources();
 
-        if (duration < 450 || blob.size < 1200) {
+        if (duration < 450 || blob.size < 900) {
           setErrorMsg(
             'Đoạn nói hơi ngắn hoặc chưa thu được tiếng. Bạn hãy bấm mic và nói rõ hơn nhé!'
           );
@@ -383,7 +454,10 @@ function CallStudioInner() {
         let lastSoundTs = Date.now();
 
         const monitor = () => {
-          if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') {
+          if (
+            !mediaRecorderRef.current ||
+            mediaRecorderRef.current.state !== 'recording'
+          ) {
             return;
           }
           analyser.getByteTimeDomainData(buffer);
@@ -424,19 +498,21 @@ function CallStudioInner() {
   }, [cleanupRecordingResources, sendTurn, stopRecordingAndSend]);
 
   useEffect(() => {
-    if (autoListenTick === 0 || micMode !== 'handsfree') return;
+    if (autoListenTick === 0 || micMode !== 'handsfree' || practiceTarget) {
+      return;
+    }
     const timer = setTimeout(() => {
-      if (phaseRef.current === 'idle') {
+      if (phaseRef.current === 'idle' && !practiceOpenRef.current) {
         void startRecording();
       }
     }, 350);
     return () => clearTimeout(timer);
-  }, [autoListenTick, micMode, startRecording]);
+  }, [autoListenTick, micMode, practiceTarget, startRecording]);
 
   // Spacebar shortcut on desktop when in tap mode
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.code !== 'Space') return;
+      if (e.code !== 'Space' || practiceOpenRef.current) return;
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -449,7 +525,10 @@ function CallStudioInner() {
       e.preventDefault();
       if (phaseRef.current === 'recording') {
         stopRecordingAndSend();
-      } else if (phaseRef.current === 'idle' || phaseRef.current === 'speaking') {
+      } else if (
+        phaseRef.current === 'idle' ||
+        phaseRef.current === 'speaking'
+      ) {
         void startRecording();
       }
     }
@@ -464,13 +543,14 @@ function CallStudioInner() {
     await sendTurn({ userText: clean });
   }
 
-  async function handleSavePhrase(en: string, vi: string) {
+  async function handleSavePhrase(en: string, vi: string, phonetic?: string) {
     const key = en.toLowerCase();
     if (savedKeys.has(key)) return;
     try {
       await savePhrase({
         englishPhrase: en,
         vietnameseMeaning: vi,
+        phonetic: phonetic ?? null,
         category: scenario.category,
         accent: persona.accent,
       });
@@ -480,19 +560,112 @@ function CallStudioInner() {
     }
   }
 
+  const generatePostCallReport = useCallback(
+    async (
+      convId: string | null,
+      snapshotMessages: TutorMessage[],
+      durationSec: number
+    ) => {
+      setReportLoading(true);
+      setReportError(null);
+
+      try {
+        const headers = {
+          ...buildAuthHeaders(),
+          'Content-Type': 'application/json',
+        };
+        const res = await fetch('/api/tutor/summary', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            scenarioId: scenario.id,
+            personaId: personaRef.current.id,
+            durationSeconds: durationSec,
+            messages: snapshotMessages.map((m) => ({
+              role: m.role,
+              englishText: m.englishText,
+              naturalRewrite: m.naturalRewrite,
+              pronunciation: m.pronunciation,
+            })),
+            profileOverride: profileRef.current
+              ? {
+                  displayName: profileRef.current.displayName,
+                  englishLevel: profileRef.current.englishLevel,
+                  jobField: profileRef.current.jobField,
+                  hobbies: profileRef.current.hobbies,
+                }
+              : undefined,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.report) {
+          throw new Error(data.error || 'Không thể tạo báo cáo tổng kết.');
+        }
+
+        const report = data.report as ConversationReport;
+        setCallReport(report);
+
+        if (convId) {
+          await updateConversationSummary(
+            convId,
+            serializeConversationReport(report)
+          );
+        }
+      } catch (err) {
+        const userSentCount = snapshotMessages.filter(
+          (m) => m.role === 'user'
+        ).length;
+        setReportError(
+          err instanceof Error
+            ? err.message
+            : 'Không thể kết nối AI để phân tích chi tiết.'
+        );
+        const fallback = buildFallbackConversationReport({
+          displayName: profileRef.current?.displayName,
+          englishLevel: profileRef.current?.englishLevel ?? 'A0-A1',
+          userTurns: userSentCount,
+        });
+        setCallReport(fallback);
+      } finally {
+        setReportLoading(false);
+      }
+    },
+    [buildAuthHeaders, scenario.id]
+  );
+
   async function handleEndCall() {
     stopVoicePlayback();
     cleanupRecordingResources();
+    setPracticeTarget(null);
     setPhase('ended');
-    if (conversationId) {
-      const userSentCount = messages.filter((m) => m.role === 'user').length;
+
+    const snapshotMessages = [...messagesRef.current];
+    const userSentCount = snapshotMessages.filter(
+      (m) => m.role === 'user'
+    ).length;
+    const convId = conversationIdRef.current ?? conversationId;
+
+    // Immediately save call duration & streak so nothing is lost if user closes early
+    if (convId) {
       await finishConversationRecord({
-        conversationId,
+        conversationId: convId,
         durationSeconds: elapsedSeconds,
-        messageCount: messages.length,
+        messageCount: snapshotMessages.length,
         userMessagesSent: userSentCount,
       });
     }
+
+    await generatePostCallReport(convId, snapshotMessages, elapsedSeconds);
+  }
+
+  function handleOpenPractice(target: PronunciationPracticeTarget) {
+    stopVoicePlayback();
+    cleanupRecordingResources();
+    if (phaseRef.current === 'recording' || phaseRef.current === 'speaking') {
+      setPhase('idle');
+    }
+    setPracticeTarget(target);
   }
 
   function handleChangePersona(nextPersonaId: string) {
@@ -503,6 +676,15 @@ function CallStudioInner() {
   }
 
   const userTurns = messages.filter((m) => m.role === 'user').length;
+  const spokenScores = messages
+    .filter((m) => m.role === 'user' && m.pronunciation)
+    .map((m) => m.pronunciation!.overallScore);
+  const avgPronunciation =
+    spokenScores.length > 0
+      ? Math.round(
+          spokenScores.reduce((sum, s) => sum + s, 0) / spokenScores.length
+        )
+      : null;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-white">
@@ -519,13 +701,22 @@ function CallStudioInner() {
               )}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-sm font-bold text-white">
                   {persona.name} · {scenario.titleVi}
                 </h1>
                 <span className="rounded-full bg-slate-800 px-2 py-0.5 font-mono text-[11px] text-cyan-300">
                   {formatTimer(elapsedSeconds)}
                 </span>
+                {lastTurnMeta && (
+                  <span
+                    title={`Model: ${lastTurnMeta.modelUsed}`}
+                    className="hidden sm:inline-flex items-center gap-1 rounded-full bg-slate-800/90 border border-slate-700 px-2 py-0.5 font-mono text-[10px] text-emerald-300"
+                  >
+                    <Zap className="h-2.5 w-2.5" />
+                    {(lastTurnMeta.latencyMs / 1000).toFixed(1)}s
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400">
                 {phase === 'initializing' && 'Đang kết nối cuộc gọi...'}
@@ -534,8 +725,10 @@ function CallStudioInner() {
                     ? 'Sẵn sàng — Hãy nói hoặc bấm Mic'
                     : 'Sẵn sàng — Bấm Mic (hoặc phím Space) để nói')}
                 {phase === 'recording' && 'Đang nghe bạn nói...'}
-                {phase === 'thinking' && `${persona.name} đang suy nghĩ & sửa câu...`}
-                {phase === 'speaking' && `${persona.name} đang nói (${persona.accentLabel})...`}
+                {phase === 'thinking' &&
+                  `${persona.name} đang chấm phát âm & phản hồi...`}
+                {phase === 'speaking' &&
+                  `${persona.name} đang nói (${persona.accentLabel})...`}
                 {phase === 'ended' && 'Cuộc gọi đã kết thúc'}
               </p>
             </div>
@@ -595,7 +788,7 @@ function CallStudioInner() {
 
             <button
               type="button"
-              onClick={handleEndCall}
+              onClick={() => void handleEndCall()}
               disabled={phase === 'ended'}
               className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 transition cursor-pointer"
             >
@@ -617,12 +810,15 @@ function CallStudioInner() {
           </div>
         )}
 
-        {messages.map((msg) => {
+        {messages.map((msg, msgIdx) => {
           const isUser = msg.role === 'user';
           const isSavedRewrite =
             msg.naturalRewrite &&
             savedKeys.has(msg.naturalRewrite.toLowerCase());
           const isSavedAi = savedKeys.has(msg.englishText.toLowerCase());
+          const isLatestUserTurn =
+            isUser &&
+            msgIdx >= messages.length - 2;
 
           return (
             <div
@@ -672,30 +868,45 @@ function CallStudioInner() {
                   </p>
                 )}
 
-                {!isUser && msg.vietnameseTranslation && (
-                  <div className="mt-2 flex items-center justify-end">
+                {!isUser && (
+                  <div className="mt-2 flex flex-wrap items-center justify-end gap-3">
                     <button
                       type="button"
                       onClick={() =>
-                        handleSavePhrase(
-                          msg.englishText,
-                          msg.vietnameseTranslation || ''
-                        )
+                        handleOpenPractice({
+                          sentence: msg.englishText,
+                          vietnamese: msg.vietnameseTranslation,
+                        })
                       }
-                      className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-cyan-300 cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-cyan-300 hover:text-cyan-200 cursor-pointer"
                     >
-                      {isSavedAi ? (
-                        <>
-                          <Check className="h-3 w-3 text-emerald-400" />
-                          Đã lưu câu
-                        </>
-                      ) : (
-                        <>
-                          <Bookmark className="h-3 w-3" />
-                          Lưu vào sổ tay
-                        </>
-                      )}
+                      <Mic className="h-3 w-3" />
+                      Đọc nhại & Chấm điểm
                     </button>
+                    {msg.vietnameseTranslation && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleSavePhrase(
+                            msg.englishText,
+                            msg.vietnameseTranslation || ''
+                          )
+                        }
+                        className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-cyan-300 cursor-pointer"
+                      >
+                        {isSavedAi ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-400" />
+                            Đã lưu câu
+                          </>
+                        ) : (
+                          <>
+                            <Bookmark className="h-3 w-3" />
+                            Lưu vào sổ tay
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -706,15 +917,24 @@ function CallStudioInner() {
                 )}
               </div>
 
+              {/* Automatic Per-Turn Pronunciation Score */}
+              {isUser && msg.pronunciation && (
+                <PronunciationBadge
+                  assessment={msg.pronunciation}
+                  theme="dark"
+                  defaultExpanded={isLatestUserTurn}
+                />
+              )}
+
               {/* Native phrasing upgrade card for user turns */}
               {isUser && msg.naturalRewrite && (
                 <div className="mt-1.5 max-w-[92%] sm:max-w-[82%] rounded-2xl border border-emerald-500/30 bg-emerald-950/60 px-3.5 py-2.5 text-xs">
-                  <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                     <span className="inline-flex items-center gap-1 font-bold text-emerald-300">
                       <Sparkles className="h-3.5 w-3.5" />
                       Cách người bản xứ nói tự nhiên hơn:
                     </span>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() =>
@@ -724,6 +944,19 @@ function CallStudioInner() {
                       >
                         <Volume2 className="h-3 w-3" />
                         Nghe mẫu
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleOpenPractice({
+                            sentence: msg.naturalRewrite || '',
+                            vietnamese: `Nâng cấp từ: "${msg.englishText}"`,
+                          })
+                        }
+                        className="inline-flex items-center gap-1 rounded-lg bg-cyan-900/80 px-2 py-0.5 text-[11px] font-semibold text-cyan-200 hover:bg-cyan-800 cursor-pointer"
+                      >
+                        <Mic className="h-3 w-3" />
+                        Đọc thử
                       </button>
                       <button
                         type="button"
@@ -756,7 +989,9 @@ function CallStudioInner() {
         {phase === 'thinking' && (
           <div className="flex items-center gap-2 text-xs text-cyan-300 pl-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{persona.name} đang nghe và chuẩn bị câu trả lời...</span>
+            <span>
+              {persona.name} đang nghe, chấm phát âm và chuẩn bị câu trả lời...
+            </span>
           </div>
         )}
 
@@ -777,7 +1012,7 @@ function CallStudioInner() {
             {replyHints.length > 0 && (
               <div>
                 <div className="text-[11px] font-semibold text-slate-400 mb-1.5">
-                  💬 Gợi ý cách trả lời (nghe thử rồi đọc theo vào mic hoặc bấm gửi):
+                  💬 Gợi ý cách trả lời (nghe mẫu, đọc thử chấm phát âm hoặc gửi nhanh):
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {replyHints.map((hint, idx) => (
@@ -800,14 +1035,28 @@ function CallStudioInner() {
                           </div>
                         )}
                       </div>
-                      <div className="mt-2 flex items-center gap-1.5">
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => void speakAiSentence(hint.en, 0.8)}
                           className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-medium text-cyan-300 hover:bg-slate-700 cursor-pointer"
                         >
                           <Volume2 className="h-3 w-3" />
-                          Nghe mẫu
+                          Nghe
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleOpenPractice({
+                              sentence: hint.en,
+                              vietnamese: hint.vi,
+                              phonetic: hint.phonetic,
+                            })
+                          }
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-900/70 px-2 py-1 text-[11px] font-medium text-emerald-200 hover:bg-emerald-800 cursor-pointer"
+                        >
+                          <Mic className="h-3 w-3" />
+                          Đọc thử
                         </button>
                         <button
                           type="button"
@@ -815,7 +1064,7 @@ function CallStudioInner() {
                           onClick={() => void handleSendText(hint.en)}
                           className="inline-flex items-center gap-1 rounded-lg bg-indigo-600/80 px-2 py-1 text-[11px] font-medium text-white hover:bg-indigo-600 disabled:opacity-50 cursor-pointer"
                         >
-                          Dùng câu này
+                          Dùng câu
                         </button>
                       </div>
                     </div>
@@ -906,45 +1155,123 @@ function CallStudioInner() {
         </footer>
       )}
 
-      {/* Session Ended Summary Modal */}
+      {/* Sentence Pronunciation Practice Modal */}
+      <PronunciationPracticeModal
+        target={practiceTarget}
+        persona={persona}
+        profile={profile}
+        onClose={() => setPracticeTarget(null)}
+      />
+
+      {/* Post-Call Evaluation Report Modal */}
       {phase === 'ended' && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 p-6 text-center shadow-2xl">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-2xl">
-              🎉
-            </div>
-            <h2 className="text-xl font-bold text-white">
-              Tuyệt vời lắm, {profile?.displayName || 'bạn'}!
-            </h2>
-            <p className="mt-1 text-xs text-slate-400">
-              Bạn vừa hoàn thành một buổi luyện giao tiếp thực tế với {persona.name}.
-            </p>
-
-            <div className="my-5 grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-slate-800 p-3">
-                <div className="text-lg font-bold text-cyan-400">
-                  {formatTimer(elapsedSeconds)}
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-xs">
+          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-5 sm:p-6 shadow-2xl space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-2xl">
+                  🎉
                 </div>
-                <div className="text-[11px] text-slate-400">Thời gian gọi</div>
-              </div>
-              <div className="rounded-2xl bg-slate-800 p-3">
-                <div className="text-lg font-bold text-emerald-400">
-                  {userTurns} lượt
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold text-white">
+                    Báo cáo Đánh giá Sau Cuộc Gọi
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    {scenario.titleVi} · cùng {persona.name} ({persona.accent})
+                  </p>
                 </div>
-                <div className="text-[11px] text-slate-400">Câu bạn đã nói</div>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs">
+                <div className="rounded-xl bg-slate-800 px-3 py-1.5 text-center">
+                  <div className="font-bold text-cyan-400">
+                    {formatTimer(elapsedSeconds)}
+                  </div>
+                  <div className="text-[10px] text-slate-400">Thời lượng</div>
+                </div>
+                <div className="rounded-xl bg-slate-800 px-3 py-1.5 text-center">
+                  <div className="font-bold text-emerald-400">
+                    {userTurns} lượt
+                  </div>
+                  <div className="text-[10px] text-slate-400">Bạn đã nói</div>
+                </div>
+                {avgPronunciation !== null && (
+                  <div className="rounded-xl bg-slate-800 px-3 py-1.5 text-center">
+                    <div className="font-bold text-amber-300">
+                      {avgPronunciation}/100
+                    </div>
+                    <div className="text-[10px] text-slate-400">TB Phát âm</div>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex flex-col gap-2.5 sm:flex-row">
+            {reportLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+                <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-white">
+                    AI đang tổng hợp báo cáo đánh giá buổi học...
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Phân tích phát âm, độ trôi chảy, ngữ pháp & gợi ý cụm từ cho bạn
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {reportError && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-950/50 px-3.5 py-2.5 text-xs text-amber-200">
+                    <span>{reportError}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void generatePostCallReport(
+                          conversationIdRef.current ?? conversationId,
+                          messagesRef.current,
+                          elapsedSeconds
+                        )
+                      }
+                      className="inline-flex items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-amber-500 cursor-pointer"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Thử lại
+                    </button>
+                  </div>
+                )}
+
+                {callReport && (
+                  <CallReportView
+                    report={callReport}
+                    theme="dark"
+                    savedKeys={savedKeys}
+                    onSpeak={(text) => void speakAiSentence(text)}
+                    onSavePhrase={(p: ReportKeyPhrase) =>
+                      void handleSavePhrase(p.en, p.vi, p.phonetic)
+                    }
+                  />
+                )}
+              </>
+            )}
+
+            <div className="flex flex-col gap-2.5 sm:flex-row border-t border-slate-800 pt-4">
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-700 cursor-pointer"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Gọi lại tình huống này
+              </button>
               <Link
                 href="/history"
-                className="flex-1 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-700"
+                className="flex-1 text-center rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-700"
               >
-                Xem lại hội thoại
+                Xem lịch sử & báo cáo
               </Link>
               <Link
                 href="/"
-                className="flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700"
+                className="flex-1 text-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700"
               >
                 Về trang chủ
               </Link>

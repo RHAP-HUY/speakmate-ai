@@ -6,27 +6,27 @@ import {
   maskApiKey,
 } from '@/lib/crypto';
 import { parseGeminiKeyPool } from '@/lib/gemini-keys';
+import {
+  getOrderedGeminiModels,
+  getThinkingConfigForModel,
+} from '@/lib/gemini-models';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 async function verifyGeminiKey(apiKey: string): Promise<boolean> {
   const ai = new GoogleGenAI({ apiKey });
-  const candidates = Array.from(
-    new Set([
-      process.env.GEMINI_MODEL?.trim() || 'gemini-3.5-flash-lite',
-      'gemini-3.5-flash-lite',
-      'gemini-3.1-flash-lite',
-      'gemini-3.8-flash',
-      'gemini-3.5-flash',
-      'gemini-2.5-flash',
-    ])
-  );
+  const candidates = getOrderedGeminiModels();
   let lastError: unknown = null;
   for (const model of candidates) {
     try {
+      const thinkingConfig = getThinkingConfigForModel(model, 'realtime');
       const res = await ai.models.generateContent({
         model,
         contents: 'Reply with just OK',
+        config: {
+          maxOutputTokens: 16,
+          ...(thinkingConfig ? { thinkingConfig } : {}),
+        },
       });
       if (res.text) return true;
     } catch (err) {

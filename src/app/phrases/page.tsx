@@ -6,6 +6,7 @@ import {
   Check,
   Layers,
   Loader2,
+  Mic,
   Plus,
   RotateCw,
   Trash2,
@@ -14,6 +15,10 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppNav } from '@/components/AppNav';
+import {
+  PronunciationPracticeModal,
+  type PronunciationPracticeTarget,
+} from '@/components/PronunciationPracticeModal';
 import { playNaturalVoice } from '@/lib/audio';
 import {
   deletePhrase,
@@ -56,6 +61,10 @@ export default function PhrasesPage() {
   // Flashcard state
   const [cardIndex, setCardIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
+
+  // Pronunciation practice modal state
+  const [practiceTarget, setPracticeTarget] =
+    useState<PronunciationPracticeTarget | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -330,6 +339,20 @@ export default function PhrasesPage() {
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
+                            onClick={() =>
+                              setPracticeTarget({
+                                sentence: item.englishPhrase,
+                                vietnamese: item.vietnameseMeaning,
+                                phonetic: item.phonetic,
+                              })
+                            }
+                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+                          >
+                            <Mic className="h-3 w-3" />
+                            Chấm phát âm
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => speakText(item.englishPhrase, 0.72)}
                             className="text-xs font-medium text-slate-500 hover:text-indigo-600 cursor-pointer"
                           >
@@ -398,17 +421,34 @@ export default function PhrasesPage() {
                           /{currentCard.phonetic}/
                         </p>
                       )}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          speakText(currentCard.englishPhrase, 0.85);
-                        }}
-                        className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 cursor-pointer"
-                      >
-                        <Volume2 className="h-4 w-4" />
-                        Nghe phát âm ({activePersona.accent})
-                      </button>
+                      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            speakText(currentCard.englishPhrase, 0.85);
+                          }}
+                          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 cursor-pointer"
+                        >
+                          <Volume2 className="h-4 w-4" />
+                          Nghe phát âm ({activePersona.accent})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPracticeTarget({
+                              sentence: currentCard.englishPhrase,
+                              vietnamese: currentCard.vietnameseMeaning,
+                              phonetic: currentCard.phonetic,
+                            });
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 cursor-pointer"
+                        >
+                          <Mic className="h-4 w-4" />
+                          Đọc thử & Chấm điểm
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>
@@ -521,14 +561,30 @@ export default function PhrasesPage() {
                       </p>
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between pt-2 border-t border-slate-100">
-                      <button
-                        type="button"
-                        onClick={() => speakText(item.example, 0.85)}
-                        className="text-xs font-semibold text-indigo-600 hover:underline cursor-pointer"
-                      >
-                        Nghe cả câu ví dụ
-                      </button>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => speakText(item.example, 0.85)}
+                          className="text-xs font-semibold text-indigo-600 hover:underline cursor-pointer"
+                        >
+                          Nghe câu ví dụ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPracticeTarget({
+                              sentence: item.english,
+                              vietnamese: item.vietnamese,
+                              phonetic: item.phonetic,
+                            })
+                          }
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+                        >
+                          <Mic className="h-3 w-3" />
+                          Chấm phát âm
+                        </button>
+                      </div>
 
                       <button
                         type="button"
@@ -560,6 +616,13 @@ export default function PhrasesPage() {
           </div>
         )}
       </main>
+
+      <PronunciationPracticeModal
+        target={practiceTarget}
+        persona={activePersona}
+        profile={profile}
+        onClose={() => setPracticeTarget(null)}
+      />
     </div>
   );
 }

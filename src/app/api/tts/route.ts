@@ -6,6 +6,8 @@ import {
   speedToEdgeRate,
 } from '@/lib/tts-utils';
 
+export const maxDuration = 30;
+
 export async function POST(request: NextRequest) {
   let tts: MsEdgeTTS | null = null;
 

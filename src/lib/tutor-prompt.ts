@@ -1,7 +1,12 @@
 import { Type, type Schema } from '@google/genai';
 import type {
   AiPersona,
+  ConversationReport,
   EnglishLevel,
+  PronunciationAssessment,
+  PronunciationPracticeResult,
+  PronunciationWordFeedback,
+  PronunciationWordStatus,
   ReplyHint,
   Scenario,
   TutorMessage,
@@ -20,7 +25,75 @@ export interface TutorTurnOutput {
     vi: string;
     phonetic: string;
   } | null;
+  pronunciation?: PronunciationAssessment | null;
 }
+
+const PRONUNCIATION_WORD_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    word: { type: Type.STRING },
+    status: {
+      type: Type.STRING,
+      description: 'One of: good, improve, missing',
+    },
+    ipa: {
+      type: Type.STRING,
+      nullable: true,
+      description: 'Short IPA for words needing improvement (optional).',
+    },
+    tipVi: {
+      type: Type.STRING,
+      nullable: true,
+      description:
+        'Very short Vietnamese tip (max 8 words) ONLY if status is improve or missing, e.g. "bật âm cuối /t/", "nhấn âm tiết 2". Null if good.',
+    },
+  },
+  required: ['word', 'status'],
+};
+
+const PRONUNCIATION_ASSESSMENT_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  nullable: true,
+  description:
+    'Pronunciation score for spoken audio input. MUST be null when input is text or conversation start.',
+  properties: {
+    overallScore: {
+      type: Type.INTEGER,
+      description: 'Overall pronunciation score from 0 to 100.',
+    },
+    accuracyScore: {
+      type: Type.INTEGER,
+      description: 'Phoneme/sound clarity score from 0 to 100.',
+    },
+    fluencyScore: {
+      type: Type.INTEGER,
+      description: 'Pace, rhythm, and smoothness score from 0 to 100.',
+    },
+    intonationScore: {
+      type: Type.INTEGER,
+      description: 'Word stress and natural intonation score from 0 to 100.',
+    },
+    summaryVi: {
+      type: Type.STRING,
+      description:
+        'One concise encouraging Vietnamese sentence highlighting pronunciation strength and 1 key fix.',
+    },
+    wordFeedback: {
+      type: Type.ARRAY,
+      description:
+        'Word-by-word pronunciation status for the English words spoken (up to 18 words).',
+      items: PRONUNCIATION_WORD_SCHEMA,
+    },
+  },
+  required: [
+    'overallScore',
+    'accuracyScore',
+    'fluencyScore',
+    'intonationScore',
+    'summaryVi',
+    'wordFeedback',
+  ],
+};
 
 export const TUTOR_RESPONSE_SCHEMA: Schema = {
   type: Type.OBJECT,
@@ -63,7 +136,7 @@ export const TUTOR_RESPONSE_SCHEMA: Schema = {
           phonetic: {
             type: Type.STRING,
             description:
-              'Easy Vietnamese-style phonetic guide to help an A0-A1 learner pronounce it comfortably.',
+              'Easy Vietnamese-style phonetic guide for A0-A1 learners (or concise IPA for B2+).',
           },
         },
         required: ['en', 'vi', 'phonetic'],
@@ -80,14 +153,206 @@ export const TUTOR_RESPONSE_SCHEMA: Schema = {
       },
       required: ['en', 'vi', 'phonetic'],
     },
+    pronunciation: PRONUNCIATION_ASSESSMENT_SCHEMA,
+  },
+  required: ['userTranscript', 'aiReplyEn', 'aiReplyVi', 'replyHints'],
+};
+
+export const PRONUNCIATION_PRACTICE_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    heardTranscript: {
+      type: Type.STRING,
+      description:
+        'What the learner actually sounded like in the audio (faithful transcription).',
+    },
+    overallScore: { type: Type.INTEGER },
+    accuracyScore: { type: Type.INTEGER },
+    fluencyScore: { type: Type.INTEGER },
+    intonationScore: { type: Type.INTEGER },
+    summaryVi: {
+      type: Type.STRING,
+      description:
+        'Encouraging, actionable Vietnamese feedback (1-2 short sentences) on how close they sounded to a native speaker.',
+    },
+    linkingTipVi: {
+      type: Type.STRING,
+      nullable: true,
+      description:
+        'One practical tip in Vietnamese on connected speech, linking sounds, or sentence stress for this target sentence.',
+    },
+    wordFeedback: {
+      type: Type.ARRAY,
+      description:
+        'Every word in the target sentence in order, marked as good, improve, or missing, with IPA and short Vietnamese fix tip for improve/missing words.',
+      items: PRONUNCIATION_WORD_SCHEMA,
+    },
   },
   required: [
-    'userTranscript',
-    'aiReplyEn',
-    'aiReplyVi',
-    'replyHints',
+    'heardTranscript',
+    'overallScore',
+    'accuracyScore',
+    'fluencyScore',
+    'intonationScore',
+    'summaryVi',
+    'wordFeedback',
   ],
 };
+
+export const CONVERSATION_REPORT_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    overallScore: { type: Type.INTEGER },
+    cefrEstimate: {
+      type: Type.STRING,
+      description: 'Estimated spoken level during this call, e.g. A0, A1, A2, B1, B2, C1.',
+    },
+    scores: {
+      type: Type.OBJECT,
+      properties: {
+        pronunciation: { type: Type.INTEGER },
+        fluency: { type: Type.INTEGER },
+        grammar: { type: Type.INTEGER },
+        vocabulary: { type: Type.INTEGER },
+      },
+      required: ['pronunciation', 'fluency', 'grammar', 'vocabulary'],
+    },
+    headlineVi: {
+      type: Type.STRING,
+      description: 'Short motivating Vietnamese headline summarizing the call (max 14 words).',
+    },
+    overviewVi: {
+      type: Type.STRING,
+      description: '2-3 encouraging Vietnamese sentences evaluating overall communication performance.',
+    },
+    strengthsVi: {
+      type: Type.ARRAY,
+      description: '2-3 specific strengths observed in this call (Vietnamese).',
+      items: { type: Type.STRING },
+    },
+    improvementsVi: {
+      type: Type.ARRAY,
+      description: '2-3 prioritized areas to improve next (Vietnamese).',
+      items: { type: Type.STRING },
+    },
+    topCorrections: {
+      type: Type.ARRAY,
+      description: 'Up to 3 most impactful corrections from the learner’s actual turns.',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          original: { type: Type.STRING },
+          better: { type: Type.STRING },
+          explanationVi: { type: Type.STRING },
+        },
+        required: ['original', 'better', 'explanationVi'],
+      },
+    },
+    recommendedPhrases: {
+      type: Type.ARRAY,
+      description: '2-3 native expressions from or suited to this call worth saving.',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          en: { type: Type.STRING },
+          vi: { type: Type.STRING },
+          phonetic: { type: Type.STRING },
+        },
+        required: ['en', 'vi', 'phonetic'],
+      },
+    },
+    nextStepVi: {
+      type: Type.STRING,
+      description: 'One concrete actionable practice suggestion for the next session (Vietnamese).',
+    },
+  },
+  required: [
+    'overallScore',
+    'cefrEstimate',
+    'scores',
+    'headlineVi',
+    'overviewVi',
+    'strengthsVi',
+    'improvementsVi',
+    'topCorrections',
+    'recommendedPhrases',
+    'nextStepVi',
+  ],
+};
+
+function clampScore(value: unknown, fallback = 75): number {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  return Math.max(0, Math.min(100, Math.round(num)));
+}
+
+function normalizeWordStatus(status: unknown): PronunciationWordStatus {
+  const s = String(status ?? '').toLowerCase().trim();
+  if (s === 'good' || s === 'improve' || s === 'missing') return s;
+  return 'good';
+}
+
+function normalizeWordFeedback(items: unknown): PronunciationWordFeedback[] {
+  if (!Array.isArray(items)) return [];
+  const result: PronunciationWordFeedback[] = [];
+  for (const rawItem of items) {
+    if (!rawItem || typeof rawItem !== 'object') continue;
+    const item = rawItem as Record<string, unknown>;
+    if (typeof item.word !== 'string' || !item.word.trim()) continue;
+    result.push({
+      word: item.word.trim(),
+      status: normalizeWordStatus(item.status),
+      ipa:
+        typeof item.ipa === 'string' && item.ipa.trim()
+          ? item.ipa.trim()
+          : undefined,
+      tipVi:
+        typeof item.tipVi === 'string' && item.tipVi.trim()
+          ? item.tipVi.trim()
+          : undefined,
+    });
+    if (result.length >= 24) break;
+  }
+  return result;
+}
+
+function normalizePronunciationAssessment(
+  raw: unknown
+): PronunciationAssessment | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const obj = raw as Record<string, unknown>;
+  if (obj.overallScore === undefined && obj.accuracyScore === undefined) {
+    return null;
+  }
+
+  const accuracyScore = clampScore(obj.accuracyScore, 75);
+  const fluencyScore = clampScore(obj.fluencyScore, 75);
+  const intonationScore = clampScore(obj.intonationScore, 75);
+  const overallScore = clampScore(
+    obj.overallScore,
+    Math.round((accuracyScore + fluencyScore + intonationScore) / 3)
+  );
+
+  return {
+    overallScore,
+    accuracyScore,
+    fluencyScore,
+    intonationScore,
+    summaryVi:
+      typeof obj.summaryVi === 'string' && obj.summaryVi.trim()
+        ? obj.summaryVi.trim()
+        : 'Phát âm rõ ý, hãy chú ý thêm âm cuối và ngữ điệu tự nhiên nhé!',
+    wordFeedback: normalizeWordFeedback(obj.wordFeedback),
+  };
+}
+
+function cleanJsonFence(rawText: string): string {
+  return rawText
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+}
 
 function getLevelGuideline(level: EnglishLevel): string {
   switch (level) {
@@ -103,7 +368,7 @@ function getLevelGuideline(level: EnglishLevel): string {
       return [
         'Learner level is A2-B1 (Elementary to Intermediate).',
         'Speak naturally in 2-3 conversational sentences, introducing 1 useful everyday phrasal verb or natural transition.',
-        'Correct Chinglish/Vietlish literal translations into natural native phrasing in naturalRewrite and explain briefly in Vietnamese.',
+        'Correct Vietlish literal translations into natural native phrasing in naturalRewrite and explain briefly in Vietnamese.',
       ].join(' ');
     case 'B2+':
       return [
@@ -121,7 +386,7 @@ function getAccentFlavor(accent: AiPersona['accent']): string {
     case 'UK':
       return 'Use natural British English phrasing politely (e.g., "lovely", "cheers", "have a go", "underground", "bill").';
     case 'AU':
-      return 'Use friendly Australian English warmth (e.g., "no worries", "sounds great, mate", "arvo" when casual).';
+      return 'Use friendly Australian English warmth (e.g., "no worries", "sounds great, mate").';
     case 'CA':
       return 'Use warm, clear Canadian English expressions.';
   }
@@ -153,7 +418,7 @@ export function buildTutorSystemInstruction(params: {
     getAccentFlavor(persona.accent),
     'Always keep the conversation moving naturally by ending your reply with ONE friendly, easy-to-answer question (unless wrapping up).',
     'Never output markdown, asterisks, or emojis inside aiReplyEn so TTS reads it cleanly as natural spoken speech.',
-    'Always return valid JSON matching the schema.',
+    'Keep JSON fields concise for low latency. Return valid JSON matching the schema.',
   ].join('\n');
 }
 
@@ -166,14 +431,14 @@ export function buildConversationTurnPrompt(params: {
 }): string {
   const { history, userText, isStart, isAudio, displayName } = params;
   const recentHistory = history
-    .slice(-10)
+    .slice(-8)
     .map((m) => `${m.role === 'user' ? 'Learner' : 'AI'}: ${m.englishText}`)
     .join('\n');
 
   if (isStart) {
     return [
       `Start the voice call right now by greeting ${displayName?.trim() || 'the learner'} warmly by name, setting the scene briefly in 1-2 short sentences, and asking your first easy opening question.`,
-      'Set userTranscript to "[Bắt đầu cuộc gọi]", naturalRewrite to null, and coachingTip to a quick Vietnamese welcome tip telling them they can speak slowly or even mix Vietnamese if stuck.',
+      'Set userTranscript to "[Bắt đầu cuộc gọi]", naturalRewrite to null, pronunciation to null, and coachingTip to a quick Vietnamese welcome tip telling them they can speak slowly or even mix Vietnamese if stuck.',
     ].join('\n');
   }
 
@@ -184,12 +449,12 @@ export function buildConversationTurnPrompt(params: {
 
   if (isAudio) {
     parts.push(
-      'Listen carefully to the attached audio from the learner. Transcribe what they said (even if pronunciation is imperfect or mixes Vietnamese words), gently offer a natural native rewrite + brief Vietnamese coaching tip, reply naturally in character, translate to Vietnamese, and provide 3 helpful replyHints for what they can say next.'
+      'Listen carefully to the attached audio from the learner. 1) Transcribe faithfully in userTranscript (even if pronunciation is imperfect or mixes Vietnamese; if silent/noise-only write "[Chưa nghe rõ tiếng]"). 2) Score their actual spoken English honestly in pronunciation (overallScore, accuracyScore, fluencyScore, intonationScore, summaryVi, and wordFeedback for each English word spoken — noting final consonants /s/ /t/ /d/ /k/, /θ/ /ð/, word stress; if audio is silent or unintelligible noise, score 0-15). 3) Offer naturalRewrite + brief Vietnamese coachingTip. 4) Reply naturally in aiReplyEn + aiReplyVi + 3 replyHints.'
     );
   } else {
-    parts.push(`Learner just said/typed: "${userText ?? ''}"`);
+    parts.push(`Learner just typed: "${userText ?? ''}"`);
     parts.push(
-      'Respond naturally in character, give naturalRewrite + brief Vietnamese coachingTip if their phrasing can sound more native, translate your reply to Vietnamese, and provide 3 helpful replyHints.'
+      'Set pronunciation to null (no audio). Respond naturally in character, give naturalRewrite + brief Vietnamese coachingTip if their phrasing can sound more native, translate your reply to Vietnamese, and provide 3 helpful replyHints.'
     );
   }
 
@@ -197,12 +462,7 @@ export function buildConversationTurnPrompt(params: {
 }
 
 export function parseTutorTurnOutput(rawText: string): TutorTurnOutput {
-  const cleaned = rawText
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/```\s*$/i, '')
-    .trim();
-
+  const cleaned = cleanJsonFence(rawText);
   const parsed = JSON.parse(cleaned) as Partial<TutorTurnOutput>;
 
   if (!parsed.aiReplyEn || typeof parsed.aiReplyEn !== 'string') {
@@ -271,5 +531,254 @@ export function parseTutorTurnOutput(rawText: string): TutorTurnOutput {
                 : '',
           }
         : null,
+    pronunciation: normalizePronunciationAssessment(parsed.pronunciation),
+  };
+}
+
+export function buildPronunciationPracticePrompt(params: {
+  targetSentence: string;
+  accentLabel: string;
+  englishLevel: EnglishLevel;
+}): string {
+  return [
+    `You are a friendly, precise English pronunciation coach evaluating a Vietnamese learner (level: ${params.englishLevel}) practicing ${params.accentLabel} pronunciation.`,
+    `Target sentence to read aloud: "${params.targetSentence}"`,
+    'Listen carefully to the attached audio recording and compare it word-by-word against the target sentence.',
+    'Pay close attention to common Vietnamese-speaker pronunciation points: ending sounds (/s/, /z/, /t/, /d/, /k/, /ed/), /θ/ and /ð/ ("th"), /ʃ/ vs /s/, vowel length, word stress, and sentence rhythm.',
+    'In wordFeedback, list EVERY word of the target sentence in order with status: "good" (pronounced clearly), "improve" (audible but needs clearer sound/stress — provide ipa and a very short tipVi), or "missing" (skipped or unintelligible).',
+    'Be strictly honest based ONLY on the actual audio: if the audio is silent, noise-only, or contains no intelligible English speech, set heardTranscript to "[Chưa nghe rõ giọng nói]", score 0-15, mark every word as "missing", and politely remind them in Vietnamese to speak closer to the mic. For genuine understandable speech, score fairly (75-95 when clear for their level).',
+    'Return strictly valid JSON matching the schema.',
+  ].join('\n');
+}
+
+export function parsePronunciationPracticeOutput(
+  rawText: string,
+  targetSentence: string
+): PronunciationPracticeResult {
+  const cleaned = cleanJsonFence(rawText);
+  const parsed = JSON.parse(cleaned) as Record<string, unknown>;
+  const base = normalizePronunciationAssessment(parsed);
+
+  const fallbackWords: PronunciationWordFeedback[] = targetSentence
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => ({ word: w, status: 'good' }));
+
+  return {
+    targetSentence,
+    heardTranscript:
+      typeof parsed.heardTranscript === 'string' && parsed.heardTranscript.trim()
+        ? parsed.heardTranscript.trim()
+        : targetSentence,
+    overallScore: base?.overallScore ?? 75,
+    accuracyScore: base?.accuracyScore ?? 75,
+    fluencyScore: base?.fluencyScore ?? 75,
+    intonationScore: base?.intonationScore ?? 75,
+    summaryVi:
+      base?.summaryVi ??
+      'Bạn đọc khá rõ ràng! Hãy thử nhấn nhá thêm ngữ điệu để giống người bản xứ hơn nhé.',
+    linkingTipVi:
+      typeof parsed.linkingTipVi === 'string' && parsed.linkingTipVi.trim()
+        ? parsed.linkingTipVi.trim()
+        : null,
+    wordFeedback:
+      base && base.wordFeedback.length > 0 ? base.wordFeedback : fallbackWords,
+  };
+}
+
+export function buildConversationReportPrompt(params: {
+  profile: Pick<UserProfile, 'displayName' | 'englishLevel' | 'jobField'>;
+  scenario: Scenario;
+  persona: AiPersona;
+  durationSeconds: number;
+  messages: Pick<
+    TutorMessage,
+    'role' | 'englishText' | 'naturalRewrite' | 'pronunciation'
+  >[];
+}): string {
+  const { profile, scenario, persona, durationSeconds, messages } = params;
+  const userTurns = messages.filter((m) => m.role === 'user');
+  const pronScores = userTurns
+    .map((m) => m.pronunciation?.overallScore)
+    .filter((s): s is number => typeof s === 'number');
+  const avgPron =
+    pronScores.length > 0
+      ? Math.round(pronScores.reduce((a, b) => a + b, 0) / pronScores.length)
+      : null;
+
+  const transcriptLines = messages
+    .slice(-24)
+    .map((m, idx) => {
+      const speaker = m.role === 'user' ? 'Learner' : persona.name;
+      const rewrite = m.naturalRewrite
+        ? ` [Native rewrite: ${m.naturalRewrite}]`
+        : '';
+      const pron = m.pronunciation
+        ? ` [Pronunciation: ${m.pronunciation.overallScore}/100]`
+        : '';
+      return `${idx + 1}. ${speaker}: ${m.englishText}${rewrite}${pron}`;
+    })
+    .join('\n');
+
+  return [
+    `You are an encouraging, expert English speaking coach writing a post-call evaluation report in Vietnamese for "${profile.displayName || 'học viên'}" (target level: ${profile.englishLevel}, job: ${profile.jobField || 'N/A'}).`,
+    `Call context: Scenario "${scenario.titleVi}" (${scenario.titleEn}) with ${persona.name} (${persona.accentLabel}), duration ${durationSeconds}s, ${userTurns.length} learner turns.`,
+    avgPron !== null
+      ? `Measured average audio pronunciation score across spoken turns: ${avgPron}/100. Anchor scores.pronunciation close to this measured score.`
+      : 'Learner used text or did not have audio pronunciation scores; estimate scores.pronunciation realistically (around 70-80) and mention practicing aloud with the mic next time.',
+    'Conversation transcript:',
+    transcriptLines,
+    'Provide honest, specific, motivating feedback in Vietnamese based strictly on what the learner actually said above. In topCorrections, pick up to 3 real learner sentences that improved the most. In recommendedPhrases, provide 2-3 high-value native phrases with easy phonetic guides. Return strictly valid JSON matching the schema.',
+  ].join('\n');
+}
+
+export function parseConversationReportOutput(
+  rawText: string
+): ConversationReport {
+  const cleaned = cleanJsonFence(rawText);
+  const parsed = JSON.parse(cleaned) as Partial<ConversationReport>;
+
+  const rawScores = parsed.scores ?? ({} as ConversationReport['scores']);
+  const pronunciation = clampScore(rawScores.pronunciation, 75);
+  const fluency = clampScore(rawScores.fluency, 75);
+  const grammar = clampScore(rawScores.grammar, 75);
+  const vocabulary = clampScore(rawScores.vocabulary, 75);
+
+  const overallScore = clampScore(
+    parsed.overallScore,
+    Math.round((pronunciation + fluency + grammar + vocabulary) / 4)
+  );
+
+  return {
+    overallScore,
+    cefrEstimate:
+      typeof parsed.cefrEstimate === 'string' && parsed.cefrEstimate.trim()
+        ? parsed.cefrEstimate.trim().toUpperCase().slice(0, 6)
+        : 'A1',
+    scores: {
+      pronunciation,
+      fluency,
+      grammar,
+      vocabulary,
+    },
+    headlineVi:
+      typeof parsed.headlineVi === 'string' && parsed.headlineVi.trim()
+        ? parsed.headlineVi.trim()
+        : 'Bạn đã hoàn thành buổi luyện nói rất tốt!',
+    overviewVi:
+      typeof parsed.overviewVi === 'string' && parsed.overviewVi.trim()
+        ? parsed.overviewVi.trim()
+        : 'Bạn đã duy trì cuộc trò chuyện đều đặn và phản hồi đúng trọng tâm câu hỏi.',
+    strengthsVi: Array.isArray(parsed.strengthsVi)
+      ? parsed.strengthsVi
+          .filter((s) => typeof s === 'string' && s.trim())
+          .slice(0, 3)
+      : ['Mạnh dạn phản xạ giao tiếp tiếng Anh'],
+    improvementsVi: Array.isArray(parsed.improvementsVi)
+      ? parsed.improvementsVi
+          .filter((s) => typeof s === 'string' && s.trim())
+          .slice(0, 3)
+      : ['Chú ý thêm âm cuối và ngữ điệu khi nói'],
+    topCorrections: Array.isArray(parsed.topCorrections)
+      ? parsed.topCorrections
+          .filter(
+            (c) =>
+              c &&
+              typeof c.original === 'string' &&
+              typeof c.better === 'string' &&
+              typeof c.explanationVi === 'string'
+          )
+          .slice(0, 3)
+          .map((c) => ({
+            original: c.original.trim(),
+            better: c.better.trim(),
+            explanationVi: c.explanationVi.trim(),
+          }))
+      : [],
+    recommendedPhrases: Array.isArray(parsed.recommendedPhrases)
+      ? parsed.recommendedPhrases
+          .filter((p) => p && typeof p.en === 'string' && typeof p.vi === 'string')
+          .slice(0, 3)
+          .map((p) => ({
+            en: p.en.trim(),
+            vi: p.vi.trim(),
+            phonetic: typeof p.phonetic === 'string' ? p.phonetic.trim() : '',
+          }))
+      : [],
+    nextStepVi:
+      typeof parsed.nextStepVi === 'string' && parsed.nextStepVi.trim()
+        ? parsed.nextStepVi.trim()
+        : 'Hãy ôn lại các cụm từ vừa lưu và thử gọi lại tình huống này thêm 1 lần nữa nhé!',
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+export function serializeConversationReport(report: ConversationReport): string {
+  return JSON.stringify(report);
+}
+
+export function parseConversationReport(
+  summaryVi?: string | null
+): ConversationReport | null {
+  if (!summaryVi || !summaryVi.trim()) return null;
+  const trimmed = summaryVi.trim();
+  if (!trimmed.startsWith('{')) return null;
+
+  try {
+    const parsed = JSON.parse(trimmed) as Partial<ConversationReport>;
+    if (
+      typeof parsed.overallScore === 'number' &&
+      parsed.scores &&
+      typeof parsed.headlineVi === 'string'
+    ) {
+      return parsed as ConversationReport;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function buildFallbackConversationReport(params: {
+  displayName?: string;
+  englishLevel: EnglishLevel;
+  userTurns: number;
+}): ConversationReport {
+  const cefrMap: Record<EnglishLevel, string> = {
+    'A0-A1': 'A1',
+    'A2-B1': 'A2',
+    'B2+': 'B2',
+  };
+  return {
+    overallScore: params.userTurns > 0 ? 75 : 0,
+    cefrEstimate: cefrMap[params.englishLevel] || 'A1',
+    scores: {
+      pronunciation: params.userTurns > 0 ? 74 : 0,
+      fluency: params.userTurns > 0 ? 75 : 0,
+      grammar: params.userTurns > 0 ? 75 : 0,
+      vocabulary: params.userTurns > 0 ? 76 : 0,
+    },
+    headlineVi:
+      params.userTurns > 0
+        ? `Khởi đầu rất tốt, ${params.displayName || 'bạn'}!`
+        : 'Bạn vừa nghe thử phần mở đầu cuộc gọi',
+    overviewVi:
+      params.userTurns > 0
+        ? 'Bạn đã hoàn thành buổi luyện nói. Hãy tiếp tục duy trì thói quen nói 5–15 phút mỗi ngày để phản xạ tự nhiên hơn.'
+        : 'Cuộc gọi kết thúc trước khi bạn trả lời lượt đầu tiên. Lần tới hãy bấm Micro hoặc chọn 1 câu gợi ý để trò chuyện cùng AI nhé!',
+    strengthsVi:
+      params.userTurns > 0
+        ? ['Dám mở lời và hoàn thành buổi luyện tập']
+        : ['Đã làm quen với giao diện cuộc gọi và giọng đọc bản xứ'],
+    improvementsVi: [
+      params.userTurns > 0
+        ? 'Thử nói thêm 4–6 lượt mỗi cuộc gọi để AI đánh giá chi tiết hơn'
+        : 'Hãy bấm nút Micro và thử đọc theo 1 trong 3 câu gợi ý sẵn ở cuối màn hình',
+    ],
+    topCorrections: [],
+    recommendedPhrases: [],
+    nextStepVi:
+      'Bắt đầu lại tình huống này và nói ít nhất 3 câu bằng Micro để nhận điểm phát âm chi tiết.',
+    generatedAt: new Date().toISOString(),
   };
 }
