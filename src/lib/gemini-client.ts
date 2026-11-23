@@ -15,6 +15,7 @@ import {
   markModelHealthy,
   type GeminiSpeedMode,
 } from '@/lib/gemini-models';
+import { readGoogleSession } from '@/lib/google-auth';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { EnglishLevel, UserProfile } from '@/types';
@@ -69,6 +70,16 @@ export async function resolveTutorRequestAuth(
     jobField: profileOverride?.jobField ?? '',
     hobbies: profileOverride?.hobbies ?? [],
   };
+
+  // Recognize direct Google OAuth session first
+  const googleSession = await readGoogleSession();
+  if (googleSession) {
+    userId = googleSession.userId;
+    if (!profileOverride?.displayName && googleSession.name) {
+      profile = { ...profile, displayName: googleSession.name };
+    }
+    return { userId, userPersonalKey, profile };
+  }
 
   if (isSupabaseConfigured()) {
     const supabase = await createSupabaseServerClient();

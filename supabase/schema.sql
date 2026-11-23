@@ -19,6 +19,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   display_name text not null default '',
+  native_language text not null default 'vi',
   english_level text not null default 'A0-A1' check (english_level in ('A0-A1', 'A2-B1', 'B2+')),
   job_field text not null default '',
   hobbies text[] not null default '{}',
@@ -42,6 +43,7 @@ create table if not exists public.profiles (
 );
 
 -- Safe idempotent migrations for gamification & streak rewards on existing databases
+alter table public.profiles add column if not exists native_language text not null default 'vi';
 alter table public.profiles add column if not exists longest_streak integer not null default 0;
 alter table public.profiles add column if not exists xp integer not null default 0;
 alter table public.profiles add column if not exists gems integer not null default 30;

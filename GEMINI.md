@@ -30,3 +30,4 @@ Tài liệu này giúp AI nắm ngay toàn bộ yêu cầu và kiến trúc khi 
 - Trả lời người dùng bằng tiếng Việt tự nhiên, rõ ràng.
 - Luôn chạy kiểm thử đầy đủ (`npm test`, `npm run lint`, `npm run build` và kiểm tra trực tiếp bản chạy/link web thực tế) để đảm bảo chạy được 100% trước khi bàn giao cho người dùng.
 - Nếu phát sinh lỗi: chủ động sửa lỗi; nếu sau **3 lần sửa không được** thì **tạm dừng ngay** và báo cáo chi tiết cho người dùng.
+- Khi hoàn thành nâng cấp hoặc có câu hỏi cần xác nhận, báo trực tiếp cho người dùng qua Discord Webhook đã cấu hình trong Global Rules.

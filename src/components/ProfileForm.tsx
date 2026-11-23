@@ -3,7 +3,12 @@
 import { Check, Loader2, Plus, Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
 import { JOB_SUGGESTIONS, HOBBY_SUGGESTIONS } from '@/lib/scenarios';
-import type { AccentPreference, EnglishLevel, UserProfile } from '@/types';
+import type {
+  AccentPreference,
+  EnglishLevel,
+  NativeLanguage,
+  UserProfile,
+} from '@/types';
 
 interface ProfileFormProps {
   initialProfile: UserProfile;
@@ -39,6 +44,9 @@ const ACCENTS: { value: AccentPreference; label: string; flag: string }[] = [
 
 export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) {
   const [displayName, setDisplayName] = useState(initialProfile.displayName);
+  const [nativeLanguage, setNativeLanguage] = useState<NativeLanguage>(
+    initialProfile.nativeLanguage || 'vi'
+  );
   const [englishLevel, setEnglishLevel] = useState<EnglishLevel>(
     initialProfile.englishLevel
   );
@@ -88,6 +96,7 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
     try {
       await onSave({
         displayName: displayName.trim(),
+        nativeLanguage,
         englishLevel,
         jobField: jobField.trim(),
         hobbies,
@@ -126,6 +135,36 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
         />
       </div>
 
+      {/* Native Language */}
+      <div>
+        <label className="block text-sm font-semibold text-slate-800 mb-2">
+          Ngôn ngữ mẹ đẻ / giải thích
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { val: 'vi', label: '🇻🇳 Tiếng Việt' },
+              { val: 'en', label: '🇺🇸 English' },
+              { val: 'ja', label: '🇯🇵 日本語' },
+              { val: 'ko', label: '🇰🇷 한국어' },
+              { val: 'zh', label: '🇨🇳 中文' },
+            ] as const
+          ).map((lang) => (
+            <button
+              key={lang.val}
+              type="button"
+              onClick={() => setNativeLanguage(lang.val)}
+              className={`rounded-xl border px-3 py-2 text-xs font-bold transition cursor-pointer ${nativeLanguage === lang.val
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-800'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* English Level */}
       <div>
         <label className="block text-sm font-semibold text-slate-800 mb-2">
@@ -150,11 +189,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                     );
                   }
                 }}
-                className={`rounded-2xl border p-3.5 text-left transition cursor-pointer ${
-                  selected
+                className={`rounded-2xl border p-3.5 text-left transition cursor-pointer ${selected
                     ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-100'
                     : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-bold text-slate-900">
@@ -189,11 +227,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                 key={job}
                 type="button"
                 onClick={() => setJobField(active ? '' : job)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
-                  active
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition cursor-pointer ${active
                     ? 'bg-indigo-600 text-white'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
+                  }`}
               >
                 {job}
               </button>
@@ -226,11 +263,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                 key={hobby}
                 type="button"
                 onClick={() => toggleHobby(hobby)}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
-                  selected
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition cursor-pointer ${selected
                     ? 'bg-cyan-600 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
+                  }`}
               >
                 {selected && <Check className="h-3 w-3" />}
                 {hobby}
@@ -295,11 +331,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                   key={acc.value}
                   type="button"
                   onClick={() => setPreferredAccent(acc.value)}
-                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition cursor-pointer ${
-                    selected
+                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition cursor-pointer ${selected
                       ? 'border-indigo-600 bg-indigo-50 text-indigo-800'
                       : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   <span>{acc.flag}</span>
                   <span className="truncate">{acc.label}</span>
@@ -324,11 +359,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                   key={s.val}
                   type="button"
                   onClick={() => setPreferredSpeed(s.val)}
-                  className={`rounded-xl border px-2.5 py-2 text-xs font-semibold transition cursor-pointer ${
-                    Math.abs(preferredSpeed - s.val) < 0.04
+                  className={`rounded-xl border px-2.5 py-2 text-xs font-semibold transition cursor-pointer ${Math.abs(preferredSpeed - s.val) < 0.04
                       ? 'border-indigo-600 bg-indigo-50 text-indigo-800'
                       : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   {s.label}
                 </button>
@@ -346,11 +380,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                   key={mins}
                   type="button"
                   onClick={() => setDailyGoalMinutes(mins)}
-                  className={`rounded-xl border px-2 py-2 text-xs font-semibold transition cursor-pointer ${
-                    dailyGoalMinutes === mins
+                  className={`rounded-xl border px-2 py-2 text-xs font-semibold transition cursor-pointer ${dailyGoalMinutes === mins
                       ? 'border-indigo-600 bg-indigo-50 text-indigo-800'
                       : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   {mins} phút
                 </button>

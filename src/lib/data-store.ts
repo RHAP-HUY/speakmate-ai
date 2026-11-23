@@ -10,18 +10,24 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import type {
   AccentPreference,
+  AccountCloudBundle,
+  AuthSessionInfo,
   ConcreteAccent,
   ConversationRecord,
   DailyStat,
   EnglishLevel,
   LessonRewardSummary,
+  NativeLanguage,
   SavedPhrase,
+  StorageBackendMode,
   TopicCategory,
   TutorMessage,
   UserProfile,
 } from '@/types';
 
-const STORAGE_KEYS = {
+export const DATA_UPDATED_EVENT = 'speakmate:data-updated';
+
+const LEGACY_KEYS = {
   profile: 'speakmate_local_profile_v1',
   conversations: 'speakmate_local_conversations_v1',
   messagesPrefix: 'speakmate_local_messages_v1_',
@@ -29,6 +35,34 @@ const STORAGE_KEYS = {
   dailyStats: 'speakmate_local_stats_v1',
   personalApiKey: 'speakmate_personal_gemini_key_v1',
 };
+
+let cachedSession: { info: AuthSessionInfo; fetchedAt: number } | null = null;
+let hydratedAccountId: string | null = null;
+let activeDriveSyncPromise: Promise<void> | null = null;
+
+function getScopedKeys(accountId?: string | null) {
+  if (!accountId || accountId === 'local-demo-user') {
+    return LEGACY_KEYS;
+  }
+  const prefix = `speakmate_acc_${accountId}_`;
+  return {
+    profile: `${prefix}profile_v2`,
+    conversations: `${prefix}conversations_v2`,
+    messagesPrefix: `${prefix}messages_v2_`,
+    phrases: `${prefix}phrases_v2`,
+    dailyStats: `${prefix}stats_v2`,
+    personalApiKey: LEGACY_KEYS.personalApiKey,
+  };
+}
+
+export function emitDataUpdated(profile?: UserProfile | null): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent(DATA_UPDATED_EVENT, {
+      detail: { profile: profile ?? null, timestamp: Date.now() },
+    })
+  );
+}
 
 export function getTodayLocalDate(): string {
   const now = new Date();
@@ -63,29 +97,36 @@ function writeLocalJson<T>(key: string, value: T): void {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // Ignore quota errors
+    // Ignore storage quota errors
   }
 }
 
 export function getLocalPersonalKey(): string | null {
   if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem(STORAGE_KEYS.personalApiKey);
+  return window.localStorage.getItem(LEGACY_KEYS.personalApiKey);
 }
 
 export function setLocalPersonalKey(key: string | null): void {
   if (typeof window === 'undefined') return;
   if (!key || !key.trim()) {
-    window.localStorage.removeItem(STORAGE_KEYS.personalApiKey);
+    window.localStorage.removeItem(LEGACY_KEYS.personalApiKey);
   } else {
-    window.localStorage.setItem(STORAGE_KEYS.personalApiKey, key.trim());
+    window.localStorage.setItem(LEGACY_KEYS.personalApiKey, key.trim());
   }
 }
 
-function defaultLocalProfile(): UserProfile {
+function defaultLocalProfile(seed?: {
+  id?: string;
+  email?: string;
+  displayName?: string;
+  avatarUrl?: string | null;
+}): UserProfile {
   return {
-    id: 'local-demo-user',
-    email: 'demo@local',
-    displayName: '',
+    id: seed?.id || 'local-demo-user',
+    email: seed?.email || 'demo@local',
+    displayName: seed?.displayName || '',
+    avatarUrl: seed?.avatarUrl ?? null,
+    nativeLanguage: 'vi',
     englishLevel: 'A0-A1',
     jobField: '',
     hobbies: [],
@@ -108,12 +149,32 @@ function defaultLocalProfile(): UserProfile {
   };
 }
 
-function normalizeProfile(raw: Partial<UserProfile> | null | undefined): UserProfile {
-  const base = defaultLocalProfile();
+function normalizeProfile(
+  raw: Partial<UserProfile> | null | undefined,
+  seed?: {
+    id?: string;
+    email?: string;
+    displayName?: string;
+    avatarUrl?: string | null;
+  }
+): UserProfile {
+  const base = defaultLocalProfile(seed);
   if (!raw) return base;
+  const validLangs: NativeLanguage[] = ['vi', 'en', 'ja', 'ko', 'zh'];
+  const nativeLanguage = validLangs.includes(
+    raw.nativeLanguage as NativeLanguage
+  )
+    ? (raw.nativeLanguage as NativeLanguage)
+    : 'vi';
+
   return {
     ...base,
     ...raw,
+    id: raw.id || base.id,
+    email: raw.email || base.email,
+    displayName: raw.displayName || base.displayName,
+    avatarUrl: raw.avatarUrl ?? base.avatarUrl,
+    nativeLanguage,
     hobbies: Array.isArray(raw.hobbies) ? raw.hobbies : base.hobbies,
     xp: Number.isFinite(Number(raw.xp)) ? Math.max(0, Number(raw.xp)) : 0,
     gems: Number.isFinite(Number(raw.gems)) ? Math.max(0, Number(raw.gems)) : 30,
@@ -159,6 +220,7 @@ function mapDbProfile(
     id: String(row.id ?? ''),
     email: String(row.email ?? ''),
     displayName: String(row.display_name ?? ''),
+    nativeLanguage: (row.native_language as NativeLanguage) || 'vi',
     englishLevel: (row.english_level as EnglishLevel) || 'A0-A1',
     jobField: String(row.job_field ?? ''),
     hobbies: Array.isArray(row.hobbies) ? (row.hobbies as string[]) : [],
@@ -190,23 +252,266 @@ function mapDbProfile(
   });
 }
 
-function readLocalStats(): DailyStat[] {
-  const raw = readLocalJson<Partial<DailyStat>[]>(STORAGE_KEYS.dailyStats, []);
+export async function getAuthSessionInfo(
+  forceRefresh = false
+): Promise<AuthSessionInfo> {
+  if (
+    !forceRefresh &&
+    cachedSession &&
+    Date.now() - cachedSession.fetchedAt < 10_000
+  ) {
+    return cachedSession.info;
+  }
+
+  if (typeof window === 'undefined') {
+    return {
+      authenticated: false,
+      provider: 'local',
+      storageMode: 'local',
+      googleConfigured: false,
+      ownerDriveConfigured: false,
+      supabaseConfigured: isSupabaseConfigured(),
+      user: null,
+    };
+  }
+
+  try {
+    const res = await fetch('/api/auth/session', { cache: 'no-store' });
+    if (res.ok) {
+      const info = (await res.json()) as AuthSessionInfo;
+      cachedSession = { info, fetchedAt: Date.now() };
+      return info;
+    }
+  } catch {
+    // Fallback cleanly
+  }
+
+  return {
+    authenticated: false,
+    provider: 'local',
+    storageMode: isSupabaseConfigured() ? 'supabase' : 'local',
+    googleConfigured: false,
+    ownerDriveConfigured: false,
+    supabaseConfigured: isSupabaseConfigured(),
+    user: null,
+  };
+}
+
+function readLocalStatsFor(accountId?: string | null): DailyStat[] {
+  const keys = getScopedKeys(accountId);
+  const raw = readLocalJson<Partial<DailyStat>[]>(keys.dailyStats, []);
   return raw.map(normalizeDailyStat).filter((s) => Boolean(s.practiceDate));
+}
+
+function buildLocalBundleFor(session: AuthSessionInfo): AccountCloudBundle {
+  const accountId = session.user?.id || 'local-demo-user';
+  const keys = getScopedKeys(accountId);
+  const profile = normalizeProfile(
+    readLocalJson<Partial<UserProfile> | null>(keys.profile, null),
+    session.user
+      ? {
+          id: session.user.id,
+          email: session.user.email,
+          displayName: session.user.name,
+          avatarUrl: session.user.avatarUrl,
+        }
+      : undefined
+  );
+  const conversations = readLocalJson<ConversationRecord[]>(
+    keys.conversations,
+    []
+  );
+  const messagesByConversation: Record<string, TutorMessage[]> = {};
+  for (const conv of conversations.slice(0, 40)) {
+    const msgs = readLocalJson<TutorMessage[]>(
+      `${keys.messagesPrefix}${conv.id}`,
+      []
+    );
+    if (msgs.length > 0) {
+      messagesByConversation[conv.id] = msgs;
+    }
+  }
+
+  return {
+    version: 3,
+    accountId,
+    email: session.user?.email || profile.email,
+    provider: session.provider === 'google' ? 'google' : 'local',
+    updatedAt: new Date().toISOString(),
+    profile,
+    dailyStats: readLocalStatsFor(accountId),
+    phrases: readLocalJson<SavedPhrase[]>(keys.phrases, []),
+    conversations,
+    messagesByConversation,
+  };
+}
+
+function writeBundleToLocalScope(
+  accountId: string,
+  bundle: AccountCloudBundle
+): void {
+  const keys = getScopedKeys(accountId);
+  writeLocalJson(keys.profile, normalizeProfile(bundle.profile));
+  writeLocalJson(
+    keys.dailyStats,
+    (bundle.dailyStats ?? [])
+      .map(normalizeDailyStat)
+      .filter((s) => Boolean(s.practiceDate))
+  );
+  writeLocalJson(keys.phrases, bundle.phrases ?? []);
+  writeLocalJson(keys.conversations, bundle.conversations ?? []);
+  if (bundle.messagesByConversation) {
+    for (const [convId, msgs] of Object.entries(
+      bundle.messagesByConversation
+    )) {
+      writeLocalJson(`${keys.messagesPrefix}${convId}`, msgs);
+    }
+  }
+}
+
+async function hydrateGoogleAccountOnce(
+  session: AuthSessionInfo
+): Promise<void> {
+  if (
+    session.provider !== 'google' ||
+    !session.authenticated ||
+    !session.user?.id
+  ) {
+    return;
+  }
+  if (hydratedAccountId === session.user.id) return;
+
+  try {
+    const res = await fetch('/api/drive/data', { cache: 'no-store' });
+    if (res.ok) {
+      const data = (await res.json()) as { bundle?: AccountCloudBundle | null };
+      if (data.bundle?.profile) {
+        writeBundleToLocalScope(session.user.id, data.bundle);
+      } else {
+        // Brand new Google account -> seed profile from Google identity
+        const keys = getScopedKeys(session.user.id);
+        const existing = readLocalJson<Partial<UserProfile> | null>(
+          keys.profile,
+          null
+        );
+        if (!existing) {
+          writeLocalJson(
+            keys.profile,
+            defaultLocalProfile({
+              id: session.user.id,
+              email: session.user.email,
+              displayName: session.user.name,
+              avatarUrl: session.user.avatarUrl,
+            })
+          );
+        }
+      }
+      hydratedAccountId = session.user.id;
+    }
+  } catch {
+    // Allow app to continue using local mirror cleanly
+  }
+}
+
+async function syncGoogleDriveIfActive(
+  session?: AuthSessionInfo
+): Promise<void> {
+  const info = session ?? (await getAuthSessionInfo());
+  if (info.provider !== 'google' || !info.authenticated || !info.user?.id) {
+    return;
+  }
+
+  const bundle = buildLocalBundleFor(info);
+  const run = async () => {
+    try {
+      await fetch('/api/drive/data', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bundle }),
+      });
+    } catch {
+      // Non-fatal; local mirror retains latest state for next sync
+    }
+  };
+
+  activeDriveSyncPromise = (activeDriveSyncPromise ?? Promise.resolve()).then(
+    run
+  );
+  await activeDriveSyncPromise;
+}
+
+export async function forceSyncToGoogleDrive(): Promise<{
+  ok: boolean;
+  mode?: StorageBackendMode;
+  syncedAt?: string;
+  error?: string;
+}> {
+  const info = await getAuthSessionInfo(true);
+  if (info.provider !== 'google' || !info.authenticated) {
+    return { ok: false, error: 'Chưa đăng nhập bằng Google Drive.' };
+  }
+  try {
+    const bundle = buildLocalBundleFor(info);
+    const res = await fetch('/api/drive/data', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bundle }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { ok: false, error: data.error || 'Đồng bộ Google Drive thất bại.' };
+    }
+    return { ok: true, mode: data.mode, syncedAt: data.syncedAt };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : 'Lỗi mạng khi đồng bộ Drive.',
+    };
+  }
+}
+
+export async function signOutAccount(): Promise<void> {
+  cachedSession = null;
+  hydratedAccountId = null;
+
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch {
+    // ignore
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = createSupabaseBrowserClient();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+  }
+  emitDataUpdated(null);
 }
 
 export async function getCurrentProfile(): Promise<{
   profile: UserProfile | null;
   isCloud: boolean;
   authenticated: boolean;
+  storageMode: StorageBackendMode;
 }> {
   const today = getTodayLocalDate();
+  const session = await getAuthSessionInfo();
 
-  if (!isSupabaseConfigured()) {
+  // 1. Direct Google OAuth + Google Drive 5TB storage
+  if (session.provider === 'google' && session.authenticated && session.user) {
+    await hydrateGoogleAccountOnce(session);
+    const keys = getScopedKeys(session.user.id);
     const local = normalizeProfile(
-      readLocalJson<Partial<UserProfile> | null>(STORAGE_KEYS.profile, null)
+      readLocalJson<Partial<UserProfile> | null>(keys.profile, null),
+      {
+        id: session.user.id,
+        email: session.user.email,
+        displayName: session.user.name,
+        avatarUrl: session.user.avatarUrl,
+      }
     );
-    const stats = readLocalStats();
+    const stats = readLocalStatsFor(session.user.id);
     const strict = computeStrictStreak(stats, today);
     const synced: UserProfile = {
       ...local,
@@ -215,110 +520,179 @@ export async function getCurrentProfile(): Promise<{
     };
     return {
       profile: synced,
-      isCloud: false,
-      authenticated: true,
-    };
-  }
-
-  const supabase = createSupabaseBrowserClient();
-  if (!supabase) {
-    return { profile: null, isCloud: true, authenticated: false };
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { profile: null, isCloud: true, authenticated: false };
-  }
-
-  const [{ data: row }, { data: keyRow }, { data: recentStats }] =
-    await Promise.all([
-      supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
-      supabase
-        .from('user_api_keys')
-        .select('key_hint')
-        .eq('user_id', user.id)
-        .maybeSingle(),
-      supabase
-        .from('daily_stats')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('practice_date', { ascending: false })
-        .limit(90),
-    ]);
-
-  const mappedStats: DailyStat[] = (recentStats ?? []).map((r) =>
-    normalizeDailyStat({
-      practiceDate: r.practice_date,
-      secondsPracticed: r.seconds_practiced,
-      messagesSent: r.messages_sent,
-      sessionsCompleted: r.sessions_completed,
-      lessonsCompleted: r.lessons_completed,
-      xpEarned: r.xp_earned,
-      freezeUsed: r.freeze_used,
-    })
-  );
-  const strict = computeStrictStreak(mappedStats, today);
-
-  if (!row) {
-    const fallbackName =
-      String(user.user_metadata?.display_name ?? '') ||
-      String(user.user_metadata?.full_name ?? '') ||
-      String(user.user_metadata?.name ?? '') ||
-      '';
-    const { data: inserted } = await supabase
-      .from('profiles')
-      .upsert({
-        id: user.id,
-        email: user.email ?? '',
-        display_name: fallbackName,
-      })
-      .select('*')
-      .single();
-
-    const mapped = inserted
-      ? mapDbProfile(inserted, keyRow?.key_hint ?? null)
-      : null;
-
-    return {
-      profile: mapped
-        ? {
-            ...mapped,
-            streakDays: strict.currentStreak,
-            longestStreak: Math.max(mapped.longestStreak, strict.longestStreak),
-          }
-        : null,
       isCloud: true,
       authenticated: true,
+      storageMode: session.storageMode,
     };
   }
 
-  const mapped = mapDbProfile(row, keyRow?.key_hint ?? null);
+  // 2. If Google OAuth is configured on server and user hasn't signed in yet, show public/auth gate
+  if (session.googleConfigured && !session.authenticated && !session.supabaseConfigured) {
+    return {
+      profile: null,
+      isCloud: true,
+      authenticated: false,
+      storageMode: session.ownerDriveConfigured
+        ? 'google-drive-owner'
+        : 'google-drive-user',
+    };
+  }
+
+  // 3. Supabase Auth + PostgreSQL mode (if configured)
+  if (isSupabaseConfigured()) {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) {
+      return {
+        profile: null,
+        isCloud: true,
+        authenticated: false,
+        storageMode: 'supabase',
+      };
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return {
+        profile: null,
+        isCloud: true,
+        authenticated: false,
+        storageMode: 'supabase',
+      };
+    }
+
+    const [{ data: row }, { data: keyRow }, { data: recentStats }] =
+      await Promise.all([
+        supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+        supabase
+          .from('user_api_keys')
+          .select('key_hint')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('daily_stats')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('practice_date', { ascending: false })
+          .limit(90),
+      ]);
+
+    const mappedStats: DailyStat[] = (recentStats ?? []).map((r) =>
+      normalizeDailyStat({
+        practiceDate: r.practice_date,
+        secondsPracticed: r.seconds_practiced,
+        messagesSent: r.messages_sent,
+        sessionsCompleted: r.sessions_completed,
+        lessonsCompleted: r.lessons_completed,
+        xpEarned: r.xp_earned,
+        freezeUsed: r.freeze_used,
+      })
+    );
+    const strict = computeStrictStreak(mappedStats, today);
+
+    if (!row) {
+      const fallbackName =
+        String(user.user_metadata?.display_name ?? '') ||
+        String(user.user_metadata?.full_name ?? '') ||
+        String(user.user_metadata?.name ?? '') ||
+        '';
+      const { data: inserted } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: user.email ?? '',
+          display_name: fallbackName,
+        })
+        .select('*')
+        .single();
+
+      const mapped = inserted
+        ? mapDbProfile(inserted, keyRow?.key_hint ?? null)
+        : null;
+
+      return {
+        profile: mapped
+          ? {
+              ...mapped,
+              streakDays: strict.currentStreak,
+              longestStreak: Math.max(mapped.longestStreak, strict.longestStreak),
+            }
+          : null,
+        isCloud: true,
+        authenticated: true,
+        storageMode: 'supabase',
+      };
+    }
+
+    const mapped = mapDbProfile(row, keyRow?.key_hint ?? null);
+    return {
+      profile: {
+        ...mapped,
+        streakDays: strict.currentStreak,
+        longestStreak: Math.max(mapped.longestStreak, strict.longestStreak),
+      },
+      isCloud: true,
+      authenticated: true,
+      storageMode: 'supabase',
+    };
+  }
+
+  // 4. Local device mode (instant zero-config trial)
+  const local = normalizeProfile(
+    readLocalJson<Partial<UserProfile> | null>(LEGACY_KEYS.profile, null)
+  );
+  const stats = readLocalStatsFor(null);
+  const strict = computeStrictStreak(stats, today);
+  const synced: UserProfile = {
+    ...local,
+    streakDays: strict.currentStreak,
+    longestStreak: Math.max(local.longestStreak, strict.longestStreak),
+  };
   return {
-    profile: {
-      ...mapped,
-      streakDays: strict.currentStreak,
-      longestStreak: Math.max(mapped.longestStreak, strict.longestStreak),
-    },
-    isCloud: true,
+    profile: synced,
+    isCloud: false,
     authenticated: true,
+    storageMode: 'local',
   };
 }
 
 export async function saveProfile(
   updates: Partial<UserProfile>
 ): Promise<UserProfile> {
-  if (!isSupabaseConfigured()) {
+  const session = await getAuthSessionInfo();
+
+  // Google Drive or Local mode
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
     const current = normalizeProfile(
-      readLocalJson<Partial<UserProfile> | null>(STORAGE_KEYS.profile, null)
+      readLocalJson<Partial<UserProfile> | null>(keys.profile, null),
+      session.user
+        ? {
+            id: session.user.id,
+            email: session.user.email,
+            displayName: session.user.name,
+            avatarUrl: session.user.avatarUrl,
+          }
+        : undefined
     );
     const next = normalizeProfile({ ...current, ...updates });
-    writeLocalJson(STORAGE_KEYS.profile, next);
+    writeLocalJson(keys.profile, next);
+    emitDataUpdated(next);
+
+    if (session.provider === 'google' && session.authenticated) {
+      await syncGoogleDriveIfActive(session);
+    }
     return next;
   }
 
+  // Supabase mode
   const supabase = createSupabaseBrowserClient();
   if (!supabase) {
     throw new Error('Supabase client unavailable');
@@ -334,6 +708,8 @@ export async function saveProfile(
   const dbPayload: Record<string, unknown> = { id: user.id };
   if (updates.displayName !== undefined)
     dbPayload.display_name = updates.displayName;
+  if (updates.nativeLanguage !== undefined)
+    dbPayload.native_language = updates.nativeLanguage;
   if (updates.englishLevel !== undefined)
     dbPayload.english_level = updates.englishLevel;
   if (updates.jobField !== undefined) dbPayload.job_field = updates.jobField;
@@ -373,8 +749,8 @@ export async function saveProfile(
     .select('*')
     .single();
 
+  let saved: UserProfile;
   if (error) {
-    // Graceful fallback if existing Supabase DB hasn't run gamification columns migration
     const corePayload: Record<string, unknown> = { id: user.id };
     for (const k of [
       'display_name',
@@ -397,9 +773,13 @@ export async function saveProfile(
       .select('*')
       .single();
     if (retryErr) throw retryErr;
-    return mapDbProfile(retryData);
+    saved = mapDbProfile(retryData);
+  } else {
+    saved = mapDbProfile(data);
   }
-  return mapDbProfile(data);
+
+  emitDataUpdated(saved);
+  return saved;
 }
 
 export async function createConversationRecord(params: {
@@ -411,8 +791,15 @@ export async function createConversationRecord(params: {
   level: EnglishLevel;
 }): Promise<ConversationRecord> {
   const nowIso = new Date().toISOString();
+  const session = await getAuthSessionInfo();
 
-  if (!isSupabaseConfigured()) {
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
     const record: ConversationRecord = {
       id: crypto.randomUUID(),
       scenarioId: params.scenarioId,
@@ -427,11 +814,8 @@ export async function createConversationRecord(params: {
       startedAt: nowIso,
       endedAt: null,
     };
-    const existing = readLocalJson<ConversationRecord[]>(
-      STORAGE_KEYS.conversations,
-      []
-    );
-    writeLocalJson(STORAGE_KEYS.conversations, [record, ...existing]);
+    const existing = readLocalJson<ConversationRecord[]>(keys.conversations, []);
+    writeLocalJson(keys.conversations, [record, ...existing]);
     return record;
   }
 
@@ -477,13 +861,20 @@ export async function appendConversationMessages(
   messages: TutorMessage[]
 ): Promise<void> {
   if (messages.length === 0) return;
+  const session = await getAuthSessionInfo();
 
-  if (!isSupabaseConfigured()) {
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
     const existing = readLocalJson<TutorMessage[]>(
-      `${STORAGE_KEYS.messagesPrefix}${conversationId}`,
+      `${keys.messagesPrefix}${conversationId}`,
       []
     );
-    writeLocalJson(`${STORAGE_KEYS.messagesPrefix}${conversationId}`, [
+    writeLocalJson(`${keys.messagesPrefix}${conversationId}`, [
       ...existing,
       ...messages,
     ]);
@@ -524,13 +915,6 @@ export async function appendConversationMessages(
   }
 }
 
-/**
- * Core strict-streak + lesson reward recorder shared by Voice Calls (/call) and
- * Play-to-Learn lessons (/play).
- *
- * STRICT RULE: Streak ONLY counts a day when `completedLesson === true`
- * (which increments `daily_stats.lessons_completed >= 1`).
- */
 export async function recordLessonProgress(params: {
   durationSeconds: number;
   userMessagesSent?: number;
@@ -544,9 +928,16 @@ export async function recordLessonProgress(params: {
   const msgDelta = Math.max(0, Math.round(params.userMessagesSent ?? 0));
   const lessonDelta = params.completedLesson ? 1 : 0;
   const sessionDelta = params.sessionsDelta ?? 1;
+  const session = await getAuthSessionInfo();
 
-  if (!isSupabaseConfigured()) {
-    const stats = readLocalStats();
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    const stats = readLocalStatsFor(accountId);
     const existingToday = stats.find((s) => s.practiceDate === today);
     const updatedStats: DailyStat[] = existingToday
       ? stats.map((s) =>
@@ -573,10 +964,18 @@ export async function recordLessonProgress(params: {
           },
           ...stats,
         ];
-    writeLocalJson(STORAGE_KEYS.dailyStats, updatedStats);
+    writeLocalJson(keys.dailyStats, updatedStats);
 
     const profile = normalizeProfile(
-      readLocalJson<Partial<UserProfile> | null>(STORAGE_KEYS.profile, null)
+      readLocalJson<Partial<UserProfile> | null>(keys.profile, null),
+      session.user
+        ? {
+            id: session.user.id,
+            email: session.user.email,
+            displayName: session.user.name,
+            avatarUrl: session.user.avatarUrl,
+          }
+        : undefined
     );
     const prevLevel = getLevelInfo(profile.xp).level;
     const prevClaimableCount = getClaimableMilestones(
@@ -600,7 +999,12 @@ export async function recordLessonProgress(params: {
       lastPracticeDate: strict.studiedToday ? today : profile.lastPracticeDate,
       totalLessonsCompleted: profile.totalLessonsCompleted + lessonDelta,
     };
-    writeLocalJson(STORAGE_KEYS.profile, nextProfile);
+    writeLocalJson(keys.profile, nextProfile);
+    emitDataUpdated(nextProfile);
+
+    if (session.provider === 'google' && session.authenticated) {
+      void syncGoogleDriveIfActive(session);
+    }
 
     const allClaimable = getClaimableMilestones(
       nextProfile.streakDays,
@@ -778,14 +1182,18 @@ export async function finishConversationRecord(params: {
     ? 60 + Math.min(40, params.userMessagesSent * 5)
     : Math.min(15, params.userMessagesSent * 5);
   const gemsEarned = completedLesson ? 15 : 0;
+  const session = await getAuthSessionInfo();
 
-  if (!isSupabaseConfigured()) {
-    const convs = readLocalJson<ConversationRecord[]>(
-      STORAGE_KEYS.conversations,
-      []
-    );
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    const convs = readLocalJson<ConversationRecord[]>(keys.conversations, []);
     writeLocalJson(
-      STORAGE_KEYS.conversations,
+      keys.conversations,
       convs.map((c) =>
         c.id === params.conversationId
           ? {
@@ -836,15 +1244,23 @@ export async function updateConversationSummary(
   conversationId: string,
   summaryVi: string
 ): Promise<void> {
-  if (!isSupabaseConfigured()) {
-    const convs = readLocalJson<ConversationRecord[]>(
-      STORAGE_KEYS.conversations,
-      []
-    );
+  const session = await getAuthSessionInfo();
+
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    const convs = readLocalJson<ConversationRecord[]>(keys.conversations, []);
     writeLocalJson(
-      STORAGE_KEYS.conversations,
+      keys.conversations,
       convs.map((c) => (c.id === conversationId ? { ...c, summaryVi } : c))
     );
+    if (session.provider === 'google' && session.authenticated) {
+      void syncGoogleDriveIfActive(session);
+    }
     return;
   }
 
@@ -874,7 +1290,9 @@ export async function claimStreakMilestone(
 
   const best = Math.max(profile.streakDays, profile.longestStreak);
   if (best < milestone.days) {
-    throw new Error(`Bạn cần đạt chuỗi ${milestone.days} ngày để mở khóa phần thưởng này.`);
+    throw new Error(
+      `Bạn cần đạt chuỗi ${milestone.days} ngày để mở khóa phần thưởng này.`
+    );
   }
   if (profile.claimedMilestones.includes(milestone.days)) {
     return profile;
@@ -902,7 +1320,11 @@ export async function purchaseShopReward(itemId: string): Promise<UserProfile> {
   const { profile } = await getCurrentProfile();
   if (!profile) throw new Error('Vui lòng đăng nhập.');
 
-  if (item.type === 'badge' && item.badgeId && profile.unlockedBadges.includes(item.badgeId)) {
+  if (
+    item.type === 'badge' &&
+    item.badgeId &&
+    profile.unlockedBadges.includes(item.badgeId)
+  ) {
     return saveProfile({ activeBadge: item.badgeId });
   }
 
@@ -938,6 +1360,7 @@ export async function applyStreakFreezeForYesterday(): Promise<{
   stats: DailyStat[];
 }> {
   const today = getTodayLocalDate();
+  const session = await getAuthSessionInfo();
   const [{ profile }, stats] = await Promise.all([
     getCurrentProfile(),
     getDailyStats(120),
@@ -945,17 +1368,27 @@ export async function applyStreakFreezeForYesterday(): Promise<{
 
   if (!profile) throw new Error('Vui lòng đăng nhập.');
   if (profile.streakFreezes < 1) {
-    throw new Error('Bạn đã hết Khiên Bảo Vệ Chuỗi. Hãy đổi thêm trong Kho quà bằng Ngọc 💎!');
+    throw new Error(
+      'Bạn đã hết Khiên Bảo Vệ Chuỗi. Hãy đổi thêm trong Kho quà bằng Ngọc 💎!'
+    );
   }
 
   const strict = computeStrictStreak(stats, today);
   if (!strict.canFreezeYesterday) {
-    throw new Error('Ngày hôm qua không cần hoặc không thể dùng Khiên Bảo Vệ.');
+    throw new Error(
+      'Ngày hôm qua không cần hoặc không thể dùng Khiên Bảo Vệ.'
+    );
   }
 
   const yesterday = strict.yesterdayStr;
 
-  if (!isSupabaseConfigured()) {
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
     const existing = stats.find((s) => s.practiceDate === yesterday);
     const updatedStats: DailyStat[] = existing
       ? stats.map((s) =>
@@ -973,7 +1406,7 @@ export async function applyStreakFreezeForYesterday(): Promise<{
           },
           ...stats,
         ];
-    writeLocalJson(STORAGE_KEYS.dailyStats, updatedStats);
+    writeLocalJson(keys.dailyStats, updatedStats);
     const nextStrict = computeStrictStreak(updatedStats, today);
     const updatedProfile = await saveProfile({
       streakFreezes: Math.max(0, profile.streakFreezes - 1),
@@ -1009,8 +1442,16 @@ export async function applyStreakFreezeForYesterday(): Promise<{
 }
 
 export async function listConversations(): Promise<ConversationRecord[]> {
-  if (!isSupabaseConfigured()) {
-    return readLocalJson<ConversationRecord[]>(STORAGE_KEYS.conversations, []);
+  const session = await getAuthSessionInfo();
+
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    return readLocalJson<ConversationRecord[]>(keys.conversations, []);
   }
 
   const supabase = createSupabaseBrowserClient()!;
@@ -1048,14 +1489,19 @@ export async function getConversationDetail(conversationId: string): Promise<{
   conversation: ConversationRecord | null;
   messages: TutorMessage[];
 }> {
-  if (!isSupabaseConfigured()) {
-    const convs = readLocalJson<ConversationRecord[]>(
-      STORAGE_KEYS.conversations,
-      []
-    );
+  const session = await getAuthSessionInfo();
+
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    const convs = readLocalJson<ConversationRecord[]>(keys.conversations, []);
     const conversation = convs.find((c) => c.id === conversationId) ?? null;
     const messages = readLocalJson<TutorMessage[]>(
-      `${STORAGE_KEYS.messagesPrefix}${conversationId}`,
+      `${keys.messagesPrefix}${conversationId}`,
       []
     );
     return { conversation, messages };
@@ -1117,8 +1563,16 @@ export async function getConversationDetail(conversationId: string): Promise<{
 }
 
 export async function listSavedPhrases(): Promise<SavedPhrase[]> {
-  if (!isSupabaseConfigured()) {
-    return readLocalJson<SavedPhrase[]>(STORAGE_KEYS.phrases, []);
+  const session = await getAuthSessionInfo();
+
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    return readLocalJson<SavedPhrase[]>(keys.phrases, []);
   }
 
   const supabase = createSupabaseBrowserClient()!;
@@ -1158,9 +1612,16 @@ export async function savePhrase(input: {
 }): Promise<SavedPhrase> {
   const cleanEn = input.englishPhrase.trim();
   const cleanVi = input.vietnameseMeaning.trim();
+  const session = await getAuthSessionInfo();
 
-  if (!isSupabaseConfigured()) {
-    const existing = readLocalJson<SavedPhrase[]>(STORAGE_KEYS.phrases, []);
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    const existing = readLocalJson<SavedPhrase[]>(keys.phrases, []);
     const duplicate = existing.find(
       (p) => p.englishPhrase.toLowerCase() === cleanEn.toLowerCase()
     );
@@ -1177,7 +1638,10 @@ export async function savePhrase(input: {
       masteryLevel: 0,
       createdAt: new Date().toISOString(),
     };
-    writeLocalJson(STORAGE_KEYS.phrases, [item, ...existing]);
+    writeLocalJson(keys.phrases, [item, ...existing]);
+    if (session.provider === 'google' && session.authenticated) {
+      void syncGoogleDriveIfActive(session);
+    }
     return item;
   }
 
@@ -1222,12 +1686,23 @@ export async function updatePhraseMastery(
   id: string,
   masteryLevel: 0 | 1 | 2 | 3
 ): Promise<void> {
-  if (!isSupabaseConfigured()) {
-    const existing = readLocalJson<SavedPhrase[]>(STORAGE_KEYS.phrases, []);
+  const session = await getAuthSessionInfo();
+
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    const existing = readLocalJson<SavedPhrase[]>(keys.phrases, []);
     writeLocalJson(
-      STORAGE_KEYS.phrases,
+      keys.phrases,
       existing.map((p) => (p.id === id ? { ...p, masteryLevel } : p))
     );
+    if (session.provider === 'google' && session.authenticated) {
+      void syncGoogleDriveIfActive(session);
+    }
     return;
   }
 
@@ -1239,12 +1714,23 @@ export async function updatePhraseMastery(
 }
 
 export async function deletePhrase(id: string): Promise<void> {
-  if (!isSupabaseConfigured()) {
-    const existing = readLocalJson<SavedPhrase[]>(STORAGE_KEYS.phrases, []);
+  const session = await getAuthSessionInfo();
+
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    const existing = readLocalJson<SavedPhrase[]>(keys.phrases, []);
     writeLocalJson(
-      STORAGE_KEYS.phrases,
+      keys.phrases,
       existing.filter((p) => p.id !== id)
     );
+    if (session.provider === 'google' && session.authenticated) {
+      void syncGoogleDriveIfActive(session);
+    }
     return;
   }
 
@@ -1253,8 +1739,15 @@ export async function deletePhrase(id: string): Promise<void> {
 }
 
 export async function getDailyStats(limitDays = 120): Promise<DailyStat[]> {
-  if (!isSupabaseConfigured()) {
-    const all = readLocalStats().sort((a, b) =>
+  const session = await getAuthSessionInfo();
+
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const all = readLocalStatsFor(accountId).sort((a, b) =>
       b.practiceDate.localeCompare(a.practiceDate)
     );
     return all.slice(0, limitDays);
@@ -1286,28 +1779,31 @@ export async function getDailyStats(limitDays = 120): Promise<DailyStat[]> {
   );
 }
 
-/**
- * Exports local browser progress as a portable JSON backup string (helpful when
- * moving devices before cloud OAuth is linked).
- */
 export function exportLocalProgressBackup(): string {
+  const accountId =
+    cachedSession?.info.provider === 'google'
+      ? cachedSession.info.user?.id
+      : null;
+  const keys = getScopedKeys(accountId);
   const payload = {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     profile: normalizeProfile(
-      readLocalJson<Partial<UserProfile> | null>(STORAGE_KEYS.profile, null)
+      readLocalJson<Partial<UserProfile> | null>(keys.profile, null)
     ),
-    dailyStats: readLocalStats(),
-    phrases: readLocalJson<SavedPhrase[]>(STORAGE_KEYS.phrases, []),
-    conversations: readLocalJson<ConversationRecord[]>(
-      STORAGE_KEYS.conversations,
-      []
-    ),
+    dailyStats: readLocalStatsFor(accountId),
+    phrases: readLocalJson<SavedPhrase[]>(keys.phrases, []),
+    conversations: readLocalJson<ConversationRecord[]>(keys.conversations, []),
   };
   return JSON.stringify(payload, null, 2);
 }
 
 export function importLocalProgressBackup(rawJson: string): void {
+  const accountId =
+    cachedSession?.info.provider === 'google'
+      ? cachedSession.info.user?.id
+      : null;
+  const keys = getScopedKeys(accountId);
   const parsed = JSON.parse(rawJson) as {
     profile?: Partial<UserProfile>;
     dailyStats?: Partial<DailyStat>[];
@@ -1316,18 +1812,26 @@ export function importLocalProgressBackup(rawJson: string): void {
   };
 
   if (parsed.profile) {
-    writeLocalJson(STORAGE_KEYS.profile, normalizeProfile(parsed.profile));
+    const prof = normalizeProfile(parsed.profile);
+    writeLocalJson(keys.profile, prof);
+    emitDataUpdated(prof);
   }
   if (Array.isArray(parsed.dailyStats)) {
     writeLocalJson(
-      STORAGE_KEYS.dailyStats,
-      parsed.dailyStats.map(normalizeDailyStat).filter((s) => Boolean(s.practiceDate))
+      keys.dailyStats,
+      parsed.dailyStats
+        .map(normalizeDailyStat)
+        .filter((s) => Boolean(s.practiceDate))
     );
   }
   if (Array.isArray(parsed.phrases)) {
-    writeLocalJson(STORAGE_KEYS.phrases, parsed.phrases);
+    writeLocalJson(keys.phrases, parsed.phrases);
   }
   if (Array.isArray(parsed.conversations)) {
-    writeLocalJson(STORAGE_KEYS.conversations, parsed.conversations);
+    writeLocalJson(keys.conversations, parsed.conversations);
+  }
+
+  if (cachedSession?.info.provider === 'google' && cachedSession.info.authenticated) {
+    void syncGoogleDriveIfActive(cachedSession.info);
   }
 }

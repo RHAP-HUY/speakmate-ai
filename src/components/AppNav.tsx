@@ -3,6 +3,7 @@
 import {
   BookOpen,
   CalendarDays,
+  Cloud,
   Flame,
   Gamepad2,
   Home,
@@ -14,11 +15,15 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { stopVoicePlayback } from '@/lib/audio';
+import {
+  DATA_UPDATED_EVENT,
+  getAuthSessionInfo,
+  signOutAccount,
+} from '@/lib/data-store';
 import { BADGE_DIRECTORY, getLevelInfo } from '@/lib/gamification';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { isSupabaseConfigured } from '@/lib/supabase/config';
-import type { UserProfile } from '@/types';
+import type { AuthSessionInfo, UserProfile } from '@/types';
 
 interface AppNavProps {
   profile: UserProfile | null;
@@ -37,17 +42,55 @@ const NAV_ITEMS = [
 export function AppNav({ profile, authenticated }: AppNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const cloudEnabled = isSupabaseConfigured();
-  const levelInfo = profile ? getLevelInfo(profile.xp) : null;
-  const activeBadgeLabel =
-    profile?.activeBadge ? BADGE_DIRECTORY[profile.activeBadge] : null;
+  const [liveProfile, setLiveProfile] = useState<UserProfile | null>(profile);
+  const [sessionInfo, setSessionInfo] = useState<AuthSessionInfo | null>(null);
+
+  const displayedProfile = liveProfile ?? profile;
+
+  useEffect(() => {
+    let active = true;
+    async function loadSession() {
+      const info = await getAuthSessionInfo();
+      if (active) setSessionInfo(info);
+    }
+    void loadSession();
+
+    function onDataUpdated(ev: Event) {
+      const customEv = ev as CustomEvent<{ profile?: UserProfile | null }>;
+      if (customEv.detail && 'profile' in customEv.detail) {
+        setLiveProfile(customEv.detail.profile ?? null);
+      }
+    }
+    window.addEventListener(DATA_UPDATED_EVENT, onDataUpdated);
+    return () => {
+      active = false;
+      window.removeEventListener(DATA_UPDATED_EVENT, onDataUpdated);
+    };
+  }, []);
+
+  const currentProfile =
+    profile && liveProfile && profile.id === liveProfile.id
+      ? liveProfile.xp >= profile.xp &&
+        liveProfile.gems === profile.gems &&
+        liveProfile.displayName === profile.displayName
+        ? profile
+        : liveProfile
+      : displayedProfile;
+
+  const levelInfo = currentProfile ? getLevelInfo(currentProfile.xp) : null;
+  const activeBadgeLabel = currentProfile?.activeBadge
+    ? BADGE_DIRECTORY[currentProfile.activeBadge]
+    : null;
+  const isCloudLoggedIn = Boolean(
+    sessionInfo?.authenticated && sessionInfo.provider !== 'local'
+  );
+  const isDriveActive =
+    sessionInfo?.storageMode === 'google-drive-owner' ||
+    sessionInfo?.storageMode === 'google-drive-user';
 
   async function handleSignOut() {
     stopVoicePlayback();
-    const supabase = createSupabaseBrowserClient();
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
+    await signOutAccount();
     router.push('/auth');
     router.refresh();
   }
@@ -67,6 +110,11 @@ export function AppNav({ profile, authenticated }: AppNavProps) {
               {activeBadgeLabel ? (
                 <span className="hidden sm:inline-block ml-2 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">
                   {activeBadgeLabel}
+                </span>
+              ) : isDriveActive ? (
+                <span className="hidden sm:inline-flex items-center gap-1 ml-2 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                  <Cloud className="h-3 w-3" />
+                  Drive Sync
                 </span>
               ) : (
                 <span className="hidden sm:inline-block ml-2 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
@@ -101,7 +149,7 @@ export function AppNav({ profile, authenticated }: AppNavProps) {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {authenticated && profile && levelInfo ? (
+            {authenticated && currentProfile && levelInfo ? (
               <>
                 {/* Live Streak & Gems HUD */}
                 <Link
@@ -110,7 +158,7 @@ export function AppNav({ profile, authenticated }: AppNavProps) {
                   className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-extrabold text-orange-600 hover:bg-orange-100 transition"
                 >
                   <Flame className="h-3.5 w-3.5 fill-orange-500 text-orange-500" />
-                  <span>{profile.streakDays}</span>
+                  <span>{currentProfile.streakDays}</span>
                 </Link>
 
                 <Link
@@ -119,7 +167,7 @@ export function AppNav({ profile, authenticated }: AppNavProps) {
                   className="hidden sm:inline-flex items-center gap-1 rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-extrabold text-cyan-700 hover:bg-cyan-100 transition"
                 >
                   <span>💎</span>
-                  <span>{profile.gems}</span>
+                  <span>{currentProfile.gems}</span>
                 </Link>
 
                 <Link
@@ -130,14 +178,14 @@ export function AppNav({ profile, authenticated }: AppNavProps) {
                     Lv.{levelInfo.level}
                   </span>
                   <span className="max-w-20 truncate">
-                    {profile.displayName || 'Học viên'}
+                    {currentProfile.displayName || 'Học viên'}
                   </span>
                 </Link>
 
-                {cloudEnabled ? (
+                {isCloudLoggedIn ? (
                   <button
                     type="button"
-                    onClick={handleSignOut}
+                    onClick={() => void handleSignOut()}
                     title="Đăng xuất"
                     className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
                   >
@@ -146,11 +194,11 @@ export function AppNav({ profile, authenticated }: AppNavProps) {
                 ) : (
                   <Link
                     href="/auth"
-                    title="Đăng nhập Google / Apple để đồng bộ máy khác"
+                    title="Đăng nhập Google để lưu lên Google Drive 5TB"
                     className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-[11px] font-bold text-indigo-700 hover:bg-indigo-100 transition"
                   >
                     <LogIn className="h-3.5 w-3.5" />
-                    <span className="hidden md:inline">Google / Apple</span>
+                    <span className="hidden md:inline">Google Drive</span>
                   </Link>
                 )}
               </>

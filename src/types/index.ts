@@ -7,10 +7,20 @@ export type TopicCategory = 'daily' | 'business' | 'travel' | 'freetalk';
 
 export type ApiKeyMode = 'system' | 'personal';
 
+export type NativeLanguage = 'vi' | 'en' | 'ja' | 'ko' | 'zh';
+
+export type StorageBackendMode =
+  | 'google-drive-owner'
+  | 'google-drive-user'
+  | 'supabase'
+  | 'local';
+
 export interface UserProfile {
   id: string;
   email: string;
   displayName: string;
+  avatarUrl?: string | null;
+  nativeLanguage: NativeLanguage;
   englishLevel: EnglishLevel;
   jobField: string;
   hobbies: string[];
@@ -31,6 +41,34 @@ export interface UserProfile {
   unlockedBadges: string[];
   activeBadge: string | null;
   totalLessonsCompleted: number;
+}
+
+export interface AccountCloudBundle {
+  version: 3;
+  accountId: string;
+  email: string;
+  provider: 'google' | 'apple' | 'local';
+  updatedAt: string;
+  profile: UserProfile;
+  dailyStats: DailyStat[];
+  phrases: SavedPhrase[];
+  conversations: ConversationRecord[];
+  messagesByConversation: Record<string, TutorMessage[]>;
+}
+
+export interface AuthSessionInfo {
+  authenticated: boolean;
+  provider: 'google' | 'supabase' | 'local';
+  storageMode: StorageBackendMode;
+  googleConfigured: boolean;
+  ownerDriveConfigured: boolean;
+  supabaseConfigured: boolean;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    avatarUrl?: string | null;
+  } | null;
 }
 
 export interface ReplyHint {

@@ -2,11 +2,11 @@
 
 import {
   ArrowRight,
-  CalendarDays,
   CheckCircle2,
   Cloud,
   Flame,
   Gamepad2,
+  HardDrive,
   Loader2,
   Lock,
   Mail,
@@ -17,14 +17,18 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { getAuthSessionInfo } from '@/lib/data-store';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { isSupabaseConfigured } from '@/lib/supabase/config';
+import type { AuthSessionInfo } from '@/types';
 
 type AuthMode = 'login' | 'signup' | 'magic';
 
 function translateAuthError(message: string): string {
   const lower = message.toLowerCase();
+  if (lower.includes('google_not_configured')) {
+    return 'Server chưa gắn GOOGLE_CLIENT_ID & GOOGLE_CLIENT_SECRET. Hãy thêm 2 biến này trên Vercel để kích hoạt đăng nhập Google + lưu Google Drive 5TB!';
+  }
   if (lower.includes('invalid login credentials')) {
     return 'Email hoặc mật khẩu chưa đúng. Vui lòng kiểm tra lại.';
   }
@@ -32,13 +36,10 @@ function translateAuthError(message: string): string {
     return 'Email này đã được đăng ký. Hãy chuyển sang tab Đăng nhập nhé!';
   }
   if (lower.includes('email not confirmed')) {
-    return 'Tài khoản chưa xác nhận email. Vui lòng kiểm tra hộp thư đến (hoặc Spam) để bấm link xác nhận.';
-  }
-  if (lower.includes('password should be at least')) {
-    return 'Mật khẩu cần có ít nhất 6 ký tự.';
+    return 'Tài khoản chưa xác nhận email. Vui lòng kiểm tra hộp thư đến (hoặc Spam).';
   }
   if (lower.includes('provider is not enabled')) {
-    return 'Nhà cung cấp đăng nhập này chưa được bật trong Supabase Authentication → Providers. Hãy bật Google / Apple trong bảng điều khiển Supabase nhé!';
+    return 'Nhà cung cấp đăng nhập này chưa được bật trong bảng cấu hình Cloud.';
   }
   return message;
 }
@@ -49,8 +50,7 @@ function AuthPageInner() {
   const nextPath = searchParams.get('next') || '/';
   const callbackError = searchParams.get('error');
 
-  const cloudEnabled = isSupabaseConfigured();
-
+  const [sessionInfo, setSessionInfo] = useState<AuthSessionInfo | null>(null);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [mode, setMode] = useState<AuthMode>('login');
   const [displayName, setDisplayName] = useState('');
@@ -61,43 +61,89 @@ function AuthPageInner() {
     'google' | 'apple' | 'email' | null
   >(null);
   const [error, setError] = useState<string | null>(
-    callbackError
-      ? 'Đăng nhập Google / Apple không thành công, vui lòng thử lại.'
-      : null
+    callbackError ? translateAuthError(callbackError) : null
   );
   const [notice, setNotice] = useState<string | null>(null);
-  const [cloudGuideProvider, setCloudGuideProvider] = useState<
-    'Google' | 'Apple' | null
-  >(null);
+  const [setupHint, setSetupHint] = useState<'Google' | 'Apple' | null>(null);
 
-  async function handleOAuthSignIn(provider: 'google' | 'apple') {
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      const info = await getAuthSessionInfo(true);
+      if (!active) return;
+      setSessionInfo(info);
+    }
+    void load();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const googleDirectReady = Boolean(sessionInfo?.googleConfigured);
+  const ownerDriveReady = Boolean(sessionInfo?.ownerDriveConfigured);
+  const supabaseReady = Boolean(sessionInfo?.supabaseConfigured);
+
+  async function handleGoogleSignIn() {
     setError(null);
     setNotice(null);
+    setSetupHint(null);
 
-    if (!cloudEnabled) {
-      setCloudGuideProvider(provider === 'google' ? 'Google' : 'Apple');
+    // 1. Direct Google OAuth 2.0 + Google Drive 5TB storage (preferred!)
+    if (googleDirectReady) {
+      setLoadingProvider('google');
+      window.location.href = `/api/auth/google?next=${encodeURIComponent(nextPath)}`;
       return;
     }
 
-    const supabase = createSupabaseBrowserClient();
-    if (!supabase) return;
-
-    setLoadingProvider(provider);
-    const { error: oauthErr } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-          nextPath
-        )}`,
-        ...(provider === 'google'
-          ? { queryParams: { access_type: 'offline', prompt: 'select_account' } }
-          : {}),
-      },
-    });
-    if (oauthErr) {
-      setError(translateAuthError(oauthErr.message));
-      setLoadingProvider(null);
+    // 2. Supabase Google OAuth fallback if configured
+    if (supabaseReady) {
+      const supabase = createSupabaseBrowserClient();
+      if (!supabase) return;
+      setLoadingProvider('google');
+      const { error: oauthErr } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+            nextPath
+          )}`,
+          queryParams: { access_type: 'offline', prompt: 'select_account' },
+        },
+      });
+      if (oauthErr) {
+        setError(translateAuthError(oauthErr.message));
+        setLoadingProvider(null);
+      }
+      return;
     }
+
+    setSetupHint('Google');
+  }
+
+  async function handleAppleSignIn() {
+    setError(null);
+    setNotice(null);
+    setSetupHint(null);
+
+    if (supabaseReady) {
+      const supabase = createSupabaseBrowserClient();
+      if (!supabase) return;
+      setLoadingProvider('apple');
+      const { error: oauthErr } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+            nextPath
+          )}`,
+        },
+      });
+      if (oauthErr) {
+        setError(translateAuthError(oauthErr.message));
+        setLoadingProvider(null);
+      }
+      return;
+    }
+
+    setSetupHint('Apple');
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -129,7 +175,7 @@ function AuthPageInner() {
         });
         if (otpErr) throw otpErr;
         setNotice(
-          'Đã gửi link đăng nhập nhanh vào email của bạn! Hãy mở hộp thư và bấm vào link để vào học.'
+          'Đã gửi link đăng nhập nhanh vào email của bạn! Hãy mở hộp thư và bấm vào link.'
         );
         return;
       }
@@ -144,26 +190,20 @@ function AuthPageInner() {
           setError('Hãy nhập tên bạn muốn AI gọi bạn nhé!');
           return;
         }
-
         const { data, error: signUpErr } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
-            data: {
-              display_name: displayName.trim(),
-            },
+            data: { display_name: displayName.trim() },
             emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
           },
         });
-
         if (signUpErr) throw signUpErr;
-
         if (data.session) {
           router.push('/onboarding');
           router.refresh();
           return;
         }
-
         setNotice(
           'Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản rồi đăng nhập.'
         );
@@ -185,19 +225,13 @@ function AuthPageInner() {
           .eq('id', loginData.user.id)
           .maybeSingle();
 
-        if (!profile || !profile.onboarding_completed) {
-          router.push('/onboarding');
-        } else {
-          router.push(nextPath);
-        }
+        router.push(!profile || !profile.onboarding_completed ? '/onboarding' : nextPath);
         router.refresh();
       }
     } catch (err) {
       setError(
         translateAuthError(
-          err instanceof Error
-            ? err.message
-            : 'Có lỗi xảy ra, vui lòng thử lại.'
+          err instanceof Error ? err.message : 'Có lỗi xảy ra, vui lòng thử lại.'
         )
       );
     } finally {
@@ -221,34 +255,34 @@ function AuthPageInner() {
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-indigo-600 shadow-xs">
                 <Sparkles className="h-4 w-4" />
               </span>
-              <span className="font-bold tracking-tight">SpeakMate AI</span>
+              <span className="font-extrabold tracking-tight">SpeakMate AI</span>
             </Link>
 
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">
-                Chơi để học — Nói tiếng Anh như người bản xứ
+                Đăng nhập Google · Lưu thẳng vào Google Drive 5TB
               </h1>
               <p className="mt-2.5 text-sm text-indigo-100 leading-relaxed">
-                Đăng nhập 1 chạm bằng <strong>Google</strong> hoặc <strong>Apple</strong> để tự động lưu và khôi phục toàn bộ chuỗi học, XP, sổ tay và lịch sử gọi trên mọi máy tính & điện thoại.
+                Sau khi đăng nhập, bạn sẽ chọn <strong>Ngôn ngữ & Sở thích</strong> trong 30 giây. Mọi tài khoản, chuỗi học, XP, sổ tay & lịch sử gọi được lưu đồng bộ trên <strong>Google Drive</strong> để khôi phục 100% khi đổi máy!
               </p>
             </div>
 
-            <div className="space-y-3 pt-2">
+            <div className="space-y-3 pt-1">
               {[
                 {
-                  icon: Cloud,
-                  title: 'Khôi phục tức thì khi đổi máy',
-                  desc: 'Đăng nhập cùng tài khoản Google/Apple trên máy mới là lấy lại toàn bộ tiến độ.',
+                  icon: HardDrive,
+                  title: 'Lưu dữ liệu trực tiếp trên Google Drive',
+                  desc: 'Tận dụng kho Drive 5TB siêu rộng — tự động khôi phục khi đăng nhập trên PC hay điện thoại mới.',
                 },
                 {
                   icon: Flame,
-                  title: 'Lịch chuỗi & Quà mốc ngày',
-                  desc: 'Hoàn thành 1 bài mỗi ngày để thắp lửa, mở khóa Khiên bảo vệ & danh hiệu.',
+                  title: 'Lịch chuỗi & Phần thưởng mốc ngày',
+                  desc: 'Hoàn thành ≥ 1 bài mỗi ngày để thắp lửa giữ chuỗi và mở rương quà.',
                 },
                 {
                   icon: Gamepad2,
-                  title: 'Học như chơi game cực cuốn',
-                  desc: 'Minigame phản xạ, ghép câu bản xứ & gọi thoại AI chấm phát âm từng từ.',
+                  title: 'Chơi để học + Gọi AI chấm phát âm',
+                  desc: 'Minigame phản xạ 2 phút, ghép câu bản xứ & gọi thoại AI chấm từng từ.',
                 },
               ].map((item) => {
                 const Icon = item.icon;
@@ -274,43 +308,82 @@ function AuthPageInner() {
 
           <div className="relative mt-6 flex items-center gap-2 text-[11px] text-indigo-100/90">
             <Smartphone className="h-4 w-4 shrink-0" />
-            <span>Hoạt động mượt trên iPhone, Android, Windows & macOS</span>
+            <span>Đồng bộ tức thì giữa iPhone, Android, Windows & macOS</span>
           </div>
         </div>
 
         {/* Right Auth Card */}
         <div className="lg:col-span-7 rounded-3xl border border-slate-200/80 bg-white/95 backdrop-blur-md p-6 sm:p-8 shadow-xl shadow-slate-200/60 flex flex-col justify-center">
           <div className="mb-6">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-bold text-indigo-700">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                {cloudEnabled
-                  ? 'Đồng bộ đám mây đã sẵn sàng'
-                  : 'Chế độ lưu trên máy · Sẵn sàng nối Cloud'}
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${
+                  googleDirectReady || supabaseReady
+                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                    : 'bg-indigo-50 border border-indigo-200 text-indigo-700'
+                }`}
+              >
+                {googleDirectReady ? (
+                  <>
+                    <Cloud className="h-3.5 w-3.5" />
+                    {ownerDriveReady
+                      ? 'Kho Google Drive 5TB Trung tâm đã sẵn sàng'
+                      : 'Google Drive Cloud Sync đã sẵn sàng'}
+                  </>
+                ) : supabaseReady ? (
+                  <>
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Đồng bộ đám mây đã sẵn sàng
+                  </>
+                ) : (
+                  <>
+                    <HardDrive className="h-3.5 w-3.5" />
+                    Chờ gắn khóa Google Cloud OAuth để bật lưu Drive 5TB
+                  </>
+                )}
               </span>
               <Link
                 href="/"
-                className="text-xs font-semibold text-slate-500 hover:text-indigo-600"
+                className="text-xs font-bold text-slate-500 hover:text-indigo-600"
               >
                 ← Trang chủ
               </Link>
             </div>
+
             <h2 className="text-2xl font-extrabold text-slate-900">
-              Đăng nhập để đồng bộ tiến độ
+              Đăng nhập & Thiết lập hồ sơ học
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Chọn <strong>Google</strong> hoặc <strong>Apple</strong> để lưu toàn bộ chuỗi học, XP & lịch sử trên mọi thiết bị.
+              Sau khi đăng nhập Google, bạn sẽ chọn <strong>Ngôn ngữ & Sở thích</strong> (3 bước nhanh) và toàn bộ dữ liệu sẽ tự đồng bộ lên Drive.
             </p>
           </div>
 
+          {sessionInfo?.authenticated && sessionInfo.user && (
+            <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-xs text-emerald-900">
+                <div className="font-extrabold">
+                  ✓ Đang đăng nhập: {sessionInfo.user.name}
+                </div>
+                <div className="text-emerald-700 mt-0.5">
+                  {sessionInfo.user.email} · Dữ liệu đang đồng bộ đám mây
+                </div>
+              </div>
+              <Link
+                href="/"
+                className="rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-extrabold text-white hover:bg-emerald-700"
+              >
+                Vào học ngay →
+              </Link>
+            </div>
+          )}
+
           {/* Primary OAuth Buttons: Google & Apple */}
           <div className="space-y-3">
-            {/* Google Sign-In */}
             <button
               type="button"
-              onClick={() => void handleOAuthSignIn('google')}
+              onClick={() => void handleGoogleSignIn()}
               disabled={loadingProvider !== null}
-              className="group flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-slate-800 shadow-xs hover:border-indigo-300 hover:bg-slate-50 hover:shadow-md disabled:opacity-60 transition cursor-pointer"
+              className="group flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-slate-200 bg-white px-5 py-3.5 text-sm font-extrabold text-slate-800 shadow-xs hover:border-indigo-400 hover:bg-indigo-50/40 hover:shadow-md disabled:opacity-60 transition cursor-pointer"
             >
               {loadingProvider === 'google' ? (
                 <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
@@ -334,15 +407,14 @@ function AuthPageInner() {
                   />
                 </svg>
               )}
-              <span>Tiếp tục với Google</span>
+              <span>Tiếp tục với Google (Lưu Google Drive)</span>
             </button>
 
-            {/* Apple Sign-In */}
             <button
               type="button"
-              onClick={() => void handleOAuthSignIn('apple')}
+              onClick={() => void handleAppleSignIn()}
               disabled={loadingProvider !== null}
-              className="group flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-slate-900 bg-slate-950 px-5 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-slate-800 hover:shadow-md disabled:opacity-60 transition cursor-pointer"
+              className="group flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-slate-900 bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-sm hover:bg-slate-800 hover:shadow-md disabled:opacity-60 transition cursor-pointer"
             >
               {loadingProvider === 'apple' ? (
                 <Loader2 className="h-5 w-5 animate-spin text-white" />
@@ -359,36 +431,47 @@ function AuthPageInner() {
             </button>
           </div>
 
-          {/* Clear Setup Helper if Supabase is not connected on this server yet */}
-          {!cloudEnabled && (
+          {/* Setup guide when Google OAuth credentials aren't attached on Vercel yet */}
+          {!googleDirectReady && !supabaseReady && (
             <div className="mt-4 space-y-3">
               <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-xs text-amber-950 space-y-1.5">
-                <div className="font-bold flex items-center gap-1.5 text-amber-900">
-                  <CalendarDays className="h-4 w-4 text-amber-600" />
-                  {cloudGuideProvider
-                    ? `Bật đồng bộ ${cloudGuideProvider} trong 2 phút với Supabase miễn phí:`
-                    : 'Để đăng nhập Google / Apple đồng bộ giữa nhiều máy:'}
+                <div className="font-extrabold text-amber-900">
+                  {setupHint === 'Apple'
+                    ? 'Kích hoạt đăng nhập Apple:'
+                    : 'Chỉ cần thêm khóa Google Cloud OAuth để bật lưu trực tiếp lên Google Drive 5TB:'}
                 </div>
                 <p className="leading-relaxed text-amber-900/90">
-                  Server web hiện chưa gắn khóa Supabase Cloud. Chỉ cần thêm{' '}
-                  <code className="font-mono font-bold">NEXT_PUBLIC_SUPABASE_URL</code> và{' '}
-                  <code className="font-mono font-bold">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>{' '}
-                  vào Vercel (và bật nhà cung cấp <strong>Google / Apple</strong> trong Supabase Authentication → Providers) là đăng nhập khôi phục dữ liệu hoạt động ngay trên mọi máy!
+                  {setupHint === 'Apple' ? (
+                    <>
+                      Đăng nhập Apple yêu cầu Apple Developer Services ID (hoặc bật Apple Provider trên Supabase). Trong khi đó, <strong>Google + Google Drive 5TB</strong> hoàn toàn miễn phí 100%!
+                    </>
+                  ) : (
+                    <>
+                      Thêm 2 biến môi trường{' '}
+                      <code className="font-mono font-bold">GOOGLE_CLIENT_ID</code> và{' '}
+                      <code className="font-mono font-bold">GOOGLE_CLIENT_SECRET</code>{' '}
+                      (với Redirect URI{' '}
+                      <code className="font-mono font-bold">
+                        https://speakmate-ai-nu.vercel.app/api/auth/google/callback
+                      </code>
+                      ) trên Vercel là đăng nhập Google + tự lưu Drive 5TB hoạt động ngay!
+                    </>
+                  )}
                 </p>
               </div>
 
               <Link
                 href="/onboarding"
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-indigo-500/20 hover:from-indigo-700 hover:to-cyan-700 transition"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-5 py-3.5 text-sm font-extrabold text-white shadow-md shadow-indigo-500/20 hover:from-indigo-700 hover:to-cyan-700 transition"
               >
-                Vào học & chơi ngay trên thiết bị này
+                Chọn Ngôn ngữ & Sở thích (3 bước) ngay
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           )}
 
-          {/* Optional Email/Password/Magic Link fallback when Supabase IS configured */}
-          {cloudEnabled && (
+          {/* Optional Email fallback when Supabase is configured */}
+          {supabaseReady && (
             <>
               <div className="my-5 flex items-center gap-3">
                 <div className="h-px flex-1 bg-slate-200" />
@@ -398,8 +481,8 @@ function AuthPageInner() {
                   className="text-xs font-semibold text-slate-500 hover:text-indigo-600 cursor-pointer"
                 >
                   {showEmailForm
-                    ? 'Ẩn đăng nhập bằng Email'
-                    : 'Hoặc đăng nhập bằng Email / Mật khẩu'}
+                    ? 'Ẩn đăng nhập Email'
+                    : 'Hoặc dùng Email / Mật khẩu'}
                 </button>
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
@@ -437,7 +520,7 @@ function AuthPageInner() {
                     {mode === 'signup' && (
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                          Bạn muốn AI gọi bạn bằng tên gì?
+                          Tên bạn muốn AI gọi
                         </label>
                         <div className="relative">
                           <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -446,7 +529,7 @@ function AuthPageInner() {
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             placeholder="Ví dụ: Huy, Minh, Alex..."
-                            className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                            className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm focus:border-indigo-500 focus:outline-none"
                           />
                         </div>
                       </div>
@@ -464,7 +547,7 @@ function AuthPageInner() {
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="ban@example.com"
                           required
-                          className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                          className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm focus:border-indigo-500 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -482,7 +565,7 @@ function AuthPageInner() {
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Ít nhất 6 ký tự"
                             required
-                            className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                            className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm focus:border-indigo-500 focus:outline-none"
                           />
                         </div>
                       </div>
@@ -498,7 +581,7 @@ function AuthPageInner() {
                       ) : (
                         <>
                           {mode === 'login' && 'Đăng nhập'}
-                          {mode === 'signup' && 'Tạo tài khoản & Thiết lập hồ sơ'}
+                          {mode === 'signup' && 'Tạo tài khoản & Chọn sở thích'}
                           {mode === 'magic' && 'Gửi link đăng nhập qua Email'}
                           <ArrowRight className="h-4 w-4" />
                         </>
@@ -532,7 +615,7 @@ export default function AuthPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="min-h-screen flex items-center justify-center bg-mesh-light">
           <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
         </div>
       }
