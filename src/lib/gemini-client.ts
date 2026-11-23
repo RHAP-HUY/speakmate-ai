@@ -4,6 +4,7 @@ import { decryptSecret, isServerEncryptionAvailable } from '@/lib/crypto';
 import {
   buildCandidateKeys,
   checkSharedPoolRateLimit,
+  isFatalGeminiKeyAuthError,
   isRetryableGeminiKeyError,
   markKeyCooldown,
 } from '@/lib/gemini-keys';
@@ -247,21 +248,34 @@ export async function generateGeminiJson(params: {
         };
       } catch (err) {
         lastError = err;
-        if (isRetryableGeminiKeyError(err)) {
+
+        // Invalid/revoked API key -> cool down this key immediately and move to next key
+        if (isFatalGeminiKeyAuthError(err)) {
           if (candidate.source === 'shared') {
-            markKeyCooldown(candidate.key);
+            markKeyCooldown(candidate.key, 5 * 60_000);
           }
           break;
+        }
+
+        // Per-model 429 quota -> cool down ONLY this model (each Gemini model has its own RPM quota!)
+        if (isRetryableGeminiKeyError(err)) {
+          markModelCooldown(model, 45_000);
+          continue;
         }
 
         if (isUnsupportedOrMissingModelError(err)) {
           // Avoid retrying missing/unsupported models for 5 minutes
           markModelCooldown(model, 5 * 60_000);
         } else {
-          // Timeout or transient model issue -> cool down briefly (60s)
-          markModelCooldown(model, 60_000);
+          // 503 UNAVAILABLE / timeout / transient spike -> cool down briefly and try next model
+          markModelCooldown(model, 30_000);
         }
       }
+    }
+
+    // All models failed on this shared key -> briefly cool down key if multiple keys exist
+    if (candidate.source === 'shared' && candidates.length > 1) {
+      markKeyCooldown(candidate.key, 30_000);
     }
   }
 

@@ -16,10 +16,13 @@ describe('gemini-models speed & health routing', () => {
     resetModelHealthForTest();
   });
 
-  it('orders default low-latency models with configured model first', () => {
+  it('orders default low-latency models with configured model first and valid v1 fallbacks', () => {
     const models = getOrderedGeminiModels({ GEMINI_MODEL: 'gemini-3.1-flash-lite' });
     expect(models[0]).toBe('gemini-3.1-flash-lite');
     expect(models).toContain(DEFAULT_GEMINI_MODEL);
+    expect(models).toContain('gemini-3.5-flash');
+    expect(models).toContain('gemini-3.6-flash');
+    expect(models).not.toContain('gemini-flash-latest');
     expect(new Set(models).size).toBe(models.length);
   });
 

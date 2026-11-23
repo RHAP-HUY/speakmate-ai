@@ -65,6 +65,22 @@ export function clearKeyCooldowns(): void {
   cooldownMap.clear();
 }
 
+export function isFatalGeminiKeyAuthError(error: unknown): boolean {
+  const message =
+    error instanceof Error
+      ? `${error.name} ${error.message}`
+      : String(error ?? '');
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes('api key not valid') ||
+    lower.includes('api_key_invalid') ||
+    lower.includes('permission_denied') ||
+    lower.includes('403') ||
+    lower.includes('401')
+  );
+}
+
 export function isRetryableGeminiKeyError(error: unknown): boolean {
   const message =
     error instanceof Error
@@ -77,11 +93,7 @@ export function isRetryableGeminiKeyError(error: unknown): boolean {
     lower.includes('resource_exhausted') ||
     lower.includes('quota') ||
     lower.includes('rate limit') ||
-    lower.includes('api key not valid') ||
-    lower.includes('api_key_invalid') ||
-    lower.includes('permission_denied') ||
-    lower.includes('403') ||
-    lower.includes('401')
+    isFatalGeminiKeyAuthError(error)
   );
 }
 
