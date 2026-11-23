@@ -5,6 +5,8 @@ import { NextResponse } from 'next/server';
 export const GOOGLE_SESSION_COOKIE = 'speakmate_google_session';
 export const GOOGLE_STATE_COOKIE = 'speakmate_google_oauth_state';
 
+export const GOOGLE_BASIC_SCOPES = ['openid', 'email', 'profile'].join(' ');
+
 export const GOOGLE_OAUTH_SCOPES = [
   'openid',
   'email',
@@ -59,20 +61,64 @@ export function isOwnerDriveConfigured(): boolean {
   return getGoogleOAuthConfig().ownerDriveConfigured;
 }
 
+/**
+ * Computes a server-derived setup key used ONLY once before
+ * GOOGLE_DRIVE_OWNER_REFRESH_TOKEN is configured, so only the project owner
+ * can link their 5TB central Google Drive.
+ */
+export function getOwnerSetupKey(
+  env: Record<string, string | undefined> = process.env
+): string | null {
+  const secret = env.APP_ENCRYPTION_SECRET?.trim();
+  if (!secret || secret.length < 16) return null;
+  return crypto
+    .createHmac('sha256', secret)
+    .update('speakmate-owner-drive-setup-v1')
+    .digest('hex')
+    .slice(0, 32);
+}
+
+export function verifyOwnerSetupKey(
+  candidate: string | null | undefined,
+  env: Record<string, string | undefined> = process.env
+): boolean {
+  if (!candidate) return false;
+  const expected = getOwnerSetupKey(env);
+  if (!expected) return false;
+  const a = Buffer.from(candidate.trim(), 'utf8');
+  const b = Buffer.from(expected, 'utf8');
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
 export function buildGoogleAuthUrl(params: {
   origin: string;
   state: string;
+  requestDriveScope?: boolean;
 }): string {
-  const { clientId } = getGoogleOAuthConfig();
+  const cfg = getGoogleOAuthConfig();
   const redirectUri = `${params.origin}/api/auth/google/callback`;
+  // Once central 5TB owner Drive is active, regular learners only need basic login scopes
+  const needsDriveScope =
+    params.requestDriveScope !== undefined
+      ? params.requestDriveScope
+      : !cfg.ownerDriveConfigured;
+
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  url.searchParams.set('client_id', clientId);
+  url.searchParams.set('client_id', cfg.clientId);
   url.searchParams.set('redirect_uri', redirectUri);
   url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', GOOGLE_OAUTH_SCOPES);
-  url.searchParams.set('access_type', 'offline');
-  url.searchParams.set('include_granted_scopes', 'true');
-  url.searchParams.set('prompt', 'consent select_account');
+  url.searchParams.set(
+    'scope',
+    needsDriveScope ? GOOGLE_OAUTH_SCOPES : GOOGLE_BASIC_SCOPES
+  );
+  if (needsDriveScope) {
+    url.searchParams.set('access_type', 'offline');
+    url.searchParams.set('include_granted_scopes', 'true');
+    url.searchParams.set('prompt', 'consent select_account');
+  } else {
+    url.searchParams.set('prompt', 'select_account');
+  }
   url.searchParams.set('state', params.state);
   return url.toString();
 }

@@ -2,19 +2,29 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   buildGoogleAuthUrl,
   getGoogleOAuthConfig,
+  getOwnerSetupKey,
+  GOOGLE_BASIC_SCOPES,
   GOOGLE_OAUTH_SCOPES,
   sealSessionPayload,
   unsealSessionPayload,
+  verifyOwnerSetupKey,
   type GoogleSessionPayload,
 } from '@/lib/google-auth';
 
 describe('google-auth & encrypted Drive session', () => {
   const origClientId = process.env.GOOGLE_CLIENT_ID;
+  const origClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const origOwnerToken = process.env.GOOGLE_DRIVE_OWNER_REFRESH_TOKEN;
   const origSecret = process.env.APP_ENCRYPTION_SECRET;
 
   afterEach(() => {
     if (origClientId === undefined) delete process.env.GOOGLE_CLIENT_ID;
     else process.env.GOOGLE_CLIENT_ID = origClientId;
+    if (origClientSecret === undefined) delete process.env.GOOGLE_CLIENT_SECRET;
+    else process.env.GOOGLE_CLIENT_SECRET = origClientSecret;
+    if (origOwnerToken === undefined)
+      delete process.env.GOOGLE_DRIVE_OWNER_REFRESH_TOKEN;
+    else process.env.GOOGLE_DRIVE_OWNER_REFRESH_TOKEN = origOwnerToken;
     if (origSecret === undefined) delete process.env.APP_ENCRYPTION_SECRET;
     else process.env.APP_ENCRYPTION_SECRET = origSecret;
   });
@@ -40,20 +50,44 @@ describe('google-auth & encrypted Drive session', () => {
     expect(centralOwner.ownerDriveConfigured).toBe(true);
   });
 
-  it('builds Google OAuth URL requesting drive.file scope and offline refresh token', () => {
+  it('requests drive.file scope before owner setup and minimal basic scopes once owner Drive is active', () => {
     process.env.GOOGLE_CLIENT_ID = '1234567890-test.apps.googleusercontent.com';
-    const url = new URL(
+    process.env.GOOGLE_CLIENT_SECRET = 'GOCSPX-secret123';
+    delete process.env.GOOGLE_DRIVE_OWNER_REFRESH_TOKEN;
+
+    const driveUrl = new URL(
       buildGoogleAuthUrl({
         origin: 'https://speakmate-ai-nu.vercel.app',
         state: 'abc123',
       })
     );
-    expect(url.hostname).toBe('accounts.google.com');
-    expect(url.searchParams.get('redirect_uri')).toBe(
+    expect(driveUrl.hostname).toBe('accounts.google.com');
+    expect(driveUrl.searchParams.get('redirect_uri')).toBe(
       'https://speakmate-ai-nu.vercel.app/api/auth/google/callback'
     );
-    expect(url.searchParams.get('scope')).toBe(GOOGLE_OAUTH_SCOPES);
-    expect(url.searchParams.get('access_type')).toBe('offline');
+    expect(driveUrl.searchParams.get('scope')).toBe(GOOGLE_OAUTH_SCOPES);
+    expect(driveUrl.searchParams.get('access_type')).toBe('offline');
+
+    // Once central owner Drive is active, regular users only see basic login scopes
+    process.env.GOOGLE_DRIVE_OWNER_REFRESH_TOKEN = '1//0gCentralOwnerToken1234';
+    const basicUrl = new URL(
+      buildGoogleAuthUrl({
+        origin: 'https://speakmate-ai-nu.vercel.app',
+        state: 'xyz789',
+      })
+    );
+    expect(basicUrl.searchParams.get('scope')).toBe(GOOGLE_BASIC_SCOPES);
+    expect(basicUrl.searchParams.get('access_type')).toBeNull();
+  });
+
+  it('generates and verifies HMAC owner setup keys safely', () => {
+    const env = {
+      APP_ENCRYPTION_SECRET: 'a-very-secure-secret-key-with-at-least-32-chars',
+    };
+    const key = getOwnerSetupKey(env);
+    expect(key).toBeTruthy();
+    expect(verifyOwnerSetupKey(key, env)).toBe(true);
+    expect(verifyOwnerSetupKey('wrong-key', env)).toBe(false);
   });
 
   it('seals and unseals Google Drive session cookies with AES-256-GCM', () => {

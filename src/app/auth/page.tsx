@@ -91,7 +91,9 @@ function AuthPageInner() {
     // 1. Direct Google OAuth 2.0 + Google Drive 5TB storage (preferred!)
     if (googleDirectReady) {
       setLoadingProvider('google');
-      window.location.href = `/api/auth/google?next=${encodeURIComponent(nextPath)}`;
+      window.location.assign(
+        `${window.location.origin}/api/auth/google?next=${encodeURIComponent(nextPath)}`
+      );
       return;
     }
 
