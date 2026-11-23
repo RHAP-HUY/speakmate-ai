@@ -17,7 +17,7 @@ import { AppShell } from '@/components/AppShell';
 import {
   GemSvg,
   LeagueTrophySvg,
-  MascotOwl,
+  NovaCompanion,
   StreakFlameSvg,
 } from '@/components/BrandArt';
 import {
@@ -111,9 +111,9 @@ export default function LeaderboardPage() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#F7F9FC]">
-        <MascotOwl mood="proud" className="h-16 w-16 animate-gentle-float" />
-        <Loader2 className="h-6 w-6 animate-spin text-[#FFC800]" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
+        <NovaCompanion mood="proud" className="h-18 w-18 animate-gentle-float" />
+        <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
       </div>
     );
   }
@@ -244,12 +244,12 @@ export default function LeaderboardPage() {
                 )}
               </div>
               <div
-                className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl text-base font-black text-white ${
+                className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl text-base font-black text-white shadow-sm ${
                   entry.isCurrentUser
-                    ? 'bg-[#58CC02]'
+                    ? 'bg-gradient-to-br from-indigo-500 via-violet-500 to-cyan-400'
                     : rank === 1
-                      ? 'bg-[#FF9600]'
-                      : 'bg-[#1CB0F6]'
+                      ? 'bg-gradient-to-br from-amber-400 to-orange-500'
+                      : 'bg-gradient-to-br from-sky-500 to-blue-600'
                 }`}
               >
                 {entry.displayName.slice(0, 1).toUpperCase()}
@@ -314,8 +314,8 @@ export default function LeaderboardPage() {
                     <div
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-black text-white ${
                         entry.isCurrentUser
-                          ? 'bg-[#58CC02]'
-                          : 'bg-gradient-to-br from-[#1CB0F6] to-[#6366F1]'
+                          ? 'bg-gradient-to-br from-indigo-500 via-violet-500 to-cyan-400'
+                          : 'bg-gradient-to-br from-sky-500 to-indigo-500'
                       }`}
                     >
                       {entry.displayName.slice(0, 1).toUpperCase()}
@@ -327,7 +327,7 @@ export default function LeaderboardPage() {
                           {entry.displayName}
                         </span>
                         {entry.isCurrentUser && (
-                          <span className="rounded-md bg-[#58CC02] px-1.5 py-0.5 text-[10px] font-black text-white">
+                          <span className="rounded-md bg-indigo-600 px-1.5 py-0.5 text-[10px] font-black text-white">
                             BẠN
                           </span>
                         )}
@@ -353,9 +353,9 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
 
-                {/* Duolingo Green Promotion Zone Divider right after #3 */}
+                {/* Jewel Emerald Promotion Zone Divider right after #3 */}
                 {inPromoZone && rank === 3 && entries.length > 3 && (
-                  <div className="flex items-center justify-center gap-2 bg-[#F1FDE8] border-y-2 border-[#B8F28B] py-2 text-[11px] font-black uppercase tracking-wider text-[#3B8702]">
+                  <div className="flex items-center justify-center gap-2 bg-emerald-50 border-y border-emerald-200 py-2 text-[11px] font-black uppercase tracking-wider text-emerald-700">
                     <ArrowUp className="h-3.5 w-3.5 stroke-[3]" />
                     Vùng Thăng Hạng (Top 3)
                     <ArrowUp className="h-3.5 w-3.5 stroke-[3]" />
@@ -370,7 +370,7 @@ export default function LeaderboardPage() {
       {/* Bottom CTA */}
       <div className="card-duo p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Sparkles className="h-6 w-6 text-[#FF9600] shrink-0" />
+          <Sparkles className="h-6 w-6 text-amber-500 shrink-0" />
           <div className="text-xs font-bold text-slate-600">
             Mỗi màn chơi game thưởng <strong>+65~130 XP</strong> (lên tới{' '}
             <strong>+260 XP</strong> khi bật Bình Nhân Đôi XP ⚡)!
@@ -378,7 +378,7 @@ export default function LeaderboardPage() {
         </div>
         <Link
           href="/play"
-          className="btn-duo btn-duo-green shrink-0 px-5 py-3 text-xs uppercase"
+          className="btn-duo btn-duo-primary shrink-0 px-5 py-3 text-xs uppercase"
         >
           Chơi game leo hạng ngay
           <ArrowRight className="h-4 w-4 stroke-[3]" />

@@ -30,7 +30,7 @@ import { AppShell } from '@/components/AppShell';
 import {
   GemSvg,
   LeagueTrophySvg,
-  MascotOwl,
+  NovaCompanion,
   ShieldFreezeSvg,
   StreakFlameSvg,
   TreasureChestSvg,
@@ -113,13 +113,13 @@ const LEARNING_UNITS: LearningUnit[] = [
     subtitleVi:
       'Vừa chơi game vừa luyện nghe – nói tự nhiên như người bản xứ chỉ 2 phút/màn',
     category: 'daily',
-    bannerBg: 'bg-[#58CC02]',
-    bannerLip: 'border-b-4 border-[#46A302]',
-    nodeBg: 'bg-[#58CC02]',
-    nodeShadow: 'shadow-[0_7px_0_#46A302]',
-    accentText: 'text-[#46A302]',
+    bannerBg: 'bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500',
+    bannerLip: 'border-b-4 border-indigo-900/35',
+    nodeBg: 'bg-gradient-to-br from-indigo-500 via-blue-600 to-cyan-500',
+    nodeShadow: 'shadow-[0_7px_0_#3730A3,0_16px_28px_-6px_rgba(79,70,229,0.5)]',
+    accentText: 'text-indigo-700',
     mascotTipVi:
-      'Chơi xong chỉ 1 trạm là thắp lửa giữ chuỗi hôm nay & mở quà Nhiệm vụ! 🔥',
+      'Nova sẵn sàng rồi! Chơi xong chỉ 1 trạm là thắp lửa giữ chuỗi hôm nay & mở quà Nhiệm vụ! 🔥',
     stations: [
       {
         id: 'u1-1',
@@ -189,11 +189,11 @@ const LEARNING_UNITS: LearningUnit[] = [
     subtitleVi:
       'Luyện phản xạ tiếng Anh công việc chuẩn quốc tế qua game, nghe hiểu & nhập vai',
     category: 'business',
-    bannerBg: 'bg-[#1CB0F6]',
-    bannerLip: 'border-b-4 border-[#1899D6]',
-    nodeBg: 'bg-[#1CB0F6]',
-    nodeShadow: 'shadow-[0_7px_0_#1899D6]',
-    accentText: 'text-[#1899D6]',
+    bannerBg: 'bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600',
+    bannerLip: 'border-b-4 border-violet-950/35',
+    nodeBg: 'bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600',
+    nodeShadow: 'shadow-[0_7px_0_#5B21B6,0_16px_28px_-6px_rgba(124,58,237,0.5)]',
+    accentText: 'text-violet-700',
     mascotTipVi:
       'Cụm "heads-up", "circle back" & "get back to you" dùng cực chuyên nghiệp ở công ty!',
     stations: [
@@ -265,11 +265,11 @@ const LEARNING_UNITS: LearningUnit[] = [
     subtitleVi:
       'Sân bay, nhà hàng, khách sạn — chơi vui là thuộc lòng câu bản xứ',
     category: 'travel',
-    bannerBg: 'bg-[#8B5CF6]',
-    bannerLip: 'border-b-4 border-[#6D28D9]',
-    nodeBg: 'bg-[#8B5CF6]',
-    nodeShadow: 'shadow-[0_7px_0_#6D28D9]',
-    accentText: 'text-[#6D28D9]',
+    bannerBg: 'bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500',
+    bannerLip: 'border-b-4 border-emerald-900/35',
+    nodeBg: 'bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500',
+    nodeShadow: 'shadow-[0_7px_0_#047857,0_16px_28px_-6px_rgba(16,185,129,0.5)]',
+    accentText: 'text-emerald-700',
     mascotTipVi:
       'Chinh phục xong chặng này đi du lịch nước ngoài tự tin check-in & gọi món ngay! ✈️',
     stations: [
@@ -341,11 +341,11 @@ const LEARNING_UNITS: LearningUnit[] = [
     subtitleVi:
       'AI tạo màn chơi mới không bao giờ trùng lặp theo đúng nghề nghiệp & sở thích bạn chọn',
     category: 'freetalk',
-    bannerBg: 'bg-gradient-to-r from-[#FF9600] to-[#F43F5E]',
-    bannerLip: 'border-b-4 border-[#BE123C]',
-    nodeBg: 'bg-[#FF9600]',
-    nodeShadow: 'shadow-[0_7px_0_#D97706]',
-    accentText: 'text-[#EA580C]',
+    bannerBg: 'bg-gradient-to-r from-orange-500 via-rose-500 to-fuchsia-600',
+    bannerLip: 'border-b-4 border-rose-900/35',
+    nodeBg: 'bg-gradient-to-br from-orange-500 via-rose-500 to-fuchsia-600',
+    nodeShadow: 'shadow-[0_7px_0_#BE123C,0_16px_28px_-6px_rgba(244,63,94,0.48)]',
+    accentText: 'text-rose-600',
     mascotTipVi:
       'Mỗi lần bấm "AI Tạo Màn Chơi" là một bộ 5 câu mới toanh đúng gu của riêng bạn! ✨',
     stations: [
@@ -563,50 +563,76 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#F7F9FC]">
-        <MascotOwl mood="happy" className="h-16 w-16 animate-gentle-float" />
-        <Loader2 className="h-6 w-6 animate-spin text-[#58CC02]" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
+        <NovaCompanion mood="happy" className="h-18 w-18 animate-gentle-float" />
+        <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
       </div>
     );
   }
 
-  // PUBLIC FLAGSHIP LANDING PAGE (Duolingo-inspired Split Hero)
+  // PUBLIC FLAGSHIP LANDING PAGE (Aurora Studio Split Hero)
   if (!authenticated || !profile) {
     return (
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col bg-mesh-light">
         <AppNav profile={null} authenticated={false} variant="landing" />
 
         <main className="flex-1">
           <section className="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-20 grid gap-10 lg:grid-cols-12 items-center">
             <div className="lg:col-span-6 flex flex-col items-center">
-              <div className="relative w-full max-w-md rounded-3xl border-2 border-slate-200 bg-[#F7F9FC] p-7 shadow-sm">
-                <div className="absolute -top-4 -right-3 flex items-center gap-1.5 rounded-2xl border-2 border-orange-300 bg-white px-3.5 py-2 shadow-md animate-gentle-float">
+              <div className="aurora-studio-card relative w-full max-w-md rounded-[2rem] border border-white/15 p-7 shadow-2xl shadow-indigo-950/25">
+                {/* Floating Glass Badges */}
+                <div className="absolute -top-4 -right-3 flex items-center gap-1.5 rounded-2xl border border-orange-300/60 bg-white/95 backdrop-blur-md px-3.5 py-2 shadow-lg animate-gentle-float">
                   <StreakFlameSvg active className="h-5 w-5" />
-                  <span className="text-xs font-black text-[#FF9600]">
+                  <span className="text-xs font-black text-orange-600">
                     7 ngày liên tiếp!
                   </span>
                 </div>
 
-                <div className="absolute -bottom-4 -left-3 flex items-center gap-1.5 rounded-2xl border-2 border-sky-300 bg-white px-3.5 py-2 shadow-md">
+                <div className="absolute top-16 -left-4 hidden sm:flex items-center gap-1.5 rounded-2xl border border-emerald-300/60 bg-white/95 backdrop-blur-md px-3 py-1.5 shadow-lg">
+                  <Mic className="h-4 w-4 text-emerald-600" />
+                  <span className="text-[11px] font-black text-emerald-700">
+                    94/100 Phát âm
+                  </span>
+                </div>
+
+                <div className="absolute -bottom-4 -left-3 flex items-center gap-1.5 rounded-2xl border border-sky-300/60 bg-white/95 backdrop-blur-md px-3.5 py-2 shadow-lg">
                   <GemSvg className="h-5 w-5" />
-                  <span className="text-xs font-black text-[#1899D6]">
+                  <span className="text-xs font-black text-indigo-700">
                     +130 Ngọc · Mở rương quà
                   </span>
                 </div>
 
                 <div className="flex flex-col items-center text-center space-y-4">
-                  <MascotOwl mood="excited" className="h-36 w-36" />
-                  <div className="w-full rounded-2xl border-2 border-slate-200 bg-white p-4 text-left space-y-2.5">
-                    <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-400">
-                      <span>⚡ MINI-GAME PHẢN XẠ</span>
-                      <span className="text-[#58CC02]">COMBO x4 🔥</span>
+                  <div className="relative flex flex-col items-center">
+                    <div className="absolute inset-0 rounded-full bg-indigo-500/25 blur-2xl scale-125 pointer-events-none" />
+                    <NovaCompanion
+                      mood="excited"
+                      className="relative h-36 w-36 animate-gentle-float drop-shadow-[0_14px_24px_rgba(79,70,229,0.55)]"
+                    />
+                    {/* Live Voice Equalizer Strip */}
+                    <div className="mt-1 flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 backdrop-blur-md">
+                      <span className="h-2 w-1 rounded-full bg-cyan-300 animate-pulse" />
+                      <span className="h-4 w-1 rounded-full bg-indigo-300 animate-pulse" />
+                      <span className="h-5 w-1 rounded-full bg-cyan-300 animate-pulse" />
+                      <span className="h-3 w-1 rounded-full bg-violet-300 animate-pulse" />
+                      <span className="h-4 w-1 rounded-full bg-cyan-300 animate-pulse" />
+                      <span className="ml-1.5 text-[11px] font-extrabold text-cyan-200">
+                        Nova AI · Trực tuyến 24/7
+                      </span>
                     </div>
-                    <div className="text-sm font-black text-slate-900">
+                  </div>
+
+                  <div className="w-full rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-4 text-left space-y-2.5 text-white">
+                    <div className="flex items-center justify-between text-[11px] font-extrabold text-indigo-200">
+                      <span>⚡ MINI-GAME PHẢN XẠ</span>
+                      <span className="text-amber-300">COMBO x4 🔥</span>
+                    </div>
+                    <div className="text-sm font-black text-white">
                       “Gọi một ly latte đá cỡ vừa cực tự nhiên?”
                     </div>
-                    <div className="rounded-xl border-2 border-[#58CC02] bg-[#D7FFB8]/60 px-3 py-2 text-xs font-extrabold text-[#3B8702] flex items-center justify-between">
+                    <div className="rounded-xl border border-emerald-400/50 bg-emerald-500/20 px-3 py-2 text-xs font-extrabold text-emerald-200 flex items-center justify-between">
                       <span>Can I get a medium iced latte, please?</span>
-                      <CheckCircle2 className="h-4 w-4 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-300" />
                     </div>
                   </div>
                 </div>
@@ -614,32 +640,34 @@ export default function HomePage() {
             </div>
 
             <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
-              <span className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-xs font-extrabold text-emerald-700">
-                <Sparkles className="h-3.5 w-3.5" />
-                Vừa học vừa chơi · Bảng Xếp Hạng · Gọi AI · Lưu Drive 5TB
+              <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/90 px-3.5 py-1.5 text-xs font-extrabold text-indigo-700 shadow-xs">
+                <Sparkles className="h-3.5 w-3.5 text-violet-600" />
+                Nova AI Voice Studio · Vừa Học Vừa Chơi · Google Drive 5TB
               </span>
 
-              <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-[1.15]">
-                Cách học nói tiếng Anh{' '}
-                <span className="text-[#58CC02]">vừa vui, vừa nghiện</span> mỗi
-                ngày!
+              <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-[1.13]">
+                Cách luyện nói tiếng Anh{' '}
+                <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-cyan-500 bg-clip-text text-transparent">
+                  đẹp, cuốn và dễ nghiện
+                </span>{' '}
+                mỗi ngày!
               </h1>
 
               <p className="text-base sm:text-lg font-medium text-slate-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                Chinh phục 4 Chặng lộ trình 5 chế độ game (kể cả AI tự tạo màn theo sở thích), gọi thoại nhập vai chấm phát âm từng từ, leo Bảng Xếp Hạng tuần, mở Rương Thưởng Chuỗi và đồng bộ trọn đời qua Google!
+                Đồng hành cùng trợ lý giọng nói AI <strong>Nova</strong> qua 4 chặng lộ trình phát sáng, 5 chế độ mini-game phản xạ (kể cả AI tự tạo màn theo sở thích), gọi thoại nhập vai chấm phát âm từng từ và đồng bộ trọn đời trên Google Drive 5TB.
               </p>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 max-w-md mx-auto lg:mx-0">
                 <Link
                   href="/auth"
-                  className="btn-duo btn-duo-green flex-1 px-7 py-4 text-sm uppercase tracking-wide"
+                  className="btn-duo btn-duo-primary flex-1 px-7 py-4 text-sm uppercase tracking-wide"
                 >
-                  Bắt đầu Chơi &amp; Học
+                  Bắt đầu cùng Nova AI
                   <ArrowRight className="h-4 w-4 stroke-[3]" />
                 </Link>
                 <Link
                   href="/auth"
-                  className="btn-duo btn-duo-white px-6 py-4 text-sm uppercase tracking-wide text-[#1899D6]"
+                  className="btn-duo btn-duo-white px-6 py-4 text-sm uppercase tracking-wide text-indigo-700"
                 >
                   Đăng nhập Google
                 </Link>
@@ -647,30 +675,30 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section className="border-t-2 border-slate-100 bg-[#F7F9FC] py-14">
+          <section className="border-t border-slate-200/80 bg-white/75 backdrop-blur-sm py-14">
             <div className="mx-auto max-w-6xl px-4 sm:px-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {
                   icon: Gamepad2,
-                  bg: 'bg-[#58CC02] text-white',
+                  bg: 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25',
                   title: '5 Chế độ Chơi & Học AI',
                   desc: 'Phản xạ 15s, Nghe hiểu bản xứ, Ghép câu, Đấu trường Phát âm & AI tạo màn vô tận.',
                 },
                 {
                   icon: Flame,
-                  bg: 'bg-[#FF9600] text-white',
+                  bg: 'bg-gradient-to-br from-orange-500 to-rose-500 text-white shadow-md shadow-orange-500/25',
                   title: 'Lịch Chuỗi & Rương Thưởng',
                   desc: 'Mốc thưởng 1–100 ngày, Nhiệm vụ mở rương mỗi ngày, Bình 2x XP & Khiên bảo vệ.',
                 },
                 {
                   icon: Crown,
-                  bg: 'bg-[#FFC800] text-amber-950',
+                  bg: 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/25',
                   title: 'Bảng Xếp Hạng 5 Hạng Giải',
                   desc: 'Đua Top 3 thăng hạng mỗi tuần từ Giải Đồng lên Giải Kim Cương cùng cộng đồng.',
                 },
                 {
                   icon: Cloud,
-                  bg: 'bg-[#1CB0F6] text-white',
+                  bg: 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25',
                   title: 'Đồng bộ Google Drive 5TB',
                   desc: 'Cài đặt lên màn hình điện thoại như app thật — đổi máy khôi phục 100% dữ liệu.',
                 },
@@ -679,7 +707,7 @@ export default function HomePage() {
                 return (
                   <div
                     key={item.title}
-                    className="card-duo-elevated p-5 space-y-3 hover:-translate-y-0.5 transition"
+                    className="card-duo-elevated p-5 space-y-3 hover:-translate-y-1 transition"
                   >
                     <div
                       className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${item.bg}`}
@@ -993,13 +1021,13 @@ export default function HomePage() {
                     {q.icon} {title}
                   </span>
                   {claimed ? (
-                    <span className="text-[#58CC02] shrink-0">✓ Đã nhận</span>
+                    <span className="text-emerald-600 shrink-0">✓ Đã nhận</span>
                   ) : done ? (
                     <button
                       type="button"
                       disabled={claimingQuestId === q.id}
                       onClick={() => void handleClaimDailyQuest(q.id, title)}
-                      className="shrink-0 inline-flex items-center gap-1 rounded-xl bg-[#FF9600] px-2.5 py-1 text-[10px] font-black text-white shadow-[0_2px_0_#D97706] hover:bg-[#FFA21A] animate-chest-wiggle cursor-pointer"
+                      className="shrink-0 inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-2.5 py-1 text-[10px] font-black text-white shadow-[0_2px_0_#C2410C] hover:brightness-105 animate-chest-wiggle cursor-pointer"
                     >
                       🎁 +{q.rewardGems} 💎
                     </button>
@@ -1051,11 +1079,11 @@ export default function HomePage() {
               <div
                 className={`flex h-9 w-9 items-center justify-center rounded-xl border-2 text-xs font-black transition ${
                   d.studied
-                    ? 'border-[#FF9600] bg-[#FFF4E0] text-[#FF9600]'
+                    ? 'border-orange-400 bg-orange-50 text-orange-600'
                     : d.frozen
-                      ? 'border-[#1CB0F6] bg-[#E0F5FF] text-[#1899D6]'
+                      ? 'border-sky-400 bg-sky-50 text-sky-600'
                       : d.isToday
-                        ? 'border-dashed border-[#58CC02] bg-[#F1FDE8] text-[#46A302]'
+                        ? 'border-dashed border-indigo-400 bg-indigo-50 text-indigo-700'
                         : 'border-slate-200 bg-slate-50 text-slate-300'
                 }`}
               >
@@ -1063,7 +1091,7 @@ export default function HomePage() {
               </div>
               <span
                 className={`text-[10px] font-extrabold ${
-                  d.isToday ? 'text-[#46A302]' : 'text-slate-400'
+                  d.isToday ? 'text-indigo-700' : 'text-slate-400'
                 }`}
               >
                 {d.label}
@@ -1148,10 +1176,10 @@ export default function HomePage() {
                   setActiveUnitIdx(idx);
                   setSelectedStationId(null);
                 }}
-                className={`rounded-2xl border-2 px-3 py-2 text-xs font-black uppercase tracking-wide transition cursor-pointer ${
+                className={`rounded-2xl border px-3.5 py-2 text-xs font-black uppercase tracking-wide transition cursor-pointer ${
                   active
-                    ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
+                    ? 'border-indigo-600 bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25'
+                    : 'border-slate-200 bg-white/90 text-slate-600 hover:border-indigo-300 hover:text-indigo-700'
                 }`}
               >
                 {idx === 3 ? '✨ AI Gu' : `Chặng ${idx + 1}`}
@@ -1160,8 +1188,8 @@ export default function HomePage() {
           })}
         </div>
 
-        <div className="flex items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white px-3 py-1.5">
-          <Headphones className="h-3.5 w-3.5 text-[#1CB0F6]" />
+        <div className="flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white/95 px-3 py-1.5 shadow-2xs">
+          <Headphones className="h-3.5 w-3.5 text-indigo-600" />
           <select
             aria-label="Chọn giọng bản xứ"
             value={selectedPersonaId}
@@ -1210,11 +1238,13 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* DUOLINGO-STYLE UNIT HEADER BANNER */}
+      {/* AURORA STUDIO UNIT HEADER BANNER */}
       <section
-        className={`rounded-3xl ${currentUnit.bannerBg} ${currentUnit.bannerLip} p-5 sm:p-6 text-white shadow-sm`}
+        className={`relative overflow-hidden rounded-3xl ${currentUnit.bannerBg} ${currentUnit.bannerLip} p-5 sm:p-6 text-white shadow-lg shadow-indigo-950/10`}
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
+        <div className="pointer-events-none absolute -left-10 -bottom-14 h-36 w-36 rounded-full bg-cyan-200/20 blur-2xl" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="text-[11px] font-black uppercase tracking-widest text-white/85">
               {currentUnit.sectionLabel} · MẶC ĐỊNH VỪA HỌC VỪA CHƠI
@@ -1234,7 +1264,7 @@ export default function HomePage() {
                 currentUnit.stations[activeStationIndex] ?? currentUnit.stations[0]
               )
             }
-            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/30 bg-white/15 hover:bg-white/25 px-4 py-3 text-xs font-black uppercase tracking-wide text-white backdrop-blur-xs transition cursor-pointer"
+            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl border border-white/35 bg-white/15 hover:bg-white/25 px-4 py-3 text-xs font-black uppercase tracking-wide text-white backdrop-blur-md shadow-xs transition cursor-pointer"
           >
             <Play className="h-4 w-4 fill-current" />
             Chơi bài tiếp theo
@@ -1242,21 +1272,69 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* INTERACTIVE DUOLINGO S-CURVE WINDING LEARNING PATH */}
-      <section className="card-duo relative overflow-hidden px-4 sm:px-8 py-8">
-        <div className="hidden sm:flex flex-col items-center gap-2 absolute right-5 top-1/2 -translate-y-1/2 w-44 pointer-events-none select-none">
-          <div className="rounded-2xl border-2 border-slate-200 bg-white px-3.5 py-2.5 text-[11px] font-extrabold text-slate-700 shadow-xs text-center leading-snug">
+      {/* INTERACTIVE AURORA GLOWING S-CURVE WINDING LEARNING PATH */}
+      <section className="card-duo relative overflow-hidden px-4 sm:px-8 py-9">
+        {/* Ambient Studio Soft Radial Glow */}
+        <div className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-indigo-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 right-8 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
+
+        {/* Floating Original Nova Voice Companion */}
+        <div className="hidden sm:flex flex-col items-center gap-2.5 absolute right-5 top-1/2 -translate-y-1/2 w-48 pointer-events-none select-none z-10">
+          <div className="rounded-2xl border border-indigo-200/80 bg-white/95 backdrop-blur-md px-3.5 py-2.5 text-[11px] font-extrabold text-slate-700 shadow-md shadow-indigo-950/5 text-center leading-snug">
+            <span className="block text-[9px] font-black uppercase tracking-widest text-indigo-600 mb-0.5">
+              ✨ Nova đồng hành
+            </span>
             {strict.studiedToday
               ? `Đỉnh quá ${profile.displayName || 'bạn'} ơi! Chuỗi ${profile.streakDays} ngày đang rực lửa! 🔥`
               : currentUnit.mascotTipVi}
           </div>
-          <MascotOwl
+          <NovaCompanion
             mood={strict.studiedToday ? 'fire' : 'excited'}
-            className="h-28 w-28 animate-gentle-float"
+            className="h-30 w-30 animate-gentle-float drop-shadow-[0_12px_20px_rgba(79,70,229,0.22)]"
           />
         </div>
 
-        <div className="relative mx-auto flex max-w-md sm:mr-48 flex-col items-center gap-7">
+        <div className="relative mx-auto flex max-w-md sm:mr-52 flex-col items-center gap-7">
+          {/* Glowing SVG S-Curve Connector Ribbon Behind Nodes */}
+          <svg
+            viewBox="0 0 360 760"
+            fill="none"
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute left-1/2 top-2 -translate-x-1/2 h-[calc(100%-24px)] w-[360px] z-0"
+            aria-hidden="true"
+          >
+            <defs>
+              <linearGradient
+                id="aurora-path-grad"
+                x1="180"
+                y1="20"
+                x2="180"
+                y2="740"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stopColor="#6366F1" />
+                <stop offset="40%" stopColor="#8B5CF6" />
+                <stop offset="72%" stopColor="#06B6D4" />
+                <stop offset="100%" stopColor="#F43F5E" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M 180 42 C 180 104, 126 112, 126 176 C 126 240, 104 246, 104 310 C 104 374, 154 380, 154 444 C 154 508, 230 514, 230 578 C 230 642, 186 650, 186 712"
+              stroke="url(#aurora-path-grad)"
+              strokeWidth="16"
+              strokeLinecap="round"
+              strokeOpacity="0.12"
+            />
+            <path
+              d="M 180 42 C 180 104, 126 112, 126 176 C 126 240, 104 246, 104 310 C 104 374, 154 380, 154 444 C 154 508, 230 514, 230 578 C 230 642, 186 650, 186 712"
+              stroke="url(#aurora-path-grad)"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeDasharray="7 10"
+              strokeOpacity="0.48"
+            />
+          </svg>
+
           {currentUnit.stations.map((station, idx) => {
             const Icon = getStationIcon(station.kind);
             const isChest = station.kind === 'chest';
@@ -1268,7 +1346,7 @@ export default function HomePage() {
             return (
               <div
                 key={station.id}
-                className="relative flex flex-col items-center"
+                className="relative z-10 flex flex-col items-center"
                 style={{
                   transform: `translateX(${station.offsetPx}px)`,
                 }}
@@ -1276,13 +1354,13 @@ export default function HomePage() {
                 {(isActive || chestReady) && !isSelected && (
                   <div className="mb-2.5 animate-gentle-float">
                     <div
-                      className={`relative rounded-xl border-2 px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider shadow-sm ${
+                      className={`relative rounded-xl border-2 px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider shadow-md ${
                         chestReady
                           ? 'border-amber-300 bg-white text-amber-600'
-                          : `border-slate-200 bg-white ${currentUnit.accentText}`
+                          : `border-indigo-200 bg-white ${currentUnit.accentText}`
                       }`}
                     >
-                      {chestReady ? '🎁 MỞ QUÀ!' : 'BẮT ĐẦU!'}
+                      {chestReady ? '🎁 MỞ QUÀ!' : 'CHƠI NGAY!'}
                       <span className="absolute left-1/2 -bottom-1.5 h-3 w-3 -translate-x-1/2 rotate-45 border-r-2 border-b-2 border-inherit bg-white" />
                     </div>
                   </div>
@@ -1295,16 +1373,16 @@ export default function HomePage() {
                     setSelectedStationId(isSelected ? null : station.id);
                   }}
                   aria-label={station.titleVi}
-                  className={`path-node-3d relative flex h-[74px] w-[74px] items-center justify-center rounded-full cursor-pointer ${
+                  className={`path-node-3d relative flex h-[76px] w-[76px] items-center justify-center rounded-full cursor-pointer ${
                     isChest
                       ? chestReady
-                        ? 'bg-[#FFC800] text-amber-950 shadow-[0_7px_0_#D9A400] ring-4 ring-amber-200 animate-chest-wiggle'
-                        : 'bg-amber-100 text-amber-700 border-2 border-amber-300 shadow-[0_6px_0_#F59E0B]'
+                        ? 'bg-gradient-to-br from-amber-300 to-orange-500 text-amber-950 shadow-[0_7px_0_#C2410C] ring-4 ring-amber-200 animate-chest-wiggle'
+                        : 'bg-amber-50 text-amber-700 border-2 border-amber-300 shadow-[0_6px_0_#F59E0B]'
                       : isDone
-                        ? 'bg-[#FFC800] text-white shadow-[0_7px_0_#D9A400]'
+                        ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-[0_7px_0_#D97706]'
                         : isActive
-                          ? `${currentUnit.nodeBg} text-white ${currentUnit.nodeShadow} ring-8 ring-[#58CC02]/20`
-                          : 'bg-white text-slate-700 border-2 border-slate-200 shadow-[0_6px_0_#CBD5E1] hover:border-slate-300'
+                          ? `${currentUnit.nodeBg} text-white ${currentUnit.nodeShadow} ring-4 ring-indigo-300/60 animate-orb-halo`
+                          : 'bg-white text-slate-700 border-2 border-slate-200 shadow-[0_6px_0_#CBD5E1] hover:border-indigo-300 hover:text-indigo-700'
                   }`}
                 >
                   {isChest ? (
@@ -1315,7 +1393,7 @@ export default function HomePage() {
                   ) : isDone ? (
                     <div className="relative flex items-center justify-center">
                       <Star className="h-8 w-8 fill-white text-white" />
-                      <span className="absolute -right-2 -bottom-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#58CC02] border-2 border-white text-white">
+                      <span className="absolute -right-2 -bottom-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 border-2 border-white text-white">
                         <Check className="h-3.5 w-3.5 stroke-[3.5]" />
                       </span>
                     </div>
@@ -1324,7 +1402,7 @@ export default function HomePage() {
                   )}
                 </button>
 
-                <div className="mt-2.5 text-center max-w-[180px]">
+                <div className="mt-2.5 text-center max-w-[184px] rounded-xl bg-white/80 backdrop-blur-xs px-2 py-0.5">
                   <div className="text-xs font-black text-slate-800 leading-tight">
                     {station.titleVi}
                   </div>
@@ -1334,10 +1412,10 @@ export default function HomePage() {
                 </div>
 
                 {isSelected && (
-                  <div className="animate-pop-in mt-3 w-72 rounded-2xl border-2 border-slate-200 bg-white p-4 shadow-xl z-20 space-y-3 text-left">
+                  <div className="animate-pop-in mt-3 w-72 rounded-2xl border-2 border-indigo-200/80 bg-white p-4 shadow-2xl shadow-indigo-950/15 z-20 space-y-3 text-left">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <span className="inline-block rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase text-slate-600">
+                        <span className="inline-block rounded-lg bg-indigo-50 px-2 py-0.5 text-[10px] font-black uppercase text-indigo-700">
                           Trạm {idx + 1}/{currentUnit.stations.length}
                         </span>
                         <h3 className="mt-1 text-sm font-black text-slate-900">
@@ -1361,7 +1439,7 @@ export default function HomePage() {
                             ? 'btn-duo-blue'
                             : station.kind === 'ai-quiz'
                               ? 'btn-duo-purple'
-                              : 'btn-duo-green'
+                              : 'btn-duo-primary'
                       }`}
                     >
                       {isChest
@@ -1387,12 +1465,12 @@ export default function HomePage() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-black uppercase tracking-wide text-slate-800 flex items-center gap-2">
-            <Gamepad2 className="h-4 w-4 text-[#FF9600]" />
+            <Gamepad2 className="h-4 w-4 text-orange-500" />
             Đấu trường 5 Chế độ Chơi Nhanh
           </h2>
           <Link
             href="/play"
-            className="text-xs font-extrabold text-[#1899D6] hover:underline"
+            className="text-xs font-extrabold text-indigo-600 hover:underline"
           >
             Xem tất cả →
           </Link>
@@ -1406,7 +1484,7 @@ export default function HomePage() {
               badge: '+85 XP · 🔥',
               href: '/play?mode=speed',
               icon: Zap,
-              accent: 'bg-[#FF9600] text-white',
+              accent: 'bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-sm',
             },
             {
               title: 'Nghe Hiểu Bản Xứ',
@@ -1414,7 +1492,7 @@ export default function HomePage() {
               badge: '+90 XP · 🔥',
               href: '/play?mode=listen',
               icon: Headphones,
-              accent: 'bg-[#1CB0F6] text-white',
+              accent: 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-sm',
             },
             {
               title: 'Nghe & Ghép câu',
@@ -1422,7 +1500,7 @@ export default function HomePage() {
               badge: '+95 XP · 🔥',
               href: '/play?mode=build',
               icon: Puzzle,
-              accent: 'bg-[#8B5CF6] text-white',
+              accent: 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-sm',
             },
             {
               title: 'AI Tạo Màn Theo Gu',
@@ -1430,7 +1508,7 @@ export default function HomePage() {
               badge: '✨ Vô tận · 🔥',
               href: '/play?mode=ai-quiz',
               icon: Wand2,
-              accent: 'bg-gradient-to-br from-[#F43F5E] to-[#FF9600] text-white',
+              accent: 'bg-gradient-to-br from-rose-500 to-orange-500 text-white shadow-sm',
             },
           ].map((g) => {
             const Icon = g.icon;
@@ -1439,7 +1517,7 @@ export default function HomePage() {
                 key={g.title}
                 href={g.href}
                 onClick={() => playTapSound()}
-                className="card-duo-elevated p-3.5 flex items-center gap-3 hover:-translate-y-0.5 hover:border-slate-300 transition"
+                className="card-duo-elevated p-3.5 flex items-center gap-3 hover:-translate-y-0.5 transition"
               >
                 <div
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${g.accent}`}
@@ -1466,7 +1544,7 @@ export default function HomePage() {
       {/* CUSTOM AI VOICE ROLEPLAY BUILDER */}
       <section className="card-duo-elevated p-5 space-y-4">
         <div>
-          <span className="inline-flex items-center gap-1 rounded-xl bg-[#DDF4FF] px-2.5 py-1 text-[10px] font-black uppercase text-[#1899D6]">
+          <span className="inline-flex items-center gap-1 rounded-xl bg-indigo-50 border border-indigo-200 px-2.5 py-1 text-[10px] font-black uppercase text-indigo-700">
             <Sparkles className="h-3 w-3" />
             Tính năng Pro AI
           </span>
@@ -1474,7 +1552,7 @@ export default function HomePage() {
             Tạo Tình Huống Gọi Thoại AI Bất Kỳ Bạn Muốn
           </h2>
           <p className="text-xs font-medium text-slate-500 mt-0.5">
-            Gõ bất kỳ bối cảnh thực tế nào — Gia sư AI sẽ nhập vai nói chuyện trực tiếp cùng bạn ngay lập tức!
+            Gõ bất kỳ bối cảnh thực tế nào — Nova &amp; Gia sư AI sẽ nhập vai nói chuyện trực tiếp cùng bạn ngay lập tức!
           </p>
         </div>
 
@@ -1492,12 +1570,12 @@ export default function HomePage() {
             onChange={(e) => setCustomRoleplayInput(e.target.value)}
             maxLength={140}
             placeholder="Ví dụ: Phỏng vấn xin việc React, Trả giá ở chợ đêm, Hỏi đường ở London..."
-            className="flex-1 rounded-2xl border-2 border-slate-200 bg-[#F7F9FC] px-4 py-3 text-sm font-semibold text-slate-800 focus:border-[#1CB0F6] focus:bg-white focus:outline-none"
+            className="flex-1 rounded-2xl border-2 border-slate-200 bg-slate-50/80 px-4 py-3 text-sm font-semibold text-slate-800 focus:border-indigo-500 focus:bg-white focus:outline-none"
           />
           <button
             type="submit"
             disabled={!customRoleplayInput.trim()}
-            className="btn-duo btn-duo-blue px-5 py-3 text-xs uppercase shrink-0"
+            className="btn-duo btn-duo-primary px-5 py-3 text-xs uppercase shrink-0"
           >
             <PhoneCall className="h-4 w-4" />
             Gọi nhập vai ngay
@@ -1510,7 +1588,7 @@ export default function HomePage() {
               key={preset}
               type="button"
               onClick={() => startCall('free-talk-custom', preset)}
-              className="rounded-xl border border-slate-200 bg-[#F7F9FC] px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:border-[#1CB0F6] hover:bg-[#DDF4FF]/50 hover:text-[#1899D6] transition cursor-pointer"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition cursor-pointer"
             >
               ✨ {preset}
             </button>
@@ -1523,7 +1601,7 @@ export default function HomePage() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-black uppercase tracking-wide text-slate-800 flex items-center gap-2">
-              <PhoneCall className="h-4 w-4 text-[#1CB0F6]" />
+              <PhoneCall className="h-4 w-4 text-indigo-600" />
               Thư viện Gọi Thoại AI Có Sẵn ({SCENARIOS.length} tình huống)
             </h2>
             <p className="text-xs font-medium text-slate-500 mt-0.5">
@@ -1549,14 +1627,14 @@ export default function HomePage() {
                 key={scenario.id}
                 type="button"
                 onClick={() => startCall(scenario.id)}
-                className="group flex items-center justify-between gap-3 rounded-2xl border-2 border-slate-200 bg-[#F7F9FC] p-3.5 text-left hover:border-[#1CB0F6] hover:bg-[#F0FAFF] transition cursor-pointer"
+                className="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/75 p-3.5 text-left hover:border-indigo-300 hover:bg-indigo-50/60 transition cursor-pointer"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white border-2 border-slate-200 text-xl">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white border border-slate-200 text-xl shadow-2xs">
                     {scenario.emoji}
                   </span>
                   <div className="min-w-0">
-                    <div className="text-xs font-black text-slate-900 truncate group-hover:text-[#1899D6]">
+                    <div className="text-xs font-black text-slate-900 truncate group-hover:text-indigo-700">
                       {scenario.titleVi}
                     </div>
                     <div className="text-[11px] font-semibold text-slate-500 truncate mt-0.5">
@@ -1564,18 +1642,18 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-[#1899D6]" />
+                <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-indigo-600" />
               </button>
             )
           )}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t-2 border-slate-100 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
           <Link
             href="/phrases"
-            className="inline-flex items-center gap-1.5 font-extrabold text-slate-600 hover:text-[#1899D6]"
+            className="inline-flex items-center gap-1.5 font-extrabold text-slate-600 hover:text-indigo-700"
           >
-            <BookOpen className="h-4 w-4 text-[#8B5CF6]" />
+            <BookOpen className="h-4 w-4 text-violet-600" />
             Ôn Flashcard thông minh (SRS) →
           </Link>
           <Link

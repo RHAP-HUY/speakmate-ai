@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { MascotOwl } from '@/components/BrandArt';
+import { NovaCompanion } from '@/components/BrandArt';
 import { getCurrentProfile, saveProfile } from '@/lib/data-store';
 import { HOBBY_SUGGESTIONS, JOB_SUGGESTIONS } from '@/lib/scenarios';
 import { playCorrectSound, playTapSound } from '@/lib/sound-fx';
@@ -85,8 +85,8 @@ const HOBBY_EMOJI: Record<string, string> = {
 };
 
 const MASCOT_PROMPTS: Record<1 | 2 | 3, string> = {
-  1: 'Chào bạn mới! Chọn ngôn ngữ & giọng tiếng Anh bạn yêu thích để Milo chuẩn bị lộ trình nhé!',
-  2: 'Bạn thích chủ đề nào? Milo sẽ thiết kế game và cuộc gọi đúng sở thích để học không bao giờ chán!',
+  1: 'Chào bạn mới! Chọn ngôn ngữ & giọng tiếng Anh bạn yêu thích để Nova chuẩn bị lộ trình nhé!',
+  2: 'Bạn thích chủ đề nào? Nova sẽ thiết kế game và cuộc gọi đúng sở thích để học không bao giờ chán!',
   3: 'Bước cuối rồi! Đặt tên gọi & mục tiêu mỗi ngày — mọi thứ sẽ lưu trọn đời trên Google Drive 5TB!',
 };
 
@@ -188,9 +188,9 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-white">
-        <MascotOwl mood="excited" className="h-16 w-16 animate-gentle-float" />
-        <Loader2 className="h-6 w-6 animate-spin text-[#58CC02]" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
+        <NovaCompanion mood="excited" className="h-18 w-18 animate-gentle-float" />
+        <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
       </div>
     );
   }
@@ -200,9 +200,9 @@ export default function OnboardingPage() {
   const progressPct = step === 1 ? 34 : step === 2 ? 68 : 100;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Duolingo Glossy Top Progress Bar */}
-      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b-2 border-slate-100">
+    <div className="min-h-screen bg-mesh-light flex flex-col">
+      {/* Aurora Studio Top Progress Bar */}
+      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-slate-200/80">
         <div className="mx-auto max-w-2xl px-4 py-4 flex items-center gap-4">
           {step > 1 ? (
             <button
@@ -217,30 +217,32 @@ export default function OnboardingPage() {
               <ArrowLeft className="h-5 w-5 stroke-[2.6]" />
             </button>
           ) : (
-            <span className="text-sm font-black text-[#58CC02]">SpeakMate</span>
+            <span className="text-sm font-black bg-gradient-to-r from-indigo-600 via-violet-600 to-cyan-500 bg-clip-text text-transparent">
+              SpeakMate AI
+            </span>
           )}
 
-          <div className="flex-1 h-4 rounded-full bg-slate-200 overflow-hidden">
+          <div className="flex-1 h-4 rounded-full bg-slate-200/90 overflow-hidden">
             <div
-              className="progress-gloss h-full rounded-full bg-[#58CC02] transition-all duration-300"
+              className="progress-gloss h-full rounded-full bg-gradient-to-r from-indigo-600 via-violet-500 to-cyan-400 transition-all duration-300"
               style={{ width: `${progressPct}%` }}
             />
           </div>
 
-          <span className="text-xs font-black text-slate-400">
+          <span className="text-xs font-black text-indigo-600">
             {step}/3
           </span>
         </div>
       </header>
 
       <main className="flex-1 mx-auto w-full max-w-2xl px-4 py-6 sm:py-8 space-y-6">
-        {/* Mascot Milo Speech Bubble */}
+        {/* Companion Nova Speech Bubble */}
         <div className="flex items-center gap-4">
-          <MascotOwl
+          <NovaCompanion
             mood={step === 3 ? 'proud' : 'excited'}
-            className="h-20 w-20 shrink-0 animate-gentle-float"
+            className="h-20 w-20 shrink-0 animate-gentle-float drop-shadow-[0_10px_18px_rgba(79,70,229,0.22)]"
           />
-          <div className="flex-1 rounded-2xl border-2 border-slate-200 bg-[#F7F9FC] px-4 py-3 text-sm font-extrabold text-slate-800 leading-snug">
+          <div className="flex-1 rounded-2xl border border-indigo-200/80 bg-white/95 backdrop-blur-md px-4 py-3 text-sm font-extrabold text-slate-800 leading-snug shadow-sm">
             {MASCOT_PROMPTS[step]}
           </div>
         </div>
@@ -304,7 +306,7 @@ export default function OnboardingPage() {
                       }}
                       className={`flex items-center gap-2.5 rounded-2xl border-2 border-b-4 p-3 text-left transition cursor-pointer ${
                         selected
-                          ? 'border-[#58CC02] bg-[#F1FDE8]'
+                          ? 'border-indigo-500 bg-indigo-50/80'
                           : 'border-slate-200 bg-white hover:bg-slate-50'
                       }`}
                     >
@@ -318,7 +320,7 @@ export default function OnboardingPage() {
                         </div>
                       </div>
                       {selected && (
-                        <Check className="h-4 w-4 text-[#46A302] stroke-[3] shrink-0" />
+                        <Check className="h-4 w-4 text-indigo-600 stroke-[3] shrink-0" />
                       )}
                     </button>
                   );
@@ -375,7 +377,7 @@ export default function OnboardingPage() {
                 playTapSound();
                 setStep(2);
               }}
-              className="btn-duo btn-duo-green w-full py-4 text-sm uppercase tracking-wide"
+              className="btn-duo btn-duo-primary w-full py-4 text-sm uppercase tracking-wide"
             >
               Tiếp theo: Chọn Sở thích
               <ArrowRight className="h-4 w-4 stroke-[3]" />
@@ -400,7 +402,7 @@ export default function OnboardingPage() {
                       onClick={() => toggleHobby(hobby)}
                       className={`flex items-center gap-2 rounded-2xl border-2 border-b-4 px-3.5 py-3 text-xs font-extrabold transition cursor-pointer ${
                         selected
-                          ? 'border-[#58CC02] bg-[#F1FDE8] text-[#3B8702]'
+                          ? 'border-indigo-500 bg-indigo-50/80 text-indigo-800'
                           : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                       }`}
                     >
@@ -409,7 +411,7 @@ export default function OnboardingPage() {
                       </span>
                       <span className="truncate flex-1 text-left">{hobby}</span>
                       {selected && (
-                        <Check className="h-4 w-4 text-[#46A302] stroke-[3] shrink-0" />
+                        <Check className="h-4 w-4 text-indigo-600 stroke-[3] shrink-0" />
                       )}
                     </button>
                   );
@@ -424,7 +426,7 @@ export default function OnboardingPage() {
                     .map((custom) => (
                       <span
                         key={custom}
-                        className="inline-flex items-center gap-1 rounded-xl bg-[#58CC02] px-3 py-1.5 text-xs font-black text-white"
+                        className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-3 py-1.5 text-xs font-black text-white"
                       >
                         ✨ {custom}
                         <button
@@ -451,7 +453,7 @@ export default function OnboardingPage() {
                     }
                   }}
                   placeholder="Thêm sở thích riêng (vd: Nuôi mèo, Bóng đá...)"
-                  className="flex-1 rounded-xl border-2 border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold focus:border-[#58CC02] focus:outline-none"
+                  className="flex-1 rounded-xl border-2 border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold focus:border-indigo-500 focus:outline-none"
                 />
                 <button
                   type="button"
@@ -481,7 +483,7 @@ export default function OnboardingPage() {
                       }}
                       className={`rounded-xl border-2 px-3 py-1.5 text-xs font-extrabold transition cursor-pointer ${
                         active
-                          ? 'border-[#1CB0F6] bg-[#DDF4FF] text-[#1899D6]'
+                          ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
                           : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                       }`}
                     >
@@ -495,7 +497,7 @@ export default function OnboardingPage() {
                 value={jobField}
                 onChange={(e) => setJobField(e.target.value)}
                 placeholder="Hoặc nhập nghề nghiệp của bạn..."
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold focus:border-[#1CB0F6] focus:outline-none"
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold focus:border-indigo-500 focus:outline-none"
               />
             </div>
 
@@ -505,7 +507,7 @@ export default function OnboardingPage() {
                 playTapSound();
                 setStep(3);
               }}
-              className="btn-duo btn-duo-green w-full py-4 text-sm uppercase tracking-wide"
+              className="btn-duo btn-duo-primary w-full py-4 text-sm uppercase tracking-wide"
             >
               Tiếp theo: Tên gọi &amp; Mục tiêu
               <ArrowRight className="h-4 w-4 stroke-[3]" />
@@ -526,7 +528,7 @@ export default function OnboardingPage() {
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Ví dụ: Huy, Minh, Alex..."
                 maxLength={40}
-                className="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3.5 text-base font-black text-slate-900 focus:border-[#58CC02] focus:outline-none"
+                className="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3.5 text-base font-black text-slate-900 focus:border-indigo-500 focus:outline-none"
               />
             </div>
 
@@ -550,7 +552,7 @@ export default function OnboardingPage() {
                       }}
                       className={`rounded-xl border-2 border-b-4 py-2.5 text-xs font-extrabold transition cursor-pointer ${
                         Math.abs(preferredSpeed - s.val) < 0.04
-                          ? 'border-[#1CB0F6] bg-[#DDF4FF] text-[#1899D6]'
+                          ? 'border-sky-500 bg-sky-50 text-sky-700'
                           : 'border-slate-200 bg-white text-slate-700'
                       }`}
                     >
@@ -575,7 +577,7 @@ export default function OnboardingPage() {
                       }}
                       className={`rounded-xl border-2 border-b-4 py-2.5 text-xs font-extrabold transition cursor-pointer ${
                         dailyGoalMinutes === m
-                          ? 'border-[#58CC02] bg-[#F1FDE8] text-[#3B8702]'
+                          ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
                           : 'border-slate-200 bg-white text-slate-700'
                       }`}
                     >
@@ -587,8 +589,8 @@ export default function OnboardingPage() {
             </div>
 
             {/* Summary Preview */}
-            <div className="rounded-2xl border-2 border-[#B8F28B] bg-[#F1FDE8]/70 p-4 text-xs space-y-1.5">
-              <div className="font-black text-[#2E6E00]">
+            <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/80 via-white to-cyan-50/70 p-4 text-xs space-y-1.5">
+              <div className="font-black text-indigo-900">
                 ✨ Hồ sơ học tập của {displayName.trim() || 'bạn'}:
               </div>
               <div className="font-semibold text-slate-700">
@@ -605,7 +607,7 @@ export default function OnboardingPage() {
                   {hobbies.length > 0 ? hobbies.join(', ') : 'Giao tiếp đời sống'}
                 </strong>
               </div>
-              <div className="text-[#3B8702] font-extrabold pt-1 flex items-center gap-1.5">
+              <div className="text-emerald-700 font-extrabold pt-1 flex items-center gap-1.5">
                 <Cloud className="h-4 w-4" />
                 {isDrive
                   ? 'Tự động lưu & khôi phục trọn đời trên Google Drive 5TB!'
@@ -623,7 +625,7 @@ export default function OnboardingPage() {
               type="button"
               disabled={saving}
               onClick={() => void handleFinish()}
-              className="btn-duo btn-duo-green w-full py-4 text-sm uppercase tracking-wide"
+              className="btn-duo btn-duo-primary w-full py-4 text-sm uppercase tracking-wide"
             >
               {saving ? (
                 <>

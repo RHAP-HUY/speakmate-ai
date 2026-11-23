@@ -20,7 +20,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   GemSvg,
-  MascotOwl,
+  NovaCompanion,
   StreakFlameSvg,
 } from '@/components/BrandArt';
 import { stopVoicePlayback } from '@/lib/audio';
@@ -51,49 +51,49 @@ const SIDEBAR_ITEMS = [
     label: 'Học & Chơi',
     shortLabel: 'Học',
     icon: Compass,
-    iconBg: 'bg-[#58CC02] text-white',
+    iconBg: 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white',
   },
   {
     href: '/play',
     label: 'Đấu trường Game',
     shortLabel: 'Game',
     icon: Gamepad2,
-    iconBg: 'bg-[#FF9600] text-white',
+    iconBg: 'bg-gradient-to-br from-orange-500 to-rose-500 text-white',
   },
   {
     href: '/call',
     label: 'Gọi Gia sư AI',
     shortLabel: 'Gọi AI',
     icon: PhoneCall,
-    iconBg: 'bg-[#1CB0F6] text-white',
+    iconBg: 'bg-gradient-to-br from-sky-500 to-blue-600 text-white',
   },
   {
     href: '/history',
     label: 'Chuỗi & Quà',
     shortLabel: 'Chuỗi',
     icon: Trophy,
-    iconBg: 'bg-[#FFC800] text-amber-950',
+    iconBg: 'bg-gradient-to-br from-amber-400 to-orange-500 text-white',
   },
   {
     href: '/leaderboard',
     label: 'Bảng Xếp Hạng',
     shortLabel: 'Xếp hạng',
     icon: Crown,
-    iconBg: 'bg-[#F59E0B] text-white',
+    iconBg: 'bg-gradient-to-br from-amber-500 to-yellow-500 text-white',
   },
   {
     href: '/phrases',
     label: 'Sổ Từ Vựng',
     shortLabel: 'Sổ tay',
     icon: BookOpen,
-    iconBg: 'bg-[#8B5CF6] text-white',
+    iconBg: 'bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white',
   },
   {
     href: '/settings',
     label: 'Hồ sơ & Cài đặt',
     shortLabel: 'Cài đặt',
     icon: Settings,
-    iconBg: 'bg-slate-700 text-white',
+    iconBg: 'bg-gradient-to-br from-slate-700 to-slate-900 text-white',
   },
 ];
 
@@ -182,31 +182,34 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
     router.refresh();
   }
 
-  // PUBLIC LANDING HEADER (Duolingo-inspired ultra-clean top bar)
+  // PUBLIC LANDING HEADER (Aurora Studio Glass Top Bar)
   if (resolvedVariant === 'landing') {
     return (
-      <header className="sticky top-0 z-30 border-b-2 border-slate-200 bg-white/95 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 py-3">
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <MascotOwl mood="happy" className="h-10 w-10" />
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+            <NovaCompanion
+              mood="happy"
+              className="h-10 w-10 transition-transform group-hover:scale-105"
+            />
             <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tight text-[#58CC02] leading-none">
-                SpeakMate
+              <span className="text-xl font-black tracking-tight bg-gradient-to-r from-indigo-600 via-violet-600 to-cyan-500 bg-clip-text text-transparent leading-none">
+                SpeakMate AI
               </span>
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mt-0.5">
-                AI Play &amp; Speak
+                Aurora Voice Studio
               </span>
             </div>
           </Link>
 
           <div className="flex items-center gap-2.5">
-            <span className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-extrabold text-emerald-700">
-              <Cloud className="h-3.5 w-3.5" />
+            <span className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200/80 px-3 py-1 text-xs font-extrabold text-indigo-700">
+              <Cloud className="h-3.5 w-3.5 text-cyan-600" />
               Đồng bộ Google Drive 5TB
             </span>
             <Link
               href="/auth"
-              className="btn-duo btn-duo-green px-5 py-2.5 text-xs uppercase tracking-wide"
+              className="btn-duo btn-duo-primary px-5 py-2.5 text-xs uppercase tracking-wide"
             >
               <LogIn className="h-4 w-4" />
               Đăng nhập
@@ -217,11 +220,11 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
     );
   }
 
-  // AUTHENTICATED APP NAVIGATION: Duolingo Fixed Left Sidebar (Desktop) + Top HUD & Bottom Bar (Mobile)
+  // AUTHENTICATED APP NAVIGATION: Aurora Glass Left Sidebar (Desktop) + Top HUD & Bottom Bar (Mobile)
   return (
     <>
       {/* Desktop Fixed Left Sidebar */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-64 flex-col justify-between border-r-2 border-slate-200 bg-white px-4 py-5">
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-64 flex-col justify-between border-r border-slate-200/80 bg-white/92 backdrop-blur-xl px-4 py-5">
         <div className="space-y-6">
           {/* Brand Wordmark */}
           <Link
@@ -229,16 +232,16 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
             onClick={() => playTapSound()}
             className="flex items-center gap-2.5 px-2 group"
           >
-            <MascotOwl
+            <NovaCompanion
               mood={currentProfile && currentProfile.streakDays >= 3 ? 'fire' : 'happy'}
               className="h-11 w-11 shrink-0 transition-transform group-hover:scale-105"
             />
             <div>
-              <div className="text-xl font-black tracking-tight text-[#58CC02] leading-none">
+              <div className="text-xl font-black tracking-tight bg-gradient-to-r from-indigo-600 via-violet-600 to-cyan-500 bg-clip-text text-transparent leading-none">
                 SpeakMate
               </div>
               <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mt-1">
-                Vừa Học Vừa Chơi
+                Học &amp; Chơi cùng Nova
               </div>
             </div>
           </Link>
@@ -260,8 +263,8 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
                   onClick={() => playTapSound()}
                   className={`group flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-[13px] font-extrabold uppercase tracking-wide transition ${
                     active
-                      ? 'bg-[#DDF4FF] border-2 border-[#84D8FF] text-[#1899D6]'
-                      : 'border-2 border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      ? 'bg-gradient-to-r from-indigo-50 via-violet-50/75 to-cyan-50/60 border border-indigo-200 text-indigo-700 shadow-xs'
+                      : 'border border-transparent text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
                   }`}
                 >
                   <span className="flex items-center gap-3 min-w-0">
@@ -273,7 +276,7 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
                     <span className="truncate">{item.label}</span>
                   </span>
                   {showBadge && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF4B4B] px-1.5 text-[10px] font-black text-white animate-bounce">
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-orange-500 px-1.5 text-[10px] font-black text-white shadow-xs animate-bounce">
                       {claimableCount}
                     </span>
                   )}
@@ -284,11 +287,11 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
         </div>
 
         {/* Sidebar Footer: 2x XP Status + Sound Toggle + Cloud Identity Card */}
-        <div className="space-y-2.5 pt-4 border-t-2 border-slate-100">
+        <div className="space-y-2.5 pt-4 border-t border-slate-100">
           {xpBoostOn && (
-            <div className="flex items-center justify-between rounded-xl border-2 border-violet-300 bg-violet-50 px-3 py-2 text-xs font-black text-violet-700">
+            <div className="flex items-center justify-between rounded-xl border border-violet-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-3 py-2 text-xs font-black text-violet-700">
               <span className="flex items-center gap-1.5">
-                <Zap className="h-4 w-4 fill-[#FFC800] text-[#FF9600]" />
+                <Zap className="h-4 w-4 fill-amber-400 text-orange-500" />
                 Đang bật 2x XP
               </span>
               <span className="rounded-md bg-violet-600 px-1.5 py-0.5 text-[10px] text-white">
@@ -300,13 +303,13 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
           <button
             type="button"
             onClick={toggleSound}
-            className="flex w-full items-center justify-between rounded-xl border-2 border-slate-200 bg-slate-50 px-3 py-2 text-xs font-extrabold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+            className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2 text-xs font-extrabold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
           >
             <span className="flex items-center gap-2">
               {muted ? (
                 <VolumeX className="h-4 w-4 text-slate-400" />
               ) : (
-                <Volume2 className="h-4 w-4 text-[#1CB0F6]" />
+                <Volume2 className="h-4 w-4 text-indigo-600" />
               )}
               Âm thanh hiệu ứng
             </span>
@@ -322,17 +325,17 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
           </button>
 
           {currentProfile && levelInfo && (
-            <div className="rounded-2xl border-2 border-slate-200 bg-[#F7F9FC] p-3 space-y-2">
+            <div className="rounded-2xl border border-slate-200/90 bg-slate-50/75 p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <Link
                   href="/settings"
                   className="flex items-center gap-2.5 min-w-0 group"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#58CC02] to-[#1CB0F6] text-sm font-black text-white">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-cyan-400 text-sm font-black text-white shadow-xs">
                     {(currentProfile.displayName || 'H').slice(0, 1).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-black text-slate-900 truncate group-hover:text-[#1899D6]">
+                    <div className="text-xs font-black text-slate-900 truncate group-hover:text-indigo-600">
                       {currentProfile.displayName || 'Học viên'}
                     </div>
                     <div className="text-[10px] font-bold text-slate-500 truncate">
@@ -368,7 +371,7 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
               ) : (
                 <Link
                   href="/auth"
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#DDF4FF] border border-[#84D8FF] py-1.5 text-[11px] font-extrabold text-[#1899D6] hover:bg-[#CBEFFF] transition"
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-indigo-50 border border-indigo-200 py-1.5 text-[11px] font-extrabold text-indigo-700 hover:bg-indigo-100 transition"
                 >
                   <LogIn className="h-3.5 w-3.5" />
                   Kết nối Google Drive 5TB
@@ -380,11 +383,11 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
       </aside>
 
       {/* Mobile / Tablet Top Sticky Gamification HUD */}
-      <header className="sticky top-0 z-30 border-b-2 border-slate-200 bg-white/95 backdrop-blur-md lg:hidden">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl lg:hidden">
         <div className="flex items-center justify-between gap-2 px-3.5 py-2.5">
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <MascotOwl mood="happy" className="h-8 w-8" />
-            <span className="text-base font-black tracking-tight text-[#58CC02]">
+            <NovaCompanion mood="happy" className="h-8 w-8" />
+            <span className="text-base font-black tracking-tight bg-gradient-to-r from-indigo-600 via-violet-600 to-cyan-500 bg-clip-text text-transparent">
               SpeakMate
             </span>
           </Link>
@@ -392,13 +395,13 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
           {currentProfile && (
             <div className="flex items-center gap-1.5">
               {xpBoostOn && (
-                <span className="inline-flex items-center gap-0.5 rounded-xl border-2 border-violet-300 bg-violet-50 px-2 py-1 text-[10px] font-black text-violet-700">
+                <span className="inline-flex items-center gap-0.5 rounded-xl border border-violet-300 bg-violet-50 px-2 py-1 text-[10px] font-black text-violet-700">
                   ⚡2x
                 </span>
               )}
               <Link
                 href="/history"
-                className="inline-flex items-center gap-1 rounded-xl border-2 border-orange-200 bg-orange-50 px-2 py-1 text-xs font-black text-[#FF9600]"
+                className="inline-flex items-center gap-1 rounded-xl border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-black text-orange-600"
               >
                 <StreakFlameSvg
                   active={currentProfile.streakDays > 0}
@@ -409,7 +412,7 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
 
               <Link
                 href="/history#rewards"
-                className="inline-flex items-center gap-1 rounded-xl border-2 border-sky-200 bg-sky-50 px-2 py-1 text-xs font-black text-[#1899D6]"
+                className="inline-flex items-center gap-1 rounded-xl border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-black text-sky-700"
               >
                 <GemSvg className="h-4 w-4" />
                 <span>{currentProfile.gems}</span>
@@ -418,7 +421,7 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
               <Link
                 href="/settings"
                 aria-label="Hồ sơ & Cài đặt"
-                className="rounded-xl border-2 border-slate-200 bg-slate-50 p-1.5 text-slate-600"
+                className="rounded-xl border border-slate-200 bg-slate-50 p-1.5 text-slate-600"
               >
                 <Settings className="h-4 w-4" />
               </Link>
@@ -427,12 +430,12 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
                 type="button"
                 onClick={toggleSound}
                 aria-label="Bật tắt âm thanh"
-                className="rounded-xl border-2 border-slate-200 bg-slate-50 p-1.5 text-slate-600 cursor-pointer"
+                className="rounded-xl border border-slate-200 bg-slate-50 p-1.5 text-slate-600 cursor-pointer"
               >
                 {muted ? (
                   <VolumeX className="h-4 w-4 text-slate-400" />
                 ) : (
-                  <Volume2 className="h-4 w-4 text-[#1CB0F6]" />
+                  <Volume2 className="h-4 w-4 text-indigo-600" />
                 )}
               </button>
             </div>
@@ -443,7 +446,7 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
       {/* Mobile / Tablet Bottom 5-Tab Navigation Bar */}
       <nav
         aria-label="Menu di động"
-        className="fixed bottom-0 left-0 right-0 z-30 border-t-2 border-slate-200 bg-white/98 backdrop-blur-lg lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200/80 bg-white/95 backdrop-blur-xl lg:hidden"
       >
         <div className="grid grid-cols-5 gap-1 px-2 py-1.5">
           {MOBILE_TABS.map((item) => {
@@ -460,14 +463,14 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
                 onClick={() => playTapSound()}
                 className={`relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[10px] font-extrabold transition ${
                   active
-                    ? 'bg-[#DDF4FF] text-[#1899D6]'
+                    ? 'bg-indigo-50 text-indigo-700'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
                 <Icon className="h-5 w-5 stroke-[2.3]" />
                 <span className="truncate">{item.shortLabel}</span>
                 {showBadge && (
-                  <span className="absolute right-2.5 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF4B4B] px-1 text-[9px] font-black text-white">
+                  <span className="absolute right-2.5 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-orange-500 px-1 text-[9px] font-black text-white">
                     {claimableCount}
                   </span>
                 )}

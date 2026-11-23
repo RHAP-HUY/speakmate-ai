@@ -15,7 +15,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
-import { MascotOwl } from '@/components/BrandArt';
+import { NovaCompanion } from '@/components/BrandArt';
 import {
   PronunciationPracticeModal,
   type PronunciationPracticeTarget,
@@ -37,7 +37,7 @@ const MASTERY_LABELS: Record<0 | 1 | 2 | 3, { label: string; color: string }> =
     0: { label: 'Mới lưu', color: 'bg-slate-100 text-slate-700 border-slate-200' },
     1: { label: 'Đang ôn', color: 'bg-amber-50 text-amber-800 border-amber-200' },
     2: { label: 'Khá quen', color: 'bg-sky-50 text-sky-800 border-sky-200' },
-    3: { label: 'Đã thuộc ✓', color: 'bg-[#F1FDE8] text-[#3B8702] border-[#B8F28B]' },
+    3: { label: 'Đã thuộc ✓', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   };
 
 export default function PhrasesPage() {
@@ -153,9 +153,9 @@ export default function PhrasesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#F7F9FC]">
-        <MascotOwl mood="happy" className="h-16 w-16 animate-gentle-float" />
-        <Loader2 className="h-6 w-6 animate-spin text-[#8B5CF6]" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
+        <NovaCompanion mood="happy" className="h-18 w-18 animate-gentle-float" />
+        <Loader2 className="h-6 w-6 animate-spin text-violet-600" />
       </div>
     );
   }
@@ -177,9 +177,10 @@ export default function PhrasesPage() {
   return (
     <AppShell profile={profile} authenticated={authenticated}>
       {/* Banner */}
-      <section className="rounded-3xl bg-[#8B5CF6] border-b-4 border-[#6D28D9] p-6 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="text-[11px] font-black uppercase tracking-widest text-white/80">
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 border-b-4 border-indigo-900/35 p-6 text-white shadow-lg shadow-indigo-950/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
+        <div className="relative">
+          <div className="text-[11px] font-black uppercase tracking-widest text-white/85">
             SỔ TAY &amp; FLASHCARD BẢN XỨ
           </div>
           <h1 className="text-2xl sm:text-3xl font-black mt-0.5">
@@ -424,7 +425,7 @@ export default function PhrasesPage() {
                   </>
                 ) : (
                   <>
-                    <span className="text-xs font-black uppercase tracking-wider text-[#58CC02] mb-3">
+                    <span className="text-xs font-black uppercase tracking-wider text-emerald-600 mb-3">
                       Cách người bản xứ nói
                     </span>
                     <p className="text-2xl sm:text-3xl font-black text-slate-900">
@@ -610,7 +611,7 @@ export default function PhrasesPage() {
                     >
                       {alreadySaved ? (
                         <>
-                          <Check className="h-3.5 w-3.5 text-[#58CC02]" />
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
                           Đã lưu
                         </>
                       ) : (

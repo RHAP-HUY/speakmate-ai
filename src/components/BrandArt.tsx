@@ -1,124 +1,253 @@
 'use client';
 
-interface MascotProps {
+import { useId } from 'react';
+
+interface CompanionProps {
   mood?: 'happy' | 'excited' | 'fire' | 'proud';
   className?: string;
 }
 
 /**
- * "Milo" — Bespoke SpeakMate AI friendly owl-companion vector mascot.
- * Designed with crisp geometric shapes and high-contrast Duolingo-grade charm.
+ * "Nova" — Original SpeakMate AI Luminous Voice Companion.
+ * A sleek futuristic floating holographic crystal orb with expressive LED visor eyes
+ * and subtle acoustic waves — 100% original, modern Apple/Pixar-inspired identity.
  */
-export function MascotOwl({ mood = 'happy', className = 'h-16 w-16' }: MascotProps) {
-  const bellyColor =
-    mood === 'fire' ? '#FFE4B5' : mood === 'proud' ? '#FEF3C7' : '#DCFCE7';
-  const bodyMain =
-    mood === 'fire' ? '#FF9600' : mood === 'proud' ? '#6366F1' : '#58CC02';
-  const bodyShade =
-    mood === 'fire' ? '#EA580C' : mood === 'proud' ? '#4F46E5' : '#46A302';
+export function NovaCompanion({
+  mood = 'happy',
+  className = 'h-16 w-16',
+}: CompanionProps) {
+  const uid = useId().replace(/:/g, '');
+  const shellId = `nova-shell-${uid}`;
+  const visorId = `nova-visor-${uid}`;
+  const glowId = `nova-glow-${uid}`;
+
+  const palette =
+    mood === 'fire'
+      ? {
+          stop1: '#FF9A3D',
+          stop2: '#F97316',
+          stop3: '#E11D48',
+          eye: '#FDE047',
+          wave: '#FB923C',
+          halo: '#F59E0B',
+        }
+      : mood === 'proud'
+        ? {
+            stop1: '#A78BFA',
+            stop2: '#6366F1',
+            stop3: '#EC4899',
+            eye: '#67E8F9',
+            wave: '#C084FC',
+            halo: '#FBBF24',
+          }
+        : mood === 'excited'
+          ? {
+              stop1: '#38BDF8',
+              stop2: '#6366F1',
+              stop3: '#8B5CF6',
+              eye: '#5EEAD4',
+              wave: '#38BDF8',
+              halo: '#22D3EE',
+            }
+          : {
+              stop1: '#60A5FA',
+              stop2: '#4F46E5',
+              stop3: '#7C3AED',
+              eye: '#38BDF8',
+              wave: '#818CF8',
+              halo: '#38BDF8',
+            };
 
   return (
     <svg
-      viewBox="0 0 120 120"
+      viewBox="0 0 128 128"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-hidden="true"
     >
-      {/* Subtle ground shadow */}
-      <ellipse cx="60" cy="111" rx="34" ry="6" fill="#0F172A" fillOpacity="0.1" />
+      <defs>
+        <linearGradient
+          id={shellId}
+          x1="20"
+          y1="16"
+          x2="108"
+          y2="110"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor={palette.stop1} />
+          <stop offset="52%" stopColor={palette.stop2} />
+          <stop offset="100%" stopColor={palette.stop3} />
+        </linearGradient>
+        <linearGradient
+          id={visorId}
+          x1="34"
+          y1="44"
+          x2="94"
+          y2="86"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor="#1E293B" />
+          <stop offset="100%" stopColor="#090D16" />
+        </linearGradient>
+        <radialGradient id={glowId} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={palette.stop1} stopOpacity="0.34" />
+          <stop offset="100%" stopColor={palette.stop2} stopOpacity="0" />
+        </radialGradient>
+      </defs>
 
-      {/* Crown when proud */}
-      {mood === 'proud' && (
+      {/* Ambient luminous aura behind orb */}
+      <circle cx="64" cy="62" r="54" fill={`url(#${glowId})`} />
+
+      {/* Ground floating shadow */}
+      <ellipse cx="64" cy="116" rx="28" ry="5" fill="#0F172A" fillOpacity="0.14" />
+
+      {/* Floating Crown Halo for Proud / Victory mood */}
+      {mood === 'proud' ? (
         <path
-          d="M40 22L46 8L55 16L60 5L65 16L74 8L80 22H40Z"
-          fill="#FFC800"
+          d="M46 21L52 10L60 17L64 7L68 17L76 10L82 21H46Z"
+          fill="#FBBF24"
           stroke="#D97706"
-          strokeWidth="2.5"
+          strokeWidth="2.2"
           strokeLinejoin="round"
+        />
+      ) : (
+        /* Sleek Floating Acoustic Halo Ring */
+        <ellipse
+          cx="64"
+          cy="17"
+          rx="22"
+          ry="4.8"
+          stroke={palette.halo}
+          strokeWidth="3"
+          strokeOpacity="0.85"
         />
       )}
 
-      {/* Ear tufts */}
-      <path d="M27 33L18 16L42 25Z" fill={bodyShade} />
-      <path d="M93 33L102 16L78 25Z" fill={bodyShade} />
-
-      {/* Main rounded body */}
-      <rect x="20" y="22" width="80" height="84" rx="40" fill={bodyMain} />
+      {/* Subtle Side Voice Soundwaves */}
       <path
-        d="M20 66C20 88.0914 37.9086 106 60 106C82.0914 106 100 88.0914 100 66V62C100 81 82 96 60 96C38 96 20 81 20 62V66Z"
-        fill={bodyShade}
-        fillOpacity="0.45"
+        d="M15 51C11.5 56 11.5 68 15 73"
+        stroke={palette.wave}
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        strokeOpacity="0.78"
       />
-
-      {/* Wings */}
-      <ellipse
-        cx="19"
-        cy="68"
-        rx="10"
-        ry="20"
-        transform={mood === 'excited' ? 'rotate(-28 19 68)' : 'rotate(10 19 68)'}
-        fill={bodyShade}
-      />
-      <ellipse
-        cx="101"
-        cy="68"
-        rx="10"
-        ry="20"
-        transform={mood === 'excited' ? 'rotate(28 101 68)' : 'rotate(-10 101 68)'}
-        fill={bodyShade}
-      />
-
-      {/* Belly patch */}
-      <ellipse cx="60" cy="80" rx="24" ry="20" fill={bellyColor} />
       <path
-        d="M48 76C51 79 54 79 57 76M63 76C66 79 69 79 72 76M55 86C58 89 62 89 65 86"
-        stroke={bodyMain}
+        d="M8.5 56C6.5 59.5 6.5 64.5 8.5 68"
+        stroke={palette.wave}
         strokeWidth="3"
         strokeLinecap="round"
-        strokeOpacity="0.4"
+        strokeOpacity="0.45"
       />
-
-      {/* Headset band for AI speaking buddy feel */}
       <path
-        d="M21 53C21 31 38 16 60 16C82 16 99 31 99 53"
-        stroke="#1CB0F6"
-        strokeWidth="5"
+        d="M113 51C116.5 56 116.5 68 113 73"
+        stroke={palette.wave}
+        strokeWidth="3.5"
         strokeLinecap="round"
+        strokeOpacity="0.78"
       />
-      <rect x="13" y="47" width="11" height="20" rx="5.5" fill="#1899D6" />
-      <rect x="96" y="47" width="11" height="20" rx="5.5" fill="#1899D6" />
-
-      {/* Big expressive eyes */}
-      <circle cx="44" cy="52" r="15" fill="#FFFFFF" />
-      <circle cx="76" cy="52" r="15" fill="#FFFFFF" />
-
-      {/* Pupils */}
-      <circle cx="46" cy="52" r="7.5" fill="#0F172A" />
-      <circle cx="74" cy="52" r="7.5" fill="#0F172A" />
-
-      {/* Eye sparkles */}
-      <circle cx="49" cy="48.5" r="2.8" fill="#FFFFFF" />
-      <circle cx="77" cy="48.5" r="2.8" fill="#FFFFFF" />
-      <circle cx="43" cy="55" r="1.4" fill="#FFFFFF" />
-      <circle cx="71" cy="55" r="1.4" fill="#FFFFFF" />
-
-      {/* Rosy cheeks */}
-      <ellipse cx="32" cy="65" rx="5" ry="3" fill="#FB7185" fillOpacity="0.45" />
-      <ellipse cx="88" cy="65" rx="5" ry="3" fill="#FB7185" fillOpacity="0.45" />
-
-      {/* Beak */}
       <path
-        d="M53 62C53 59 67 59 67 62L60 72L53 62Z"
-        fill="#FFB800"
-        stroke="#D97706"
-        strokeWidth="2"
-        strokeLinejoin="round"
+        d="M119.5 56C121.5 59.5 121.5 64.5 119.5 68"
+        stroke={palette.wave}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeOpacity="0.45"
       />
 
-      {/* Feet */}
-      <ellipse cx="47" cy="106" rx="8" ry="4.5" fill="#F59E0B" />
-      <ellipse cx="73" cy="106" rx="8" ry="4.5" fill="#F59E0B" />
+      {/* Sleek Crystal-Glass Orb Chassis */}
+      <rect
+        x="23"
+        y="25"
+        width="82"
+        height="78"
+        rx="39"
+        fill={`url(#${shellId})`}
+      />
+
+      {/* Top-left Apple-style glass specular reflection */}
+      <path
+        d="M37 37C44 30 57 27 72 29"
+        stroke="#FFFFFF"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeOpacity="0.45"
+      />
+
+      {/* Side acoustic pods */}
+      <rect
+        x="19"
+        y="53"
+        width="8"
+        height="20"
+        rx="4"
+        fill="#FFFFFF"
+        fillOpacity="0.92"
+      />
+      <rect
+        x="101"
+        y="53"
+        width="8"
+        height="20"
+        rx="4"
+        fill="#FFFFFF"
+        fillOpacity="0.92"
+      />
+
+      {/* Deep Glossy Midnight Face Visor */}
+      <rect
+        x="33"
+        y="42"
+        width="62"
+        height="42"
+        rx="21"
+        fill={`url(#${visorId})`}
+        stroke="#FFFFFF"
+        strokeOpacity="0.22"
+        strokeWidth="2"
+      />
+
+      {/* Expressive Glowing LED Eyes */}
+      {mood === 'excited' || mood === 'proud' ? (
+        <>
+          <path
+            d="M45 62C47.5 56 54.5 56 57 62"
+            stroke={palette.eye}
+            strokeWidth="4.5"
+            strokeLinecap="round"
+          />
+          <path
+            d="M71 62C73.5 56 80.5 56 83 62"
+            stroke={palette.eye}
+            strokeWidth="4.5"
+            strokeLinecap="round"
+          />
+        </>
+      ) : (
+        <>
+          <rect x="46" y="53" width="11" height="16" rx="5.5" fill={palette.eye} />
+          <rect x="71" y="53" width="11" height="16" rx="5.5" fill={palette.eye} />
+          <circle cx="53" cy="57" r="2.2" fill="#FFFFFF" />
+          <circle cx="78" cy="57" r="2.2" fill="#FFFFFF" />
+        </>
+      )}
+
+      {/* Friendly LED Voice Smile / Mini Equalizer */}
+      <path
+        d="M57 72C60 76 68 76 71 72"
+        stroke={palette.eye}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeOpacity="0.9"
+      />
+
+      {/* Bottom Rim Glow */}
+      <path
+        d="M46 95C54 99 74 99 82 95"
+        stroke="#FFFFFF"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeOpacity="0.35"
+      />
     </svg>
   );
 }
@@ -130,6 +259,7 @@ export function StreakFlameSvg({
   active?: boolean;
   className?: string;
 }) {
+  const uid = useId().replace(/:/g, '');
   return (
     <svg
       viewBox="0 0 48 48"
@@ -138,13 +268,38 @@ export function StreakFlameSvg({
       className={className}
       aria-hidden="true"
     >
+      <defs>
+        <linearGradient
+          id={`flame-o-${uid}`}
+          x1="24"
+          y1="4"
+          x2="24"
+          y2="42"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor="#F43F5E" />
+          <stop offset="50%" stopColor="#F97316" />
+          <stop offset="100%" stopColor="#FB923C" />
+        </linearGradient>
+        <linearGradient
+          id={`flame-i-${uid}`}
+          x1="24"
+          y1="16"
+          x2="24"
+          y2="40"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor="#FDE047" />
+          <stop offset="100%" stopColor="#F59E0B" />
+        </linearGradient>
+      </defs>
       <path
         d="M25.5 4C25.5 4 37 13.5 37 26.5C37 35.2 31.2 42 23.5 42C15.5 42 10 35.8 10 27.5C10 21.5 13.4 16.4 16.5 13.5C16.2 17.2 18.2 19.6 20 20.5C18.8 14.2 21.6 8.2 25.5 4Z"
-        fill={active ? '#FF9600' : '#CBD5E1'}
+        fill={active ? `url(#flame-o-${uid})` : '#CBD5E1'}
       />
       <path
         d="M24 17C24 17 31 23 31 30.2C31 35.6 27.6 39.5 23.5 39.5C19.2 39.5 16 35.9 16 31C16 26.8 18.4 23.7 20.2 22C20.2 24.4 21.5 25.6 22.6 26.1C21.9 22.5 22.8 19.2 24 17Z"
-        fill={active ? '#FFC800' : '#E2E8F0'}
+        fill={active ? `url(#flame-i-${uid})` : '#E2E8F0'}
       />
       <ellipse
         cx="23.5"
@@ -158,6 +313,7 @@ export function StreakFlameSvg({
 }
 
 export function GemSvg({ className = 'h-6 w-6' }: { className?: string }) {
+  const uid = useId().replace(/:/g, '');
   return (
     <svg
       viewBox="0 0 48 48"
@@ -166,16 +322,34 @@ export function GemSvg({ className = 'h-6 w-6' }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      <path d="M13 8H35L44 19L24 42L4 19L13 8Z" fill="#1CB0F6" />
-      <path d="M13 8H35L31 19H17L13 8Z" fill="#7DD3FC" />
-      <path d="M17 19H31L24 42L17 19Z" fill="#38BDF8" />
-      <path d="M4 19H17L24 42L4 19Z" fill="#0284C7" />
-      <path d="M31 19H44L24 42L31 19Z" fill="#0EA5E9" />
+      <defs>
+        <linearGradient
+          id={`gem-g-${uid}`}
+          x1="8"
+          y1="8"
+          x2="40"
+          y2="42"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor="#38BDF8" />
+          <stop offset="55%" stopColor="#0EA5E9" />
+          <stop offset="100%" stopColor="#4F46E5" />
+        </linearGradient>
+      </defs>
+      <path d="M13 8H35L44 19L24 42L4 19L13 8Z" fill={`url(#gem-g-${uid})`} />
+      <path d="M13 8H35L31 19H17L13 8Z" fill="#BAE6FD" fillOpacity="0.85" />
+      <path d="M17 19H31L24 42L17 19Z" fill="#38BDF8" fillOpacity="0.75" />
+      <path d="M4 19H17L24 42L4 19Z" fill="#2563EB" fillOpacity="0.45" />
     </svg>
   );
 }
 
-export function ShieldFreezeSvg({ className = 'h-6 w-6' }: { className?: string }) {
+export function ShieldFreezeSvg({
+  className = 'h-6 w-6',
+}: {
+  className?: string;
+}) {
+  const uid = useId().replace(/:/g, '');
   return (
     <svg
       viewBox="0 0 48 48"
@@ -184,17 +358,31 @@ export function ShieldFreezeSvg({ className = 'h-6 w-6' }: { className?: string 
       className={className}
       aria-hidden="true"
     >
+      <defs>
+        <linearGradient
+          id={`sh-g-${uid}`}
+          x1="10"
+          y1="6"
+          x2="38"
+          y2="44"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor="#67E8F9" />
+          <stop offset="55%" stopColor="#0EA5E9" />
+          <stop offset="100%" stopColor="#2563EB" />
+        </linearGradient>
+      </defs>
       <path
         d="M24 5L40 11.5V23.5C40 33.4 33.2 40.6 24 44C14.8 40.6 8 33.4 8 23.5V11.5L24 5Z"
-        fill="#38BDF8"
-        stroke="#0284C7"
-        strokeWidth="2.5"
+        fill={`url(#sh-g-${uid})`}
+        stroke="#0369A1"
+        strokeWidth="2"
         strokeLinejoin="round"
       />
       <path
         d="M24 9.5L35.5 14.2V23.2C35.5 30.7 30.4 36.2 24 39V9.5Z"
-        fill="#7DD3FC"
-        fillOpacity="0.6"
+        fill="#FFFFFF"
+        fillOpacity="0.22"
       />
       <path
         d="M24 15V31M17 19L31 27M31 19L17 27"
@@ -213,14 +401,15 @@ export function TreasureChestSvg({
   state?: 'locked' | 'ready' | 'opened';
   className?: string;
 }) {
-  const bodyFill =
-    state === 'ready' ? '#F59E0B' : state === 'opened' ? '#10B981' : '#94A3B8';
-  const lidFill =
-    state === 'ready' ? '#FBBF24' : state === 'opened' ? '#34D399' : '#CBD5E1';
-  const trimFill =
-    state === 'ready' ? '#FFFBEB' : state === 'opened' ? '#D1FAE5' : '#E2E8F0';
+  const uid = useId().replace(/:/g, '');
+  const gradStops =
+    state === 'ready'
+      ? ['#FDE047', '#F59E0B', '#D97706']
+      : state === 'opened'
+        ? ['#6EE7B7', '#10B981', '#047857']
+        : ['#CBD5E1', '#94A3B8', '#64748B'];
   const strokeCol =
-    state === 'ready' ? '#B45309' : state === 'opened' ? '#047857' : '#64748B';
+    state === 'ready' ? '#B45309' : state === 'opened' ? '#047857' : '#475569';
 
   return (
     <svg
@@ -230,46 +419,69 @@ export function TreasureChestSvg({
       className={className}
       aria-hidden="true"
     >
-      {/* Glow rays when ready */}
+      <defs>
+        <linearGradient
+          id={`chest-g-${uid}`}
+          x1="12"
+          y1="14"
+          x2="52"
+          y2="54"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor={gradStops[0]} />
+          <stop offset="50%" stopColor={gradStops[1]} />
+          <stop offset="100%" stopColor={gradStops[2]} />
+        </linearGradient>
+      </defs>
       {state === 'ready' && (
-        <g stroke="#FBBF24" strokeWidth="3" strokeLinecap="round">
+        <g stroke="#F59E0B" strokeWidth="3" strokeLinecap="round">
           <path d="M32 4V10" />
           <path d="M13 10L17 14" />
           <path d="M51 10L47 14" />
         </g>
       )}
-      {/* Chest lid */}
       <path
         d="M10 28C10 20 17 15 32 15C47 15 54 20 54 28V31H10V28Z"
-        fill={lidFill}
+        fill={gradStops[0]}
         stroke={strokeCol}
-        strokeWidth="3"
+        strokeWidth="2.5"
         strokeLinejoin="round"
       />
-      {/* Chest body */}
       <rect
         x="11"
         y="31"
         width="42"
         height="23"
-        rx="5"
-        fill={bodyFill}
+        rx="6"
+        fill={`url(#chest-g-${uid})`}
         stroke={strokeCol}
-        strokeWidth="3"
+        strokeWidth="2.5"
       />
-      {/* Vertical bands */}
-      <rect x="19" y="17" width="5" height="36" fill={trimFill} fillOpacity="0.65" />
-      <rect x="40" y="17" width="5" height="36" fill={trimFill} fillOpacity="0.65" />
-      {/* Center lock buckle */}
+      <rect
+        x="19"
+        y="17"
+        width="5"
+        height="36"
+        fill="#FFFFFF"
+        fillOpacity="0.45"
+      />
+      <rect
+        x="40"
+        y="17"
+        width="5"
+        height="36"
+        fill="#FFFFFF"
+        fillOpacity="0.45"
+      />
       <rect
         x="26"
         y="26"
         width="12"
         height="13"
-        rx="3.5"
+        rx="4"
         fill={state === 'ready' ? '#FEF08A' : '#FFFFFF'}
         stroke={strokeCol}
-        strokeWidth="2.5"
+        strokeWidth="2.2"
       />
       <circle cx="32" cy="32.5" r="2.2" fill={strokeCol} />
     </svg>
@@ -283,15 +495,16 @@ export function LeagueTrophySvg({
   tier: 'bronze' | 'silver' | 'gold' | 'emerald' | 'diamond';
   className?: string;
 }) {
+  const uid = useId().replace(/:/g, '');
   const palette: Record<
     typeof tier,
-    { main: string; light: string; stroke: string }
+    { c1: string; c2: string; stroke: string }
   > = {
-    bronze: { main: '#D97706', light: '#FBBF24', stroke: '#92400E' },
-    silver: { main: '#94A3B8', light: '#E2E8F0', stroke: '#475569' },
-    gold: { main: '#F59E0B', light: '#FDE047', stroke: '#B45309' },
-    emerald: { main: '#10B981', light: '#6EE7B7', stroke: '#047857' },
-    diamond: { main: '#0EA5E9', light: '#7DD3FC', stroke: '#0369A1' },
+    bronze: { c1: '#FBBF24', c2: '#B45309', stroke: '#92400E' },
+    silver: { c1: '#F1F5F9', c2: '#64748B', stroke: '#475569' },
+    gold: { c1: '#FDE047', c2: '#EA580C', stroke: '#B45309' },
+    emerald: { c1: '#6EE7B7', c2: '#059669', stroke: '#047857' },
+    diamond: { c1: '#67E8F9', c2: '#4F46E5', stroke: '#3730A3' },
   };
   const c = palette[tier];
 
@@ -303,17 +516,30 @@ export function LeagueTrophySvg({
       className={className}
       aria-hidden="true"
     >
+      <defs>
+        <linearGradient
+          id={`lg-g-${uid}`}
+          x1="10"
+          y1="6"
+          x2="46"
+          y2="50"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor={c.c1} />
+          <stop offset="100%" stopColor={c.c2} />
+        </linearGradient>
+      </defs>
       <path
         d="M28 5L47 13V27C47 38.5 39 46.5 28 51C17 46.5 9 38.5 9 27V13L28 5Z"
-        fill={c.main}
+        fill={`url(#lg-g-${uid})`}
         stroke={c.stroke}
-        strokeWidth="3"
+        strokeWidth="2.5"
         strokeLinejoin="round"
       />
       <path
         d="M28 10L42 16V26.5C42 35.3 36.2 41.7 28 45.5V10Z"
-        fill={c.light}
-        fillOpacity="0.45"
+        fill="#FFFFFF"
+        fillOpacity="0.22"
       />
       <path
         d="M28 17L31.1 23.3L38 24.3L33 29.2L34.2 36L28 32.8L21.8 36L23 29.2L18 24.3L24.9 23.3L28 17Z"

@@ -19,7 +19,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
-import { MascotOwl } from '@/components/BrandArt';
+import { NovaCompanion } from '@/components/BrandArt';
 import { ProfileForm } from '@/components/ProfileForm';
 import {
   exportLocalProgressBackup,
@@ -200,9 +200,9 @@ export default function SettingsPage() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#F7F9FC]">
-        <MascotOwl mood="happy" className="h-16 w-16 animate-gentle-float" />
-        <Loader2 className="h-6 w-6 animate-spin text-[#1CB0F6]" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
+        <NovaCompanion mood="happy" className="h-18 w-18 animate-gentle-float" />
+        <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
       </div>
     );
   }
@@ -228,9 +228,9 @@ export default function SettingsPage() {
           <div>
             <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
               {sessionInfo?.provider === 'google' ? (
-                <HardDrive className="h-5 w-5 text-[#58CC02]" />
+                <HardDrive className="h-5 w-5 text-emerald-600" />
               ) : (
-                <Cloud className="h-5 w-5 text-[#1CB0F6]" />
+                <Cloud className="h-5 w-5 text-indigo-600" />
               )}
               Lưu trữ Google Drive 5TB &amp; Đồng bộ Tài khoản
             </h2>
@@ -252,7 +252,7 @@ export default function SettingsPage() {
               href="/onboarding"
               className="btn-duo btn-duo-white px-3.5 py-2 text-xs"
             >
-              <Sparkles className="h-3.5 w-3.5 text-[#58CC02]" />
+              <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
               Chọn lại Ngôn ngữ &amp; Sở thích
             </Link>
             <Link
@@ -445,7 +445,7 @@ export default function SettingsPage() {
           <div className="rounded-2xl border-2 border-slate-200 bg-[#F7F9FC] p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
               <span className="font-extrabold text-slate-700 flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-[#58CC02]" />
+                <ShieldCheck className="h-4 w-4 text-emerald-600" />
                 {keyStatus.personalKeyHint
                   ? `Đã lưu Key: ${keyStatus.personalKeyHint}`
                   : 'Nhập Gemini API Key miễn phí của bạn'}

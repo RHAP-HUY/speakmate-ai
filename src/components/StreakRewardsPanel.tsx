@@ -387,8 +387,8 @@ export function StreakRewardsPanel({
                     onClick={() => void handleEquip(bid)}
                     className={`rounded-xl px-3.5 py-2 text-xs font-extrabold border-2 transition cursor-pointer ${
                       active
-                        ? 'border-[#58CC02] bg-[#58CC02] text-white shadow-[0_3px_0_#46A302]'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        ? 'border-indigo-600 bg-indigo-600 text-white shadow-[0_3px_0_#3730A3]'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-300'
                     }`}
                   >
                     {BADGE_DIRECTORY[bid] || bid} {active ? '✓' : ''}

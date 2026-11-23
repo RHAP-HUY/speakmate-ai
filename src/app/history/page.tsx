@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import {
   GemSvg,
-  MascotOwl,
+  NovaCompanion,
   ShieldFreezeSvg,
   StreakFlameSvg,
 } from '@/components/BrandArt';
@@ -157,9 +157,9 @@ export default function HistoryPage() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#F7F9FC]">
-        <MascotOwl mood="fire" className="h-16 w-16 animate-gentle-float" />
-        <Loader2 className="h-6 w-6 animate-spin text-[#FF9600]" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
+        <NovaCompanion mood="fire" className="h-18 w-18 animate-gentle-float" />
+        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
       </div>
     );
   }
@@ -176,11 +176,12 @@ export default function HistoryPage() {
   return (
     <AppShell profile={profile} authenticated={authenticated}>
       {/* Hero Banner */}
-      <section className="rounded-3xl bg-[#FF9600] border-b-4 border-[#D97706] p-6 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <MascotOwl
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-500 via-rose-500 to-amber-500 border-b-4 border-rose-900/35 p-6 text-white shadow-lg shadow-orange-950/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
+        <div className="relative flex items-center gap-4">
+          <NovaCompanion
             mood="fire"
-            className="hidden sm:block h-18 w-18 shrink-0 animate-gentle-float"
+            className="hidden sm:block h-18 w-18 shrink-0 animate-gentle-float drop-shadow-[0_10px_18px_rgba(124,45,18,0.35)]"
           />
           <div>
             <div className="text-[11px] font-black uppercase tracking-widest text-white/85">
@@ -248,7 +249,7 @@ export default function HistoryPage() {
 
         <div className="card-duo-elevated p-4 space-y-1">
           <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase text-slate-500">
-            <Clock className="h-4 w-4 text-[#58CC02]" />
+            <Clock className="h-4 w-4 text-emerald-500" />
             Tổng luyện tập
           </div>
           <div className="text-2xl font-black text-slate-900">
@@ -323,9 +324,9 @@ export default function HistoryPage() {
                   <div
                     className={`progress-gloss w-full rounded-xl transition-all ${
                       metGoal
-                        ? 'bg-[#58CC02]'
+                        ? 'bg-gradient-to-t from-emerald-600 to-teal-400'
                         : mins > 0
-                          ? 'bg-[#1CB0F6]'
+                          ? 'bg-gradient-to-t from-indigo-600 to-cyan-400'
                           : 'bg-slate-200'
                     }`}
                     style={{ height: `${heightPct}%` }}

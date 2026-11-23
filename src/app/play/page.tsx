@@ -28,7 +28,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import {
   GemSvg,
-  MascotOwl,
+  NovaCompanion,
   StreakFlameSvg,
   TreasureChestSvg,
 } from '@/components/BrandArt';
@@ -949,9 +949,9 @@ function PlayPageInner() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#F7F9FC]">
-        <MascotOwl mood="excited" className="h-16 w-16 animate-gentle-float" />
-        <Loader2 className="h-6 w-6 animate-spin text-[#58CC02]" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
+        <NovaCompanion mood="excited" className="h-18 w-18 animate-gentle-float" />
+        <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
       </div>
     );
   }
@@ -964,7 +964,7 @@ function PlayPageInner() {
   const currentBuild = buildItems[buildIdx];
   const currentPron = pronItems[pronIdx];
 
-  // ACTIVE DISTRACTION-FREE DUOLINGO LESSON SCREEN
+  // ACTIVE DISTRACTION-FREE AURORA LESSON SCREEN
   if (
     mode === 'speed' ||
     mode === 'listen' ||
@@ -987,8 +987,8 @@ function PlayPageInner() {
               100;
 
     return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b-2 border-slate-100">
+      <div className="min-h-screen bg-mesh-light flex flex-col">
+        <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-slate-200/80">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 py-4 flex items-center gap-4">
             <button
               type="button"
@@ -1004,15 +1004,15 @@ function PlayPageInner() {
               <X className="h-6 w-6 stroke-[2.6]" />
             </button>
 
-            <div className="flex-1 h-4 rounded-full bg-slate-200 overflow-hidden">
+            <div className="flex-1 h-4 rounded-full bg-slate-200/90 overflow-hidden">
               <div
-                className="progress-gloss h-full rounded-full bg-[#58CC02] transition-all duration-300"
+                className="progress-gloss h-full rounded-full bg-gradient-to-r from-indigo-600 via-violet-500 to-cyan-400 transition-all duration-300"
                 style={{ width: `${Math.max(6, progressPct)}%` }}
               />
             </div>
 
             {boostActive && (
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-xl border-2 border-violet-300 bg-violet-50 px-2.5 py-1 text-[11px] font-black text-violet-700">
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-xl border border-violet-300 bg-violet-50 px-2.5 py-1 text-[11px] font-black text-violet-700">
                 ⚡ 2x XP
               </span>
             )}
@@ -1040,7 +1040,7 @@ function PlayPageInner() {
                       key={i}
                       className={`h-5 w-5 ${
                         i < hearts
-                          ? 'fill-[#FF4B4B] text-[#FF4B4B]'
+                          ? 'fill-rose-500 text-rose-500'
                           : 'text-slate-200 fill-slate-200'
                       }`}
                     />
@@ -1056,20 +1056,20 @@ function PlayPageInner() {
                     🔥 x{combo}
                   </span>
                 )}
-                <span className="text-[#1899D6]">
+                <span className="text-indigo-600">
                   {listenIdx + 1}/{listenItems.length}
                 </span>
               </div>
             )}
 
             {mode === 'build' && (
-              <span className="text-xs font-black text-[#8B5CF6]">
+              <span className="text-xs font-black text-violet-600">
                 {buildIdx + 1}/{buildItems.length}
               </span>
             )}
 
             {mode === 'pronounce' && (
-              <span className="text-xs font-black text-[#46A302]">
+              <span className="text-xs font-black text-emerald-600">
                 Câu {pronIdx + 1}/{pronItems.length}
               </span>
             )}
@@ -1081,7 +1081,7 @@ function PlayPageInner() {
           {mode === 'speed' && currentSpeed && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <MascotOwl
+                <NovaCompanion
                   mood={
                     selectedOption === currentSpeed.correctEn
                       ? 'excited'
@@ -1090,7 +1090,7 @@ function PlayPageInner() {
                   className="hidden sm:block h-20 w-20 shrink-0"
                 />
                 <div className="flex-1 space-y-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#DDF4FF] px-3 py-1 text-xs font-extrabold text-[#1899D6]">
+                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-1 text-xs font-extrabold text-indigo-700">
                     {speedRoundTitle} · Câu {speedIdx + 1}/{speedItems.length} ·{' '}
                     {currentSpeed.contextVi}
                   </span>
@@ -1105,14 +1105,14 @@ function PlayPageInner() {
                   const isPicked = selectedOption === opt;
                   const isCorrectOpt = opt === currentSpeed.correctEn;
                   let cardCls =
-                    'border-slate-200 border-b-4 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-300 active:translate-y-[2px]';
+                    'border-slate-200 border-b-4 bg-white text-slate-800 hover:bg-indigo-50/40 hover:border-indigo-300 active:translate-y-[2px]';
                   if (selectedOption !== null) {
                     if (isCorrectOpt) {
                       cardCls =
-                        'border-[#58CC02] border-b-4 bg-[#D7FFB8]/65 text-[#2E6E00]';
+                        'border-emerald-500 border-b-4 bg-emerald-50 text-emerald-900';
                     } else if (isPicked && !isCorrectOpt) {
                       cardCls =
-                        'border-[#FF4B4B] border-b-4 bg-[#FFDFE0] text-[#B91C1C]';
+                        'border-rose-500 border-b-4 bg-rose-50 text-rose-800';
                     } else {
                       cardCls =
                         'border-slate-200 bg-slate-50 text-slate-400 opacity-60';
@@ -1128,16 +1128,16 @@ function PlayPageInner() {
                       className={`flex w-full items-center justify-between gap-3 rounded-2xl border-2 px-4 py-4 text-left text-sm sm:text-base font-extrabold transition cursor-pointer ${cardCls}`}
                     >
                       <span className="flex items-center gap-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-current/20 bg-white/70 text-xs font-black">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-current/20 bg-white/80 text-xs font-black">
                           {idx + 1}
                         </span>
                         <span>{opt}</span>
                       </span>
                       {selectedOption !== null && isCorrectOpt && (
-                        <CheckCircle2 className="h-6 w-6 shrink-0 text-[#58CC02]" />
+                        <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
                       )}
                       {selectedOption !== null && isPicked && !isCorrectOpt && (
-                        <XCircle className="h-6 w-6 shrink-0 text-[#FF4B4B]" />
+                        <XCircle className="h-6 w-6 shrink-0 text-rose-500" />
                       )}
                     </button>
                   );
@@ -1155,8 +1155,8 @@ function PlayPageInner() {
           {/* GAME 2 (NEW!): LISTENING COMPREHENSION */}
           {mode === 'listen' && currentListen && (
             <div className="space-y-6">
-              <div className="rounded-3xl border-2 border-[#84D8FF] bg-[#EBF9FF] p-6 text-center space-y-4">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white border-2 border-[#84D8FF] px-3.5 py-1 text-xs font-black text-[#1899D6]">
+              <div className="rounded-3xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50/80 via-white to-cyan-50/80 p-6 text-center space-y-4">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-indigo-200 px-3.5 py-1 text-xs font-black text-indigo-700">
                   🎧 {currentListen.contextVi}
                 </span>
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900">
@@ -1167,7 +1167,7 @@ function PlayPageInner() {
                   <button
                     type="button"
                     onClick={() => speakText(currentListen.spokenEn, 0.9)}
-                    className="btn-duo btn-duo-blue px-6 py-3.5 text-sm uppercase"
+                    className="btn-duo btn-duo-primary px-6 py-3.5 text-sm uppercase"
                   >
                     <Volume2 className="h-5 w-5" />
                     Nghe giọng {persona.name} ({persona.accent})
@@ -1182,11 +1182,11 @@ function PlayPageInner() {
                 </div>
 
                 {showListenScript ? (
-                  <div className="rounded-2xl border-2 border-sky-200 bg-white p-3.5 text-left space-y-1">
+                  <div className="rounded-2xl border border-indigo-200 bg-white p-3.5 text-left space-y-1">
                     <div className="text-sm font-black text-slate-900">
                       “{currentListen.spokenEn}”
                     </div>
-                    <div className="text-xs font-bold text-[#1899D6]">
+                    <div className="text-xs font-bold text-indigo-600">
                       /{currentListen.phonetic}/
                     </div>
                   </div>
@@ -1194,7 +1194,7 @@ function PlayPageInner() {
                   <button
                     type="button"
                     onClick={() => setShowListenScript(true)}
-                    className="text-xs font-extrabold text-[#1899D6] hover:underline cursor-pointer"
+                    className="text-xs font-extrabold text-indigo-600 hover:underline cursor-pointer"
                   >
                     👀 Gợi ý: Xem câu tiếng Anh
                   </button>
@@ -1206,14 +1206,14 @@ function PlayPageInner() {
                   const isPicked = listenSelected === optVi;
                   const isCorrectOpt = optVi === currentListen.correctAnswerVi;
                   let cardCls =
-                    'border-slate-200 border-b-4 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-300 active:translate-y-[2px]';
+                    'border-slate-200 border-b-4 bg-white text-slate-800 hover:bg-indigo-50/40 hover:border-indigo-300 active:translate-y-[2px]';
                   if (listenSelected !== null) {
                     if (isCorrectOpt) {
                       cardCls =
-                        'border-[#58CC02] border-b-4 bg-[#D7FFB8]/65 text-[#2E6E00]';
+                        'border-emerald-500 border-b-4 bg-emerald-50 text-emerald-900';
                     } else if (isPicked && !isCorrectOpt) {
                       cardCls =
-                        'border-[#FF4B4B] border-b-4 bg-[#FFDFE0] text-[#B91C1C]';
+                        'border-rose-500 border-b-4 bg-rose-50 text-rose-800';
                     } else {
                       cardCls =
                         'border-slate-200 bg-slate-50 text-slate-400 opacity-60';
@@ -1229,16 +1229,16 @@ function PlayPageInner() {
                       className={`flex w-full items-center justify-between gap-3 rounded-2xl border-2 px-4 py-4 text-left text-sm font-extrabold transition cursor-pointer ${cardCls}`}
                     >
                       <span className="flex items-center gap-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-current/20 bg-white/70 text-xs font-black">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-current/20 bg-white/80 text-xs font-black">
                           {idx + 1}
                         </span>
                         <span>{optVi}</span>
                       </span>
                       {listenSelected !== null && isCorrectOpt && (
-                        <CheckCircle2 className="h-6 w-6 shrink-0 text-[#58CC02]" />
+                        <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
                       )}
                       {listenSelected !== null && isPicked && !isCorrectOpt && (
-                        <XCircle className="h-6 w-6 shrink-0 text-[#FF4B4B]" />
+                        <XCircle className="h-6 w-6 shrink-0 text-rose-500" />
                       )}
                     </button>
                   );
@@ -1258,9 +1258,9 @@ function PlayPageInner() {
           {mode === 'build' && currentBuild && (
             <div className="space-y-6">
               <div className="flex items-center gap-4">
-                <MascotOwl mood="happy" className="h-20 w-20 shrink-0" />
-                <div className="flex-1 rounded-2xl border-2 border-slate-200 bg-[#F7F9FC] p-4 space-y-2.5">
-                  <div className="text-[11px] font-black uppercase tracking-wider text-[#1899D6]">
+                <NovaCompanion mood="happy" className="h-20 w-20 shrink-0" />
+                <div className="flex-1 rounded-2xl border border-indigo-200/80 bg-white/95 p-4 space-y-2.5 shadow-sm">
+                  <div className="text-[11px] font-black uppercase tracking-wider text-indigo-600">
                     🧩 Nghe giọng {persona.name} ({persona.accent}) &amp; ghép câu
                   </div>
                   <p className="text-base sm:text-lg font-black text-slate-900">
@@ -1270,7 +1270,7 @@ function PlayPageInner() {
                     <button
                       type="button"
                       onClick={() => speakText(currentBuild.sentenceEn, 0.88)}
-                      className="btn-duo btn-duo-blue px-4 py-2 text-xs"
+                      className="btn-duo btn-duo-primary px-4 py-2 text-xs"
                     >
                       <Volume2 className="h-4 w-4" />
                       Nghe mẫu
@@ -1286,7 +1286,7 @@ function PlayPageInner() {
                 </div>
               </div>
 
-              <div className="min-h-24 rounded-2xl border-2 border-dashed border-slate-300 bg-[#F7F9FC] p-4 flex flex-wrap items-center gap-2.5">
+              <div className="min-h-24 rounded-2xl border-2 border-dashed border-indigo-200 bg-white/80 p-4 flex flex-wrap items-center gap-2.5">
                 {chosenTiles.length === 0 ? (
                   <span className="w-full text-center text-xs font-bold text-slate-400">
                     Chạm vào các thẻ từ bên dưới để xếp thành câu chuẩn bản xứ...
@@ -1298,7 +1298,7 @@ function PlayPageInner() {
                       type="button"
                       disabled={buildChecked !== 'idle'}
                       onClick={() => handleRemoveWordTile(tile)}
-                      className="rounded-xl border-2 border-[#84D8FF] border-b-4 bg-[#DDF4FF] px-3.5 py-2 text-sm font-black text-[#1899D6] active:translate-y-[2px] transition cursor-pointer"
+                      className="rounded-xl border-2 border-indigo-300 border-b-4 bg-indigo-50 px-3.5 py-2 text-sm font-black text-indigo-700 active:translate-y-[2px] transition cursor-pointer"
                     >
                       {tile.word}
                     </button>
@@ -1313,7 +1313,7 @@ function PlayPageInner() {
                     type="button"
                     disabled={buildChecked !== 'idle'}
                     onClick={() => handlePickWordTile(tile)}
-                    className="rounded-xl border-2 border-slate-200 border-b-4 bg-white px-4 py-2.5 text-sm font-extrabold text-slate-800 hover:bg-slate-50 active:translate-y-[2px] transition cursor-pointer"
+                    className="rounded-xl border-2 border-slate-200 border-b-4 bg-white px-4 py-2.5 text-sm font-extrabold text-slate-800 hover:border-indigo-300 hover:bg-indigo-50/40 active:translate-y-[2px] transition cursor-pointer"
                   >
                     {tile.word}
                   </button>
@@ -1334,7 +1334,7 @@ function PlayPageInner() {
                     type="button"
                     disabled={chosenTiles.length === 0}
                     onClick={handleCheckBuildSentence}
-                    className="btn-duo btn-duo-green flex-1 py-3.5 text-sm uppercase tracking-wide"
+                    className="btn-duo btn-duo-primary flex-1 py-3.5 text-sm uppercase tracking-wide"
                   >
                     Kiểm tra đáp án
                   </button>
@@ -1346,14 +1346,14 @@ function PlayPageInner() {
           {/* GAME 4: PRONUNCIATION ARENA */}
           {mode === 'pronounce' && currentPron && (
             <div className="space-y-6">
-              <div className="rounded-3xl border-2 border-emerald-200 bg-[#F1FDE8]/70 p-6 text-center space-y-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white border-2 border-emerald-200 px-3.5 py-1 text-xs font-extrabold text-[#3B8702]">
+              <div className="rounded-3xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/70 p-6 text-center space-y-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-emerald-200 px-3.5 py-1 text-xs font-extrabold text-emerald-700">
                   🎙️ Đọc to câu sau theo giọng {persona.accent}
                 </span>
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
                   “{currentPron.sentence}”
                 </h1>
-                <p className="text-sm font-extrabold text-[#1899D6]">
+                <p className="text-sm font-extrabold text-indigo-600">
                   /{currentPron.phonetic}/
                 </p>
                 <p className="text-sm font-semibold text-slate-600">
@@ -1488,8 +1488,8 @@ function PlayPageInner() {
           <footer
             className={`sticky bottom-0 border-t-2 px-4 py-5 ${
               selectedOption === currentSpeed.correctEn
-                ? 'border-[#B8F28B] bg-[#D7FFB8]'
-                : 'border-[#FFC1C1] bg-[#FFDFE0]'
+                ? 'border-emerald-200 bg-emerald-50'
+                : 'border-rose-200 bg-rose-50'
             }`}
           >
             <div className="mx-auto max-w-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1498,8 +1498,8 @@ function PlayPageInner() {
                   <span
                     className={`text-base font-black ${
                       selectedOption === currentSpeed.correctEn
-                        ? 'text-[#3B8702]'
-                        : 'text-[#B91C1C]'
+                        ? 'text-emerald-700'
+                        : 'text-rose-700'
                     }`}
                   >
                     {selectedOption === currentSpeed.correctEn
@@ -1511,7 +1511,7 @@ function PlayPageInner() {
                   <button
                     type="button"
                     onClick={() => speakText(currentSpeed.correctEn, 0.85)}
-                    className="inline-flex items-center gap-1 rounded-xl bg-white/90 border border-slate-200 px-2.5 py-1 text-xs font-extrabold text-[#1899D6] cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-xl bg-white/95 border border-slate-200 px-2.5 py-1 text-xs font-extrabold text-indigo-700 cursor-pointer"
                   >
                     <Volume2 className="h-3.5 w-3.5" />
                     Nghe
@@ -1528,7 +1528,7 @@ function PlayPageInner() {
                 className={`btn-duo shrink-0 px-7 py-3.5 text-sm uppercase tracking-wide ${
                   selectedOption === currentSpeed.correctEn
                     ? 'btn-duo-green'
-                    : 'bg-[#FF4B4B] text-white border-2 border-[#FF4B4B] shadow-[0_4px_0_#D93636]'
+                    : 'bg-rose-500 text-white border border-rose-500 shadow-[0_4px_0_#BE123C]'
                 }`}
               >
                 {speedIdx + 1 >= speedItems.length ? 'Nhận thưởng 🎉' : 'Tiếp tục'}
@@ -1541,8 +1541,8 @@ function PlayPageInner() {
           <footer
             className={`sticky bottom-0 border-t-2 px-4 py-5 ${
               listenSelected === currentListen.correctAnswerVi
-                ? 'border-[#B8F28B] bg-[#D7FFB8]'
-                : 'border-[#FFC1C1] bg-[#FFDFE0]'
+                ? 'border-emerald-200 bg-emerald-50'
+                : 'border-rose-200 bg-rose-50'
             }`}
           >
             <div className="mx-auto max-w-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1550,8 +1550,8 @@ function PlayPageInner() {
                 <div
                   className={`text-base font-black ${
                     listenSelected === currentListen.correctAnswerVi
-                      ? 'text-[#3B8702]'
-                      : 'text-[#B91C1C]'
+                      ? 'text-emerald-700'
+                      : 'text-rose-700'
                   }`}
                 >
                   {listenSelected === currentListen.correctAnswerVi
@@ -1569,7 +1569,7 @@ function PlayPageInner() {
                 className={`btn-duo shrink-0 px-7 py-3.5 text-sm uppercase tracking-wide ${
                   listenSelected === currentListen.correctAnswerVi
                     ? 'btn-duo-green'
-                    : 'bg-[#FF4B4B] text-white border-2 border-[#FF4B4B] shadow-[0_4px_0_#D93636]'
+                    : 'bg-rose-500 text-white border border-rose-500 shadow-[0_4px_0_#BE123C]'
                 }`}
               >
                 {listenIdx + 1 >= listenItems.length ? 'Nhận thưởng 🎉' : 'Tiếp tục'}
@@ -1582,8 +1582,8 @@ function PlayPageInner() {
           <footer
             className={`sticky bottom-0 border-t-2 px-4 py-5 ${
               buildChecked === 'correct'
-                ? 'border-[#B8F28B] bg-[#D7FFB8]'
-                : 'border-[#FFC1C1] bg-[#FFDFE0]'
+                ? 'border-emerald-200 bg-emerald-50'
+                : 'border-rose-200 bg-rose-50'
             }`}
           >
             <div className="mx-auto max-w-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1591,8 +1591,8 @@ function PlayPageInner() {
                 <div
                   className={`text-base font-black ${
                     buildChecked === 'correct'
-                      ? 'text-[#3B8702]'
-                      : 'text-[#B91C1C]'
+                      ? 'text-emerald-700'
+                      : 'text-rose-700'
                   }`}
                 >
                   {buildChecked === 'correct'
@@ -1610,7 +1610,7 @@ function PlayPageInner() {
                 className={`btn-duo shrink-0 px-7 py-3.5 text-sm uppercase tracking-wide ${
                   buildChecked === 'correct'
                     ? 'btn-duo-green'
-                    : 'bg-[#FF4B4B] text-white border-2 border-[#FF4B4B] shadow-[0_4px_0_#D93636]'
+                    : 'bg-rose-500 text-white border border-rose-500 shadow-[0_4px_0_#BE123C]'
                 }`}
               >
                 {buildIdx + 1 >= buildItems.length ? 'Nhận thưởng 🎉' : 'Tiếp tục'}
@@ -1627,21 +1627,23 @@ function PlayPageInner() {
     <AppShell profile={profile} authenticated={authenticated}>
       {mode === 'lobby' && (
         <>
-          <section className="rounded-3xl bg-[#58CC02] border-b-4 border-[#46A302] p-6 sm:p-7 text-white">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-violet-600 to-cyan-500 border-b-4 border-indigo-900/35 p-6 sm:p-7 text-white shadow-lg shadow-indigo-950/15">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/15 blur-2xl" />
+            <div className="pointer-events-none absolute -left-12 -bottom-16 h-40 w-40 rounded-full bg-cyan-200/20 blur-2xl" />
+            <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-5">
               <div className="flex items-center gap-4">
-                <MascotOwl
+                <NovaCompanion
                   mood="excited"
-                  className="hidden sm:block h-20 w-20 shrink-0 animate-gentle-float"
+                  className="hidden sm:block h-20 w-20 shrink-0 animate-gentle-float drop-shadow-[0_12px_20px_rgba(15,23,42,0.35)]"
                 />
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-black uppercase tracking-wider">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-xs px-3 py-1 text-[11px] font-black uppercase tracking-wider">
                       <Gamepad2 className="h-3.5 w-3.5" />
                       Đấu trường 5 Chế độ Chơi &amp; Học
                     </span>
                     {boostActive && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[#FFC800] px-2.5 py-1 text-[11px] font-black text-amber-950">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-300 px-2.5 py-1 text-[11px] font-black text-amber-950">
                         ⚡ 2x XP ({boostMins}p)
                       </span>
                     )}
@@ -1657,14 +1659,14 @@ function PlayPageInner() {
                 </div>
               </div>
 
-              <div className="shrink-0 rounded-2xl bg-white/15 border-2 border-white/25 p-4 min-w-56 space-y-2">
+              <div className="shrink-0 rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md p-4 min-w-56 space-y-2">
                 <div className="flex items-center justify-between text-xs font-black">
                   <span>Lv.{levelInfo.level}</span>
                   <span>{profile.xp} XP</span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-white/25 overflow-hidden">
                   <div
-                    className="progress-gloss h-full rounded-full bg-[#FFC800]"
+                    className="progress-gloss h-full rounded-full bg-gradient-to-r from-amber-300 to-yellow-400"
                     style={{ width: `${Math.max(8, levelInfo.progressPct)}%` }}
                   />
                 </div>
@@ -1866,7 +1868,7 @@ function PlayPageInner() {
                   🧩 Nghe &amp; Ghép câu
                 </h2>
                 <p className="text-xs font-medium text-slate-600 leading-relaxed">
-                  Nghe giọng bản xứ đọc rồi bấm xếp thẻ từ đúng trật tự — cách nhớ cấu trúc giao tiếp siêu nhanh kiểu Duolingo!
+                  Nghe giọng bản xứ đọc rồi bấm xếp thẻ từ đúng trật tự — cách nhớ cấu trúc giao tiếp siêu cuốn và tự nhiên!
                 </p>
                 <div className="flex flex-wrap gap-1.5 text-[11px] font-extrabold">
                   <span className="rounded-lg bg-violet-50 px-2 py-0.5 text-violet-700">
@@ -1897,7 +1899,7 @@ function PlayPageInner() {
             <div className="card-duo-elevated p-6 flex flex-col justify-between space-y-5">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#58CC02] text-white shadow-[0_4px_0_#46A302]">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-[0_4px_0_#047857]">
                     <Mic className="h-7 w-7 stroke-[2.5]" />
                   </div>
                   <span className="rounded-xl bg-emerald-50 border-2 border-emerald-200 px-2.5 py-1 text-[11px] font-black text-emerald-800">
@@ -1967,16 +1969,16 @@ function PlayPageInner() {
         <div className="mx-auto max-w-lg card-duo-elevated p-6 sm:p-8 text-center space-y-5 animate-pop-in">
           {savingVictory ? (
             <div className="py-12 flex flex-col items-center gap-3">
-              <MascotOwl mood="excited" className="h-20 w-20 animate-bounce" />
-              <Loader2 className="h-6 w-6 animate-spin text-[#58CC02]" />
+              <NovaCompanion mood="excited" className="h-20 w-20 animate-bounce" />
+              <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
               <p className="text-sm font-extrabold text-slate-600">
                 Đang thắp lửa chuỗi &amp; đồng bộ Google Drive 5TB...
               </p>
             </div>
           ) : (
             <>
-              <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-amber-50 border-2 border-amber-200">
-                <MascotOwl
+              <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-50 via-violet-50 to-amber-50 border border-indigo-200">
+                <NovaCompanion
                   mood={victoryReward?.lessonCompleted ? 'proud' : 'happy'}
                   className="h-20 w-20 animate-gentle-float"
                 />
@@ -1984,7 +1986,7 @@ function PlayPageInner() {
 
               <div>
                 <div className="flex flex-wrap items-center justify-center gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#DDF4FF] px-3 py-1 text-xs font-black text-[#1899D6]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 text-xs font-black text-indigo-700">
                     {victoryMeta?.gameTitle}
                   </span>
                   {boostActive && (
@@ -2014,7 +2016,7 @@ function PlayPageInner() {
                     </div>
                   </div>
                   <div className="rounded-2xl border-2 border-sky-200 bg-sky-50/70 p-3 flex flex-col items-center">
-                    <div className="flex items-center gap-1 text-xl font-black text-[#1899D6]">
+                    <div className="flex items-center gap-1 text-xl font-black text-indigo-700">
                       +{victoryReward.gemsEarned}
                       <GemSvg className="h-4 w-4" />
                     </div>
@@ -2023,7 +2025,7 @@ function PlayPageInner() {
                     </div>
                   </div>
                   <div className="rounded-2xl border-2 border-orange-200 bg-orange-50/70 p-3 flex flex-col items-center">
-                    <div className="flex items-center gap-1 text-xl font-black text-[#FF9600]">
+                    <div className="flex items-center gap-1 text-xl font-black text-orange-600">
                       <StreakFlameSvg active className="h-5 w-5" />
                       {victoryReward.streakDays}
                     </div>
@@ -2037,7 +2039,7 @@ function PlayPageInner() {
               <div
                 className={`rounded-2xl border-2 px-4 py-3 text-xs font-extrabold ${
                   victoryReward?.lessonCompleted
-                    ? 'border-[#B8F28B] bg-[#F1FDE8] text-[#3B8702]'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
                     : 'border-amber-200 bg-amber-50 text-amber-800'
                 }`}
               >
@@ -2045,7 +2047,7 @@ function PlayPageInner() {
               </div>
 
               {victoryReward?.leveledUp && (
-                <div className="rounded-2xl bg-[#8B5CF6] border-b-4 border-[#6D28D9] px-4 py-3 text-xs font-black text-white flex items-center justify-center gap-2">
+                <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 border-b-4 border-indigo-900/40 px-4 py-3 text-xs font-black text-white flex items-center justify-center gap-2">
                   <Sparkles className="h-4 w-4 text-amber-300" />
                   Chúc mừng thăng cấp lên Level {victoryReward.newLevel}!
                 </div>
@@ -2106,7 +2108,7 @@ function PlayPageInner() {
                 </Link>
                 <Link
                   href="/"
-                  className="btn-duo btn-duo-green flex-1 py-3.5 text-xs uppercase"
+                  className="btn-duo btn-duo-primary flex-1 py-3.5 text-xs uppercase"
                 >
                   Về Lộ trình →
                 </Link>
@@ -2128,9 +2130,9 @@ export default function PlayPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#F7F9FC]">
-          <MascotOwl mood="excited" className="h-16 w-16 animate-gentle-float" />
-          <Loader2 className="h-6 w-6 animate-spin text-[#58CC02]" />
+        <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
+          <NovaCompanion mood="excited" className="h-18 w-18 animate-gentle-float" />
+          <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
         </div>
       }
     >

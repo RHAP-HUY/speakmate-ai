@@ -17,7 +17,7 @@ import {
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { MascotOwl } from '@/components/BrandArt';
+import { NovaCompanion } from '@/components/BrandArt';
 import { getAuthSessionInfo } from '@/lib/data-store';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { AuthSessionInfo } from '@/types';
@@ -233,21 +233,24 @@ function AuthPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F9FC] flex items-center justify-center p-4 sm:p-6">
+    <div className="min-h-screen bg-mesh-light flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-4xl grid gap-6 lg:grid-cols-12 items-stretch">
-        {/* Left Mascot & Value Pillar Showcase */}
-        <div className="lg:col-span-5 rounded-3xl bg-[#58CC02] border-b-4 border-[#46A302] p-7 text-white flex flex-col justify-between">
+        {/* Left Aurora Studio Showcase with Glowing Nova */}
+        <div className="lg:col-span-5 aurora-studio-card rounded-3xl border border-white/15 p-7 text-white flex flex-col justify-between shadow-2xl shadow-indigo-950/25">
           <div className="space-y-5">
-            <Link href="/" className="inline-flex items-center gap-2.5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-xs">
-                <MascotOwl mood="happy" className="h-9 w-9" />
+            <Link href="/" className="inline-flex items-center gap-2.5 group">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md shadow-xs">
+                <NovaCompanion
+                  mood="happy"
+                  className="h-10 w-10 transition-transform group-hover:scale-105"
+                />
               </div>
               <div>
-                <div className="text-xl font-black tracking-tight leading-none">
-                  SpeakMate
+                <div className="text-xl font-black tracking-tight leading-none bg-gradient-to-r from-white via-indigo-100 to-cyan-200 bg-clip-text text-transparent">
+                  SpeakMate AI
                 </div>
-                <div className="text-[10px] font-extrabold uppercase tracking-widest text-white/85 mt-0.5">
-                  Vừa Học Vừa Chơi
+                <div className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-200/90 mt-0.5">
+                  Aurora Voice Studio
                 </div>
               </div>
             </Link>
@@ -256,8 +259,8 @@ function AuthPageInner() {
               <h1 className="text-2xl sm:text-3xl font-black leading-tight">
                 Đăng nhập Google · Lưu trọn đời trên Drive 5TB
               </h1>
-              <p className="mt-2.5 text-sm font-semibold text-white/90 leading-relaxed">
-                Chọn <strong>Ngôn ngữ &amp; Sở thích</strong> trong 30 giây sau khi đăng nhập. Mọi chuỗi ngày học, rương quà, XP &amp; sổ từ vựng tự động đồng bộ đa thiết bị!
+              <p className="mt-2.5 text-sm font-medium text-indigo-100/90 leading-relaxed">
+                Chọn <strong>Ngôn ngữ &amp; Sở thích</strong> trong 30 giây cùng Nova AI. Mọi chuỗi ngày học, rương quà, XP &amp; sổ từ vựng tự động đồng bộ đa thiết bị!
               </p>
             </div>
 
@@ -283,14 +286,14 @@ function AuthPageInner() {
                 return (
                   <div
                     key={item.title}
-                    className="flex items-start gap-3 rounded-2xl bg-white/15 border-2 border-white/20 p-3"
+                    className="flex items-start gap-3 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-3"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/25">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/80 to-cyan-400/80">
                       <Icon className="h-4 w-4 stroke-[2.5]" />
                     </div>
                     <div>
                       <div className="text-xs font-black">{item.title}</div>
-                      <div className="text-[11px] font-semibold text-white/85 mt-0.5 leading-snug">
+                      <div className="text-[11px] font-medium text-indigo-100/85 mt-0.5 leading-snug">
                         {item.desc}
                       </div>
                     </div>
@@ -300,7 +303,7 @@ function AuthPageInner() {
             </div>
           </div>
 
-          <div className="mt-6 flex items-center gap-2 text-[11px] font-bold text-white/90">
+          <div className="mt-6 flex items-center gap-2 text-[11px] font-bold text-cyan-200/90">
             <Smartphone className="h-4 w-4 shrink-0" />
             <span>Đồng bộ mượt giữa iPhone, Android, Windows &amp; macOS</span>
           </div>
@@ -311,10 +314,10 @@ function AuthPageInner() {
           <div className="mb-6">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <span
-                className={`inline-flex items-center gap-1.5 rounded-xl border-2 px-3 py-1 text-[11px] font-black ${
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1 text-[11px] font-black ${
                   googleDirectReady || supabaseReady
-                    ? 'border-emerald-200 bg-[#F1FDE8] text-[#3B8702]'
-                    : 'border-sky-200 bg-[#DDF4FF] text-[#1899D6]'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-indigo-200 bg-indigo-50 text-indigo-700'
                 }`}
               >
                 {googleDirectReady ? (
@@ -353,8 +356,8 @@ function AuthPageInner() {
           </div>
 
           {sessionInfo?.authenticated && sessionInfo.user && (
-            <div className="mb-5 rounded-2xl border-2 border-[#B8F28B] bg-[#F1FDE8] p-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-xs text-[#2E6E00]">
+            <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-xs text-emerald-900">
                 <div className="font-black">
                   ✓ Đang đăng nhập: {sessionInfo.user.name}
                 </div>
@@ -364,7 +367,7 @@ function AuthPageInner() {
               </div>
               <Link
                 href="/"
-                className="btn-duo btn-duo-green px-4 py-2 text-xs uppercase"
+                className="btn-duo btn-duo-primary px-4 py-2 text-xs uppercase"
               >
                 Vào học ngay →
               </Link>
@@ -605,8 +608,8 @@ function AuthPageInner() {
           )}
 
           {notice && (
-            <div className="mt-4 flex items-start gap-2 rounded-xl border-2 border-emerald-200 bg-[#F1FDE8] px-3.5 py-2.5 text-xs font-extrabold text-[#3B8702]">
-              <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-[#58CC02]" />
+            <div className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-extrabold text-emerald-700">
+              <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-emerald-600" />
               <span>{notice}</span>
             </div>
           )}
@@ -620,8 +623,8 @@ export default function AuthPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#F7F9FC]">
-          <Loader2 className="h-6 w-6 animate-spin text-[#58CC02]" />
+        <div className="min-h-screen flex items-center justify-center bg-mesh-light">
+          <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
         </div>
       }
     >

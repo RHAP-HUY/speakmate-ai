@@ -5,11 +5,11 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'SpeakMate AI — Vừa Học Vừa Chơi Tiếng Anh',
     short_name: 'SpeakMate',
     description:
-      'Ứng dụng học nói tiếng Anh kiểu chơi game Duolingo kết hợp gọi thoại AI chấm phát âm từng từ, lịch giữ chuỗi nhận quà và đồng bộ Google Drive 5TB.',
+      'Ứng dụng học nói tiếng Anh kiểu Vừa Học Vừa Chơi cùng trợ lý giọng nói AI Nova, chấm phát âm từng từ, lịch giữ chuỗi nhận quà và đồng bộ Google Drive 5TB.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#F7F9FC',
-    theme_color: '#58CC02',
+    background_color: '#F4F6FB',
+    theme_color: '#4F46E5',
     orientation: 'portrait-primary',
     lang: 'vi',
     icons: [

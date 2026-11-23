@@ -177,11 +177,11 @@ export function StreakCalendar({
             {missedDaysInMonth} ngày
           </div>
         </div>
-        <div className="rounded-2xl border-2 border-emerald-200 bg-[#F1FDE8] px-3.5 py-3">
-          <div className="text-[11px] font-extrabold uppercase text-[#3B8702]">
+        <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/75 px-3.5 py-3">
+          <div className="text-[11px] font-extrabold uppercase text-emerald-700">
             Bài hoàn thành
           </div>
-          <div className="mt-0.5 text-xl font-black text-[#46A302]">
+          <div className="mt-0.5 text-xl font-black text-emerald-600">
             {totalLessonsInMonth} bài
           </div>
         </div>
@@ -242,16 +242,16 @@ export function StreakCalendar({
               'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100';
             if (cell.status === 'studied') {
               cellStyle =
-                'bg-[#FF9600] border-[#E07B00] border-b-4 text-white';
+                'bg-gradient-to-br from-orange-500 to-amber-500 border-orange-600 border-b-4 text-white';
             } else if (cell.status === 'today-done') {
               cellStyle =
-                'bg-[#58CC02] border-[#46A302] border-b-4 text-white';
+                'bg-gradient-to-br from-emerald-500 to-teal-500 border-emerald-700 border-b-4 text-white';
             } else if (cell.status === 'today-pending') {
               cellStyle =
-                'bg-[#F1FDE8] border-2 border-dashed border-[#58CC02] text-[#3B8702]';
+                'bg-indigo-50 border-2 border-dashed border-indigo-400 text-indigo-700';
             } else if (cell.status === 'frozen') {
               cellStyle =
-                'bg-[#1CB0F6] border-[#1899D6] border-b-4 text-white';
+                'bg-gradient-to-br from-sky-500 to-blue-600 border-blue-700 border-b-4 text-white';
             } else if (cell.status === 'future') {
               cellStyle = 'bg-white border-slate-100 text-slate-300';
             }
@@ -291,19 +291,19 @@ export function StreakCalendar({
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] font-bold text-slate-500 pt-1">
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-3.5 w-3.5 rounded-md bg-[#FF9600]" />
+          <span className="h-3.5 w-3.5 rounded-md bg-gradient-to-br from-orange-500 to-amber-500" />
           Đã xong ≥ 1 bài (Giữ chuỗi)
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-3.5 w-3.5 rounded-md bg-[#58CC02]" />
+          <span className="h-3.5 w-3.5 rounded-md bg-gradient-to-br from-emerald-500 to-teal-500" />
           Hôm nay đã xong
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-3.5 w-3.5 rounded-md border-2 border-dashed border-[#58CC02] bg-[#F1FDE8]" />
+          <span className="h-3.5 w-3.5 rounded-md border-2 border-dashed border-indigo-400 bg-indigo-50" />
           Hôm nay (chưa xong)
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-3.5 w-3.5 rounded-md bg-[#1CB0F6]" />
+          <span className="h-3.5 w-3.5 rounded-md bg-gradient-to-br from-sky-500 to-blue-600" />
           Khiên bảo vệ ({frozenDaysInMonth})
         </span>
       </div>

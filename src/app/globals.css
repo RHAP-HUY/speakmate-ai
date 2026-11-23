@@ -1,21 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f9fc;
-  --foreground: #1e293b;
-  --duo-green: #58cc02;
-  --duo-green-dark: #46a302;
-  --duo-blue: #1cb0f6;
-  --duo-blue-dark: #1899d6;
-  --duo-orange: #ff9600;
-  --duo-orange-dark: #e07b00;
-  --duo-gold: #ffc800;
-  --duo-gold-dark: #d9a400;
-  --duo-purple: #8b5cf6;
-  --duo-purple-dark: #6d28d9;
-  --duo-red: #ff4b4b;
-  --duo-red-dark: #d93636;
-  --card-border: #e5e7eb;
+  --background: #f4f6fb;
+  --foreground: #0f172a;
+  --brand-indigo: #4f46e5;
+  --brand-violet: #7c3aed;
+  --brand-cyan: #06b6d4;
+  --brand-emerald: #10b981;
+  --brand-coral: #f97316;
+  --brand-gold: #f59e0b;
+  --brand-rose: #f43f5e;
+  --card-border: #e2e8f0;
 }
 
 @theme inline {
@@ -26,153 +21,244 @@
 }
 
 body {
-  background: var(--background);
+  background-color: #f4f6fb;
+  background-image:
+    radial-gradient(ellipse 80% 45% at 50% -10%, rgba(99, 102, 241, 0.11), transparent),
+    radial-gradient(ellipse 50% 35% at 95% 8%, rgba(6, 182, 212, 0.08), transparent),
+    radial-gradient(ellipse 45% 35% at 5% 20%, rgba(168, 85, 247, 0.06), transparent);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-be-vietnam), system-ui, -apple-system, sans-serif;
   text-rendering: optimizeLegibility;
 }
 
-/* Crisp consumer surface background (clean, airy, zero muddy clutter) */
 .bg-mesh-light {
-  background-color: #f7f9fc;
+  background-color: #f4f6fb;
   background-image:
-    radial-gradient(circle at 12% 4%, rgba(88, 204, 2, 0.055) 0px, transparent 36%),
-    radial-gradient(circle at 88% 8%, rgba(28, 176, 246, 0.065) 0px, transparent 38%);
+    radial-gradient(ellipse 75% 45% at 20% 0%, rgba(99, 102, 241, 0.1), transparent),
+    radial-gradient(ellipse 60% 45% at 85% 5%, rgba(6, 182, 212, 0.09), transparent);
 }
 
-/* Crisp Duolingo / Apple-grade Card Surface */
+/* Porcelain Glass Elevated Surfaces (Apple / Linear / Arc Craftsmanship) */
 .card-duo {
-  background-color: #ffffff;
-  border: 2px solid #e5e7eb;
-  border-radius: 1.25rem;
+  background-color: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border-radius: 1.5rem;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 10px 28px -10px rgba(15, 23, 42, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .card-duo-elevated {
-  background-color: #ffffff;
-  border: 2px solid #e5e7eb;
-  border-bottom-width: 4px;
-  border-radius: 1.5rem;
+  background-color: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border-radius: 1.625rem;
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.03),
+    0 14px 34px -12px rgba(79, 70, 229, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 200ms ease;
 }
 
-/* Tactile 3D Physical Buttons */
+.card-duo-elevated:hover {
+  border-color: rgba(165, 180, 252, 0.7);
+  box-shadow:
+    0 4px 8px rgba(15, 23, 42, 0.04),
+    0 20px 40px -14px rgba(79, 70, 229, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+/* Luxury Luminous 3D Buttons (Rich Gradient Depth + Soft Glow) */
 .btn-duo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   font-weight: 800;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.015em;
   border-radius: 1rem;
-  transition: transform 110ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 110ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    background-color 140ms ease,
-    filter 140ms ease;
+  position: relative;
+  transition: transform 130ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 130ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 150ms ease;
   cursor: pointer;
   user-select: none;
 }
 
 .btn-duo:disabled {
-  opacity: 0.52;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
+  filter: grayscale(0.2);
 }
 
-.btn-duo-green {
-  background-color: #58cc02;
+/* Signature Aurora Indigo-Violet Primary Button */
+.btn-duo-primary {
+  background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
   color: #ffffff;
-  border: 2px solid #58cc02;
-  box-shadow: 0 4px 0 #46a302;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 4px 0 #3730a3,
+    0 12px 24px -8px rgba(79, 70, 229, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.btn-duo-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow:
+    0 5px 0 #3730a3,
+    0 16px 28px -8px rgba(79, 70, 229, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.btn-duo-primary:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #3730a3;
+}
+
+/* Refined Jewel Emerald-Teal 3D Button */
+.btn-duo-green {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 4px 0 #047857,
+    0 12px 24px -8px rgba(16, 185, 129, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 .btn-duo-green:hover:not(:disabled) {
-  background-color: #61dc04;
-  border-color: #61dc04;
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow:
+    0 5px 0 #047857,
+    0 16px 28px -8px rgba(16, 185, 129, 0.52),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 .btn-duo-green:active:not(:disabled) {
   transform: translateY(3px);
-  box-shadow: 0 1px 0 #46a302;
+  box-shadow: 0 1px 0 #047857;
 }
 
+/* Luminous Cobalt-Cyan 3D Button */
 .btn-duo-blue {
-  background-color: #1cb0f6;
+  background: linear-gradient(180deg, #0ea5e9 0%, #2563eb 100%);
   color: #ffffff;
-  border: 2px solid #1cb0f6;
-  box-shadow: 0 4px 0 #1899d6;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 4px 0 #1d4ed8,
+    0 12px 24px -8px rgba(37, 99, 235, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 .btn-duo-blue:hover:not(:disabled) {
-  background-color: #29b9fc;
-  border-color: #29b9fc;
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow:
+    0 5px 0 #1d4ed8,
+    0 16px 28px -8px rgba(37, 99, 235, 0.54),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 .btn-duo-blue:active:not(:disabled) {
   transform: translateY(3px);
-  box-shadow: 0 1px 0 #1899d6;
+  box-shadow: 0 1px 0 #1d4ed8;
 }
 
+/* Sunset Coral-Amber 3D Button */
 .btn-duo-orange {
-  background-color: #ff9600;
+  background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%);
   color: #ffffff;
-  border: 2px solid #ff9600;
-  box-shadow: 0 4px 0 #d97706;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow:
+    0 4px 0 #c2410c,
+    0 12px 24px -8px rgba(234, 88, 12, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 .btn-duo-orange:hover:not(:disabled) {
-  background-color: #ffa21a;
-  border-color: #ffa21a;
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow:
+    0 5px 0 #c2410c,
+    0 16px 28px -8px rgba(234, 88, 12, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 .btn-duo-orange:active:not(:disabled) {
   transform: translateY(3px);
-  box-shadow: 0 1px 0 #d97706;
+  box-shadow: 0 1px 0 #c2410c;
 }
 
+/* Royal Amethyst 3D Button */
 .btn-duo-purple {
-  background-color: #7c3aed;
+  background: linear-gradient(180deg, #a855f7 0%, #7c3aed 100%);
   color: #ffffff;
-  border: 2px solid #7c3aed;
-  box-shadow: 0 4px 0 #5b21b6;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 4px 0 #5b21b6,
+    0 12px 24px -8px rgba(124, 58, 237, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 .btn-duo-purple:hover:not(:disabled) {
-  background-color: #8b5cf6;
-  border-color: #8b5cf6;
+  filter: brightness(1.06);
+  transform: translateY(-1px);
 }
 .btn-duo-purple:active:not(:disabled) {
   transform: translateY(3px);
   box-shadow: 0 1px 0 #5b21b6;
 }
 
+/* Porcelain Silk Secondary Button */
 .btn-duo-white {
-  background-color: #ffffff;
-  color: #334155;
-  border: 2px solid #e2e8f0;
-  box-shadow: 0 4px 0 #cbd5e1;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: #1e293b;
+  border: 1.5px solid #e2e8f0;
+  box-shadow:
+    0 3px 0 #cbd5e1,
+    0 6px 14px -4px rgba(15, 23, 42, 0.06);
 }
 .btn-duo-white:hover:not(:disabled) {
-  background-color: #f8fafc;
-  border-color: #cbd5e1;
+  background: #ffffff;
+  border-color: #a5b4fc;
+  color: #4338ca;
+  transform: translateY(-1px);
 }
 .btn-duo-white:active:not(:disabled) {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow: 0 1px 0 #cbd5e1;
 }
 
+/* Obsidian Dark Button */
 .btn-duo-dark {
-  background-color: #0f172a;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
   color: #ffffff;
-  border: 2px solid #0f172a;
-  box-shadow: 0 4px 0 #334155;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 4px 0 #020617,
+    0 10px 22px -8px rgba(15, 23, 42, 0.45);
 }
 .btn-duo-dark:hover:not(:disabled) {
-  background-color: #1e293b;
+  filter: brightness(1.12);
+  transform: translateY(-1px);
 }
 .btn-duo-dark:active:not(:disabled) {
   transform: translateY(3px);
-  box-shadow: 0 1px 0 #334155;
+  box-shadow: 0 1px 0 #020617;
 }
 
-/* Tactile Circular Path Node */
+/* Jewel-like 3D Circular Path Node */
 .path-node-3d {
-  transition: transform 110ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 110ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 160ms ease;
+}
+.path-node-3d:hover {
+  transform: translateY(-2px) scale(1.04);
+  filter: brightness(1.04);
 }
 .path-node-3d:active {
-  transform: translateY(5px);
+  transform: translateY(4px) scale(0.98);
 }
 
 /* Glossy highlight stripe inside progress bars */
@@ -186,10 +272,23 @@ body {
   top: 2px;
   left: 6px;
   right: 6px;
-  height: 30%;
+  height: 34%;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.34);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.45),
+    rgba(255, 255, 255, 0.2)
+  );
   pointer-events: none;
+}
+
+/* Cinematic Aurora Studio Hero Card */
+.aurora-studio-card {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(56, 189, 248, 0.35), transparent 46%),
+    radial-gradient(circle at 85% 22%, rgba(168, 85, 247, 0.38), transparent 48%),
+    radial-gradient(circle at 70% 90%, rgba(244, 63, 94, 0.24), transparent 45%),
+    linear-gradient(145deg, #0b1120 0%, #17153b 52%, #0f172a 100%);
 }
 
 @keyframes voicePulse {
@@ -199,12 +298,12 @@ body {
   }
   50% {
     transform: scale(1.16);
-    opacity: 0.2;
+    opacity: 0.18;
   }
 }
 
 .animate-voice-pulse {
-  animation: voicePulse 1.6s ease-in-out infinite;
+  animation: voicePulse 1.8s ease-in-out infinite;
 }
 
 @keyframes gentleFloat {
@@ -212,12 +311,25 @@ body {
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-6px);
   }
 }
 
 .animate-gentle-float {
-  animation: gentleFloat 2.8s ease-in-out infinite;
+  animation: gentleFloat 3.1s ease-in-out infinite;
+}
+
+@keyframes orbHalo {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.36);
+  }
+  60% {
+    box-shadow: 0 0 0 14px rgba(99, 102, 241, 0);
+  }
+}
+
+.animate-orb-halo {
+  animation: orbHalo 2.2s ease-out infinite;
 }
 
 @keyframes chestWiggle {
@@ -245,7 +357,7 @@ body {
 @keyframes popIn {
   0% {
     opacity: 0;
-    transform: scale(0.86) translateY(10px);
+    transform: scale(0.9) translateY(10px);
   }
   100% {
     opacity: 1;

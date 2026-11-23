@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: '#58CC02',
+  themeColor: '#4F46E5',
   width: 'device-width',
   initialScale: 1,
 };
@@ -22,7 +22,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'SpeakMate AI — Vừa Học Vừa Chơi, Nói Tiếng Anh Như Người Bản Xứ',
   description:
-    'Học giao tiếp tiếng Anh kiểu chơi game giống Duolingo kết hợp gọi thoại AI chấm phát âm từng từ, bảng xếp hạng tuần, lịch giữ chuỗi nhận quà và đồng bộ Google Drive 5TB.',
+    'Học giao tiếp tiếng Anh tương tác Vừa Học Vừa Chơi cùng trợ lý AI Nova chấm phát âm từng từ, bảng xếp hạng tuần, lịch giữ chuỗi nhận quà và đồng bộ Google Drive 5TB.',
   applicationName: 'SpeakMate AI',
   appleWebApp: {
     capable: true,

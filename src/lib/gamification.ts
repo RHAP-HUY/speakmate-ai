@@ -159,7 +159,7 @@ export const DAILY_QUEST_DEFS: DailyQuestDef[] = [
     rewardGems: 15,
     rewardXp: 20,
     icon: '🔥',
-    barColor: 'bg-[#58CC02]',
+    barColor: 'bg-gradient-to-r from-emerald-500 to-teal-400',
   },
   {
     id: 'xp_60',
