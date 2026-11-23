@@ -730,7 +730,7 @@ export default function HomePage() {
     );
   }
 
-  // AUTHENTICATED PLAY-FIRST DUOLINGO EXPERIENCE
+  // AUTHENTICATED PLAY-FIRST AURORA STUDIO EXPERIENCE
   const todayStr = getTodayLocalDate();
   const statByDate = new Map(stats.map((s) => [s.practiceDate, s]));
   const todayStats = statByDate.get(todayStr) ?? null;

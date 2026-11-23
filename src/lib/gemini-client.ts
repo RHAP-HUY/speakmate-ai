@@ -11,6 +11,7 @@ import {
 import {
   getOrderedGeminiModels,
   getThinkingConfigForModel,
+  isTransientOverloadError,
   isUnsupportedOrMissingModelError,
   markModelCooldown,
   markModelHealthy,
@@ -206,6 +207,41 @@ export async function generateGeminiJson(params: {
   const startedAt = Date.now();
   let lastError: unknown = null;
 
+  const invokeModel = async (
+    ai: GoogleGenAI,
+    model: string,
+    attemptTimeoutMs: number
+  ) => {
+    const thinkingConfig = getThinkingConfigForModel(model, speedMode);
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model,
+        contents: [{ role: 'user', parts: params.parts }],
+        config: {
+          ...(params.systemInstruction
+            ? { systemInstruction: params.systemInstruction }
+            : {}),
+          responseMimeType: 'application/json',
+          ...(params.responseSchema
+            ? { responseSchema: params.responseSchema }
+            : {}),
+          temperature: params.temperature ?? 0.6,
+          ...(params.maxOutputTokens
+            ? { maxOutputTokens: params.maxOutputTokens }
+            : {}),
+          ...(thinkingConfig ? { thinkingConfig } : {}),
+        },
+      }),
+      attemptTimeoutMs,
+      model
+    );
+    const rawText = response.text;
+    if (!rawText) {
+      throw new Error('Gemini trả về nội dung trống.');
+    }
+    return rawText;
+  };
+
   for (const candidate of candidates) {
     const ai = getCachedClient(candidate.key);
 
@@ -215,38 +251,16 @@ export async function generateGeminiJson(params: {
       if (remainingBudget < 2_500) {
         break;
       }
-      const attemptTimeoutMs = Math.min(baseAttemptTimeoutMs, remainingBudget);
+      // Keep slower non-lite models bounded so one slow cluster cannot starve fallbacks
+      const modelCapMs =
+        speedMode === 'realtime' && !model.includes('lite')
+          ? Math.min(baseAttemptTimeoutMs, 8_500)
+          : baseAttemptTimeoutMs;
+      const attemptTimeoutMs = Math.min(modelCapMs, remainingBudget);
+      const attemptStartedAt = Date.now();
 
       try {
-        const thinkingConfig = getThinkingConfigForModel(model, speedMode);
-        const response = await withTimeout(
-          ai.models.generateContent({
-            model,
-            contents: [{ role: 'user', parts: params.parts }],
-            config: {
-              ...(params.systemInstruction
-                ? { systemInstruction: params.systemInstruction }
-                : {}),
-              responseMimeType: 'application/json',
-              ...(params.responseSchema
-                ? { responseSchema: params.responseSchema }
-                : {}),
-              temperature: params.temperature ?? 0.6,
-              ...(params.maxOutputTokens
-                ? { maxOutputTokens: params.maxOutputTokens }
-                : {}),
-              ...(thinkingConfig ? { thinkingConfig } : {}),
-            },
-          }),
-          attemptTimeoutMs,
-          model
-        );
-
-        const rawText = response.text;
-        if (!rawText) {
-          throw new Error('Gemini trả về nội dung trống.');
-        }
-
+        const rawText = await invokeModel(ai, model, attemptTimeoutMs);
         markModelHealthy(model);
 
         return {
@@ -266,18 +280,48 @@ export async function generateGeminiJson(params: {
           break;
         }
 
+        // Fast transient 503 on a lite model -> brief 350ms retry once before failing over
+        const attemptDuration = Date.now() - attemptStartedAt;
+        const leftAfterFirst = totalBudgetMs - (Date.now() - startedAt);
+        if (
+          model.includes('lite') &&
+          isTransientOverloadError(err) &&
+          attemptDuration < 4_500 &&
+          leftAfterFirst > 6_000
+        ) {
+          await new Promise((r) => setTimeout(r, 350));
+          try {
+            const retryText = await invokeModel(
+              ai,
+              model,
+              Math.min(attemptTimeoutMs, totalBudgetMs - (Date.now() - startedAt))
+            );
+            markModelHealthy(model);
+            return {
+              rawText: retryText,
+              keySource: candidate.source,
+              modelUsed: model,
+              latencyMs: Date.now() - startedAt,
+            };
+          } catch (retryErr) {
+            lastError = retryErr;
+          }
+        }
+
         // Per-model 429 quota -> cool down ONLY this model (each Gemini model has its own RPM quota!)
-        if (isRetryableGeminiKeyError(err)) {
+        if (isRetryableGeminiKeyError(lastError)) {
           markModelCooldown(model, 45_000);
           continue;
         }
 
-        if (isUnsupportedOrMissingModelError(err)) {
+        if (isUnsupportedOrMissingModelError(lastError)) {
           // Avoid retrying missing/unsupported models for 5 minutes
           markModelCooldown(model, 5 * 60_000);
+        } else if (isTransientOverloadError(lastError)) {
+          // Short 12s cooldown on transient 503 so fast clusters recover quickly
+          markModelCooldown(model, 12_000);
         } else {
-          // 503 UNAVAILABLE / timeout / transient spike -> cool down briefly and try next model
-          markModelCooldown(model, 30_000);
+          markModelCooldown(model, 25_000);
         }
       }
     }

@@ -30,7 +30,9 @@ export async function GET() {
         avatarUrl: googleSession.picture ?? null,
       },
     };
-    return NextResponse.json(info);
+    return NextResponse.json(info, {
+      headers: { 'Cache-Control': 'no-store, private' },
+    });
   }
 
   // 2. Check Supabase Auth session if configured
@@ -62,7 +64,9 @@ export async function GET() {
                 : null,
           },
         };
-        return NextResponse.json(info);
+        return NextResponse.json(info, {
+          headers: { 'Cache-Control': 'no-store, private' },
+        });
       }
     }
   }
@@ -77,5 +81,7 @@ export async function GET() {
     supabaseConfigured,
     user: null,
   };
-  return NextResponse.json(info);
+  return NextResponse.json(info, {
+    headers: { 'Cache-Control': 'no-store, private' },
+  });
 }

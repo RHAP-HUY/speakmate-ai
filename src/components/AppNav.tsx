@@ -27,7 +27,10 @@ import { stopVoicePlayback } from '@/lib/audio';
 import {
   DATA_UPDATED_EVENT,
   getAuthSessionInfo,
+  getDriveSyncStatus,
   signOutAccount,
+  SYNC_STATUS_EVENT,
+  type DriveSyncStatus,
 } from '@/lib/data-store';
 import {
   BADGE_DIRECTORY,
@@ -107,6 +110,9 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
   const [liveProfile, setLiveProfile] = useState<UserProfile | null>(profile);
   const [sessionInfo, setSessionInfo] = useState<AuthSessionInfo | null>(null);
   const [muted, setMuted] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<DriveSyncStatus>(() =>
+    getDriveSyncStatus()
+  );
 
   useEffect(() => {
     let active = true;
@@ -125,10 +131,18 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
         setLiveProfile(customEv.detail.profile ?? null);
       }
     }
+    function onSyncStatus(ev: Event) {
+      const customEv = ev as CustomEvent<{ status?: DriveSyncStatus }>;
+      if (customEv.detail?.status) {
+        setSyncStatus(customEv.detail.status);
+      }
+    }
     window.addEventListener(DATA_UPDATED_EVENT, onDataUpdated);
+    window.addEventListener(SYNC_STATUS_EVENT, onSyncStatus);
     return () => {
       active = false;
       window.removeEventListener(DATA_UPDATED_EVENT, onDataUpdated);
+      window.removeEventListener(SYNC_STATUS_EVENT, onSyncStatus);
     };
   }, []);
 
@@ -363,10 +377,34 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
               )}
 
               {isDriveActive ? (
-                <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-emerald-700">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <Cloud className="h-3 w-3" />
-                  Đã đồng bộ Google Drive 5TB
+                <div
+                  className={`flex items-center gap-1.5 text-[10px] font-extrabold ${
+                    syncStatus === 'offline' || syncStatus === 'pending'
+                      ? 'text-amber-700'
+                      : syncStatus === 'syncing'
+                        ? 'text-indigo-700'
+                        : 'text-emerald-700'
+                  }`}
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      syncStatus === 'offline' || syncStatus === 'pending'
+                        ? 'bg-amber-500'
+                        : syncStatus === 'syncing'
+                          ? 'bg-indigo-500 animate-ping'
+                          : 'bg-emerald-500 animate-pulse'
+                    }`}
+                  />
+                  <Cloud className="h-3 w-3 shrink-0" />
+                  <span className="truncate">
+                    {syncStatus === 'syncing'
+                      ? 'Đang đồng bộ Drive 5TB...'
+                      : syncStatus === 'offline'
+                        ? 'Ngoại tuyến · Tự đồng bộ khi có mạng'
+                        : syncStatus === 'pending'
+                          ? 'Chờ đồng bộ lại lên Drive 5TB'
+                          : 'Đã đồng bộ Google Drive 5TB'}
+                  </span>
                 </div>
               ) : (
                 <Link

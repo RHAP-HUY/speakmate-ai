@@ -68,27 +68,48 @@ export async function POST(request: NextRequest) {
       messages,
     });
 
-    const result = await generateGeminiJson({
-      userId,
-      userPersonalKey,
-      parts: [{ text: promptText }],
-      responseSchema: CONVERSATION_REPORT_SCHEMA,
-      temperature: 0.45,
-      maxOutputTokens: 1050,
-      speedMode: 'report',
-      timeoutMs: 18_000,
-    });
+    try {
+      const result = await generateGeminiJson({
+        userId,
+        userPersonalKey,
+        parts: [{ text: promptText }],
+        responseSchema: CONVERSATION_REPORT_SCHEMA,
+        temperature: 0.45,
+        maxOutputTokens: 1050,
+        speedMode: 'report',
+        timeoutMs: 18_000,
+      });
 
-    const report = parseConversationReportOutput(result.rawText);
+      const report = parseConversationReportOutput(result.rawText);
 
-    return NextResponse.json({
-      report,
-      meta: {
-        keySource: result.keySource,
-        modelUsed: result.modelUsed,
-        latencyMs: result.latencyMs,
-      },
-    });
+      return NextResponse.json({
+        report,
+        meta: {
+          keySource: result.keySource,
+          modelUsed: result.modelUsed,
+          latencyMs: result.latencyMs,
+          fallback: false,
+        },
+      });
+    } catch (aiErr) {
+      if (aiErr instanceof TutorHttpError && aiErr.status < 500) {
+        throw aiErr;
+      }
+      const fallback = buildFallbackConversationReport({
+        displayName: profile.displayName,
+        englishLevel: profile.englishLevel,
+        userTurns,
+      });
+      return NextResponse.json({
+        report: fallback,
+        meta: {
+          keySource: 'fallback',
+          modelUsed: 'fallback',
+          latencyMs: 0,
+          fallback: true,
+        },
+      });
+    }
   } catch (error) {
     if (error instanceof TutorHttpError) {
       return NextResponse.json(

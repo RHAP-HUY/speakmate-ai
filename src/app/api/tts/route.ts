@@ -1,5 +1,12 @@
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import { NextResponse, type NextRequest } from 'next/server';
+import { checkSlidingWindowRateLimit } from '@/lib/rate-limit';
+import { extractClientIp } from '@/lib/security';
+import {
+  buildTtsCacheKey,
+  getCachedTtsAudio,
+  setCachedTtsAudio,
+} from '@/lib/tts-cache';
 import {
   resolveEdgeVoice,
   sanitizeTextForTts,
@@ -12,6 +19,22 @@ export async function POST(request: NextRequest) {
   let tts: MsEdgeTTS | null = null;
 
   try {
+    const rl = checkSlidingWindowRateLimit({
+      namespace: 'tts',
+      key: extractClientIp(request.headers),
+      limit: 60,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Bạn gửi yêu cầu đọc giọng quá nhanh. Vui lòng thử lại sau giây lát.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(rl.retryAfterSeconds) },
+        }
+      );
+    }
+
     const body = (await request.json()) as {
       text?: string;
       voice?: string;
@@ -28,6 +51,20 @@ export async function POST(request: NextRequest) {
 
     const voice = resolveEdgeVoice(body.voice);
     const rate = speedToEdgeRate(body.speed);
+    const cacheKey = buildTtsCacheKey(voice, rate, cleanedText);
+
+    const cached = getCachedTtsAudio(cacheKey);
+    if (cached) {
+      return new NextResponse(new Uint8Array(cached), {
+        status: 200,
+        headers: {
+          'Content-Type': 'audio/mpeg',
+          'Content-Length': String(cached.length),
+          'Cache-Control': 'private, max-age=3600',
+          'X-TTS-Cache': 'HIT',
+        },
+      });
+    }
 
     tts = new MsEdgeTTS({
       connectionTimeoutMs: 7000,
@@ -51,12 +88,15 @@ export async function POST(request: NextRequest) {
       throw new Error('Không nhận được dữ liệu âm thanh từ Edge TTS.');
     }
 
-    return new NextResponse(audioBuffer, {
+    setCachedTtsAudio(cacheKey, audioBuffer);
+
+    return new NextResponse(new Uint8Array(audioBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',
         'Content-Length': String(audioBuffer.length),
         'Cache-Control': 'private, max-age=3600',
+        'X-TTS-Cache': 'MISS',
       },
     });
   } catch (error) {

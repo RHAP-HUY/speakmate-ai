@@ -7,7 +7,11 @@ import {
   getOrderedGeminiModels,
 } from '@/lib/gemini-models';
 import { getGoogleOAuthConfig } from '@/lib/google-auth';
+import { getDriveCacheStats } from '@/lib/google-drive-store';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { getTtsCacheStats } from '@/lib/tts-cache';
+
+const BOOT_TIME_MS = Date.now();
 
 export async function GET() {
   const poolCount = parseGeminiKeyPool().length;
@@ -22,16 +26,26 @@ export async function GET() {
         ? 'supabase'
         : 'local';
 
-  return NextResponse.json({
-    ok: true,
-    storageMode,
-    googleAuthConfigured: googleCfg.configured,
-    ownerDriveConfigured: googleCfg.ownerDriveConfigured,
-    supabaseConfigured,
-    sharedGeminiPoolCount: poolCount,
-    serverEncryptionEnabled: isServerEncryptionAvailable(),
-    primaryModel: process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL,
-    lastHealthyModel: getLastHealthyModel(),
-    orderedModels: getOrderedGeminiModels(),
-  });
+  return NextResponse.json(
+    {
+      ok: true,
+      version: '4.0.0-enterprise',
+      uptimeSeconds: Math.max(0, Math.round((Date.now() - BOOT_TIME_MS) / 1000)),
+      storageMode,
+      googleAuthConfigured: googleCfg.configured,
+      ownerDriveConfigured: googleCfg.ownerDriveConfigured,
+      supabaseConfigured,
+      sharedGeminiPoolCount: poolCount,
+      serverEncryptionEnabled: isServerEncryptionAvailable(),
+      securityHeadersEnabled: true,
+      primaryModel: process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL,
+      lastHealthyModel: getLastHealthyModel(),
+      orderedModels: getOrderedGeminiModels(),
+      driveCache: getDriveCacheStats(),
+      ttsCache: getTtsCacheStats(),
+    },
+    {
+      headers: { 'Cache-Control': 'no-store, private' },
+    }
+  );
 }

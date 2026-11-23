@@ -1,3 +1,4 @@
+import { mergeAccountBundles } from '@/lib/bundle-merge';
 import {
   computeStrictStreak,
   DAILY_QUEST_DEFS,
@@ -28,6 +29,9 @@ import type {
 } from '@/types';
 
 export const DATA_UPDATED_EVENT = 'speakmate:data-updated';
+export const SYNC_STATUS_EVENT = 'speakmate:sync-status';
+
+export type DriveSyncStatus = 'idle' | 'syncing' | 'synced' | 'pending' | 'offline';
 
 const LEGACY_KEYS = {
   profile: 'speakmate_local_profile_v1',
@@ -36,11 +40,74 @@ const LEGACY_KEYS = {
   phrases: 'speakmate_local_phrases_v1',
   dailyStats: 'speakmate_local_stats_v1',
   personalApiKey: 'speakmate_personal_gemini_key_v1',
+  pendingSync: 'speakmate_pending_drive_sync_v1',
 };
 
 let cachedSession: { info: AuthSessionInfo; fetchedAt: number } | null = null;
 let hydratedAccountId: string | null = null;
 let activeDriveSyncPromise: Promise<void> | null = null;
+let currentDriveSyncStatus: DriveSyncStatus = 'idle';
+let onlineFlushListenerAttached = false;
+
+export function getDriveSyncStatus(): DriveSyncStatus {
+  return currentDriveSyncStatus;
+}
+
+function emitDriveSyncStatus(status: DriveSyncStatus): void {
+  currentDriveSyncStatus = status;
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent(SYNC_STATUS_EVENT, {
+      detail: { status, timestamp: Date.now() },
+    })
+  );
+}
+
+function setPendingSyncFlag(accountId: string, pending: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = `${LEGACY_KEYS.pendingSync}_${accountId}`;
+    if (pending) {
+      window.localStorage.setItem(key, String(Date.now()));
+    } else {
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    // ignore storage restrictions
+  }
+}
+
+function hasPendingSyncFlag(accountId: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return Boolean(window.localStorage.getItem(`${LEGACY_KEYS.pendingSync}_${accountId}`));
+  } catch {
+    return false;
+  }
+}
+
+function ensureOnlineAutoFlushListener(): void {
+  if (typeof window === 'undefined' || onlineFlushListenerAttached) return;
+  onlineFlushListenerAttached = true;
+
+  window.addEventListener('online', () => {
+    void (async () => {
+      const info = await getAuthSessionInfo();
+      if (
+        info.provider === 'google' &&
+        info.authenticated &&
+        info.user?.id &&
+        hasPendingSyncFlag(info.user.id)
+      ) {
+        await syncGoogleDriveIfActive(info);
+      }
+    })();
+  });
+
+  window.addEventListener('offline', () => {
+    emitDriveSyncStatus('offline');
+  });
+}
 
 function getScopedKeys(accountId?: string | null) {
   if (!accountId || accountId === 'local-demo-user') {
@@ -393,22 +460,40 @@ async function hydrateGoogleAccountOnce(
   ) {
     return;
   }
+  ensureOnlineAutoFlushListener();
   if (hydratedAccountId === session.user.id) return;
 
   try {
     const res = await fetch('/api/drive/data', { cache: 'no-store' });
     if (res.ok) {
       const data = (await res.json()) as { bundle?: AccountCloudBundle | null };
+      const keys = getScopedKeys(session.user.id);
+      const existingLocalProfile = readLocalJson<Partial<UserProfile> | null>(
+        keys.profile,
+        null
+      );
+
       if (data.bundle?.profile) {
-        writeBundleToLocalScope(session.user.id, data.bundle);
+        if (existingLocalProfile) {
+          // Conflict-free merge so offline progress is NEVER overwritten by stale cloud data
+          const localBundle = buildLocalBundleFor(session);
+          const { merged, localHadNewerProgress } = mergeAccountBundles(
+            localBundle,
+            data.bundle
+          );
+          writeBundleToLocalScope(session.user.id, merged);
+          if (localHadNewerProgress || hasPendingSyncFlag(session.user.id)) {
+            void syncGoogleDriveIfActive(session);
+          } else {
+            emitDriveSyncStatus('synced');
+          }
+        } else {
+          writeBundleToLocalScope(session.user.id, data.bundle);
+          emitDriveSyncStatus('synced');
+        }
       } else {
         // Brand new Google account -> seed profile from Google identity
-        const keys = getScopedKeys(session.user.id);
-        const existing = readLocalJson<Partial<UserProfile> | null>(
-          keys.profile,
-          null
-        );
-        if (!existing) {
+        if (!existingLocalProfile) {
           writeLocalJson(
             keys.profile,
             defaultLocalProfile({
@@ -419,11 +504,14 @@ async function hydrateGoogleAccountOnce(
             })
           );
         }
+        emitDriveSyncStatus('synced');
       }
       hydratedAccountId = session.user.id;
     }
   } catch {
-    // Allow app to continue using local mirror cleanly
+    emitDriveSyncStatus(
+      typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'pending'
+    );
   }
 }
 
@@ -434,17 +522,37 @@ async function syncGoogleDriveIfActive(
   if (info.provider !== 'google' || !info.authenticated || !info.user?.id) {
     return;
   }
+  ensureOnlineAutoFlushListener();
+  const accountId = info.user.id;
 
-  const bundle = buildLocalBundleFor(info);
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    setPendingSyncFlag(accountId, true);
+    emitDriveSyncStatus('offline');
+    return;
+  }
+
   const run = async () => {
+    emitDriveSyncStatus('syncing');
+    // Re-read the freshest local bundle right when this queued sync executes
+    const latestBundle = buildLocalBundleFor(info);
     try {
-      await fetch('/api/drive/data', {
+      const res = await fetch('/api/drive/data', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bundle }),
+        body: JSON.stringify({ bundle: latestBundle }),
       });
+      if (!res.ok) {
+        throw new Error(`Drive sync HTTP ${res.status}`);
+      }
+      setPendingSyncFlag(accountId, false);
+      emitDriveSyncStatus('synced');
     } catch {
-      // Non-fatal; local mirror retains latest state for next sync
+      setPendingSyncFlag(accountId, true);
+      emitDriveSyncStatus(
+        typeof navigator !== 'undefined' && !navigator.onLine
+          ? 'offline'
+          : 'pending'
+      );
     }
   };
 
@@ -1035,7 +1143,7 @@ export async function recordLessonProgress(params: {
       streakKeptToday: strict.studiedToday,
       streakDays: nextProfile.streakDays,
       longestStreak: nextProfile.longestStreak,
-      xpEarned: params.xpEarned,
+      xpEarned: effectiveXp,
       gemsEarned: params.gemsEarned,
       leveledUp: nextLevel > prevLevel,
       newLevel: nextLevel,
@@ -1064,12 +1172,20 @@ export async function recordLessonProgress(params: {
     };
   }
 
-  const { data: todayRow } = await supabase
-    .from('daily_stats')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('practice_date', today)
-    .maybeSingle();
+  const [{ data: todayRow }, { data: preProfRow }] = await Promise.all([
+    supabase
+      .from('daily_stats')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('practice_date', today)
+      .maybeSingle(),
+    supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+  ]);
+
+  const preProfile = preProfRow ? mapDbProfile(preProfRow) : defaultLocalProfile();
+  const effectiveSupabaseXp = isXpBoostActive(preProfile.xpBoostUntil)
+    ? params.xpEarned * 2
+    : params.xpEarned;
 
   if (todayRow) {
     const { error: updErr } = await supabase
@@ -1079,7 +1195,7 @@ export async function recordLessonProgress(params: {
         messages_sent: (todayRow.messages_sent ?? 0) + msgDelta,
         sessions_completed: (todayRow.sessions_completed ?? 0) + sessionDelta,
         lessons_completed: (todayRow.lessons_completed ?? 0) + lessonDelta,
-        xp_earned: (todayRow.xp_earned ?? 0) + params.xpEarned,
+        xp_earned: (todayRow.xp_earned ?? 0) + effectiveSupabaseXp,
       })
       .eq('id', todayRow.id);
 
@@ -1101,7 +1217,7 @@ export async function recordLessonProgress(params: {
       messages_sent: msgDelta,
       sessions_completed: sessionDelta,
       lessons_completed: lessonDelta,
-      xp_earned: params.xpEarned,
+      xp_earned: effectiveSupabaseXp,
       freeze_used: false,
     });
     if (insErr) {
@@ -1115,15 +1231,12 @@ export async function recordLessonProgress(params: {
     }
   }
 
-  const [{ data: allStats }, { data: profRow }] = await Promise.all([
-    supabase
-      .from('daily_stats')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('practice_date', { ascending: false })
-      .limit(120),
-    supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
-  ]);
+  const { data: allStats } = await supabase
+    .from('daily_stats')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('practice_date', { ascending: false })
+    .limit(120);
 
   const mappedStats = (allStats ?? []).map((r) =>
     normalizeDailyStat({
@@ -1137,7 +1250,7 @@ export async function recordLessonProgress(params: {
     })
   );
 
-  const currentProfile = profRow ? mapDbProfile(profRow) : defaultLocalProfile();
+  const currentProfile = preProfile;
   const prevLevel = getLevelInfo(currentProfile.xp).level;
   const prevClaimableCount = getClaimableMilestones(
     currentProfile.streakDays,
@@ -1146,7 +1259,7 @@ export async function recordLessonProgress(params: {
   ).length;
 
   const strict = computeStrictStreak(mappedStats, today);
-  const nextXp = currentProfile.xp + params.xpEarned;
+  const nextXp = currentProfile.xp + effectiveSupabaseXp;
   const nextGems = currentProfile.gems + params.gemsEarned;
   const nextLongest = Math.max(
     currentProfile.longestStreak,
@@ -1176,7 +1289,7 @@ export async function recordLessonProgress(params: {
     streakKeptToday: strict.studiedToday,
     streakDays: strict.currentStreak,
     longestStreak: nextLongest,
-    xpEarned: params.xpEarned,
+    xpEarned: effectiveSupabaseXp,
     gemsEarned: params.gemsEarned,
     leveledUp: nextLevel > prevLevel,
     newLevel: nextLevel,

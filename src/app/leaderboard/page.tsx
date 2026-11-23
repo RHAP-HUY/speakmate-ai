@@ -183,7 +183,7 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {/* 5-Tier League Progression Strip (Duolingo Signature Shield Bar) */}
+      {/* 5-Tier League Progression Strip */}
       <section className="card-duo p-5 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-black uppercase tracking-wider text-slate-500">

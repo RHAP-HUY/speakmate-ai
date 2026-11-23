@@ -13,6 +13,7 @@ import {
   loadAccountBundleFromDrive,
   saveAccountBundleToDrive,
 } from '@/lib/google-drive-store';
+import { sanitizeInternalRedirectPath } from '@/lib/security';
 import type { AccountCloudBundle } from '@/types';
 
 export const maxDuration = 30;
@@ -238,10 +239,7 @@ export async function GET(request: NextRequest) {
       // Allow login to proceed to onboarding smoothly
     }
 
-    const safeNext =
-      decodedState.next && decodedState.next.startsWith('/')
-        ? decodedState.next
-        : '/';
+    const safeNext = sanitizeInternalRedirectPath(decodedState.next, '/');
     const targetPath = onboardingDone ? safeNext : '/onboarding';
 
     const response = NextResponse.redirect(new URL(targetPath, origin));

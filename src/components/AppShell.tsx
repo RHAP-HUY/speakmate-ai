@@ -13,9 +13,9 @@ interface AppShellProps {
 }
 
 /**
- * Authentic Duolingo 3-Zone App Shell:
+ * Aurora Studio 3-Zone App Shell:
  * - Left Fixed Navigation Rail (256px on lg+)
- * - Centered Main Learning Stage
+ * - Centered Main Learning Stage over luminous Aurora mesh canvas
  * - Optional Sticky Right Gamification Rail (350px on xl+)
  */
 export function AppShell({
@@ -26,7 +26,7 @@ export function AppShell({
   children,
 }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-[#F7F9FC] flex flex-col">
+    <div className="min-h-screen bg-transparent flex flex-col">
       <AppNav profile={profile} authenticated={authenticated} variant="app" />
 
       <div className="flex-1 lg:pl-64 pb-24 lg:pb-12">

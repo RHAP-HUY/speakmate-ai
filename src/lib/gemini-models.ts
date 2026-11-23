@@ -78,6 +78,24 @@ export function isUnsupportedOrMissingModelError(error: unknown): boolean {
   );
 }
 
+export function isTransientOverloadError(error: unknown): boolean {
+  const message =
+    error instanceof Error
+      ? `${error.name} ${error.message}`
+      : String(error ?? '');
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes('503') ||
+    lower.includes('unavailable') ||
+    lower.includes('high demand') ||
+    lower.includes('overloaded') ||
+    lower.includes('502') ||
+    lower.includes('504') ||
+    lower.includes('econnreset')
+  );
+}
+
 /**
  * Selects the fastest valid thinkingConfig supported by each Gemini model family.
  * - gemini-3.5-flash-lite & gemini-flash-lite-latest support MINIMAL thinking (fastest, ~0 thoughts).

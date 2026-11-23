@@ -63,7 +63,7 @@ function playTone(
   osc.stop(now + duration + 0.02);
 }
 
-/** Crisp rising 2-note Duolingo-style chime for correct answers */
+/** Crisp rising 2-note chime for correct answers */
 export function playCorrectSound(): void {
   try {
     const ctx = getAudioContext();

@@ -20,10 +20,14 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://speakmate-ai-nu.vercel.app'),
   title: 'SpeakMate AI — Vừa Học Vừa Chơi, Nói Tiếng Anh Như Người Bản Xứ',
   description:
     'Học giao tiếp tiếng Anh tương tác Vừa Học Vừa Chơi cùng trợ lý AI Nova chấm phát âm từng từ, bảng xếp hạng tuần, lịch giữ chuỗi nhận quà và đồng bộ Google Drive 5TB.',
   applicationName: 'SpeakMate AI',
+  alternates: {
+    canonical: '/',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -35,6 +39,8 @@ export const metadata: Metadata = {
       'Lộ trình trò chơi phản xạ 2 phút, gọi thoại gia sư AI chấm phát âm từng từ, Bảng Xếp Hạng tuần & Rương Thưởng Chuỗi đồng bộ Google Drive 5TB.',
     type: 'website',
     locale: 'vi_VN',
+    siteName: 'SpeakMate AI',
+    url: 'https://speakmate-ai-nu.vercel.app',
   },
 };
 
@@ -48,7 +54,7 @@ export default function RootLayout({
       lang="vi"
       className={`${beVietnamPro.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#F7F9FC] text-[#1E293B] flex flex-col selection:bg-[#DDF4FF] selection:text-[#1899D6]">
+      <body className="min-h-full text-slate-900 flex flex-col selection:bg-indigo-100 selection:text-indigo-800">
         {children}
       </body>
     </html>

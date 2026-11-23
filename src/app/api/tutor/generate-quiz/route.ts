@@ -5,7 +5,11 @@ import {
   resolveTutorRequestAuth,
   TutorHttpError,
 } from '@/lib/gemini-client';
-import type { SpeedMatchQuestion } from '@/lib/game-data';
+import {
+  pickShuffledItems,
+  SPEED_MATCH_QUESTIONS,
+  type SpeedMatchQuestion,
+} from '@/lib/game-data';
 
 export const maxDuration = 30;
 
@@ -142,7 +146,7 @@ export async function POST(request: NextRequest) {
       userPersonalKey,
       parts: [{ text: prompt }],
       systemInstruction:
-        'You are SpeakMate AI, a world-class Duolingo-style English learning designer for Vietnamese learners. Always output crisp, natural spoken English and warm, concise Vietnamese prompts & phonetic reading guides.',
+        'You are SpeakMate AI (Nova), a world-class interactive English speaking coach for Vietnamese learners. Always output crisp, natural spoken English and warm, concise Vietnamese prompts & phonetic reading guides.',
       responseSchema: AI_QUIZ_SCHEMA,
       temperature: 0.85,
       maxOutputTokens: 1100,
@@ -156,10 +160,19 @@ export async function POST(request: NextRequest) {
     };
     const questions = sanitizeGeneratedQuizQuestions(parsed.questions);
     if (questions.length < 3) {
-      return NextResponse.json(
-        { error: 'AI chưa tạo đủ bộ câu hỏi. Vui lòng thử lại!' },
-        { status: 502 }
-      );
+      const curatedFallback = pickShuffledItems(SPEED_MATCH_QUESTIONS, 5);
+      return NextResponse.json({
+        ok: true,
+        topicTitleVi: customTopic
+          ? `Luyện phản xạ nhanh · ${customTopic}`
+          : 'Màn chơi Phản xạ Bản xứ tuyển chọn',
+        questions: curatedFallback,
+        meta: {
+          modelUsed: 'curated-fallback',
+          latencyMs: result.latencyMs,
+          fallback: true,
+        },
+      });
     }
 
     return NextResponse.json({
@@ -171,23 +184,27 @@ export async function POST(request: NextRequest) {
       meta: {
         modelUsed: result.modelUsed,
         latencyMs: result.latencyMs,
+        fallback: false,
       },
     });
   } catch (error) {
-    if (error instanceof TutorHttpError) {
+    if (error instanceof TutorHttpError && error.status < 500) {
       return NextResponse.json(
         { error: error.message },
         { status: error.status }
       );
     }
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Không thể tạo màn chơi AI lúc này.',
+    // 99.99% uptime graceful fallback during upstream Gemini 503 traffic spikes
+    const curatedFallback = pickShuffledItems(SPEED_MATCH_QUESTIONS, 5);
+    return NextResponse.json({
+      ok: true,
+      topicTitleVi: 'Màn chơi Phản xạ Bản xứ tuyển chọn (Chế độ dự phòng nhanh)',
+      questions: curatedFallback,
+      meta: {
+        modelUsed: 'curated-fallback',
+        latencyMs: 0,
+        fallback: true,
       },
-      { status: 500 }
-    );
+    });
   }
 }

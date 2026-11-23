@@ -20,6 +20,7 @@ import {
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { NovaCompanion } from '@/components/BrandArt';
 import { CallReportView } from '@/components/CallReportView';
 import { PronunciationBadge } from '@/components/PronunciationBadge';
 import {
@@ -83,10 +84,10 @@ function CallStudioInner() {
       SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
     return customTopic
       ? {
-          ...baseScenario,
-          titleVi: customTopic,
-          titleEn: customTopic,
-        }
+        ...baseScenario,
+        titleVi: customTopic,
+        titleEn: customTopic,
+      }
       : baseScenario;
   }, [scenarioId, customTopic]);
 
@@ -104,6 +105,7 @@ function CallStudioInner() {
   const [replyHints, setReplyHints] = useState<ReplyHint[]>([]);
   const [textInput, setTextInput] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [canRetryLastTurn, setCanRetryLastTurn] = useState<boolean>(false);
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
   const [micLevel, setMicLevel] = useState<number>(0);
   const [autoListenTick, setAutoListenTick] = useState<number>(0);
@@ -139,6 +141,12 @@ function CallStudioInner() {
   const phaseRef = useRef<CallPhase>('initializing');
   const practiceOpenRef = useRef<boolean>(false);
   const startedInitRef = useRef<boolean>(false);
+  const lastFailedTurnRef = useRef<{
+    isStart?: boolean;
+    userText?: string;
+    audioBlob?: Blob;
+    audioMime?: string;
+  } | null>(null);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -176,7 +184,7 @@ function CallStudioInner() {
       vadRafRef.current = null;
     }
     if (audioCtxRef.current) {
-      audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current.close().catch(() => { });
       audioCtxRef.current = null;
     }
     if (streamRef.current) {
@@ -238,6 +246,8 @@ function CallStudioInner() {
       audioMime?: string;
     }) => {
       setErrorMsg(null);
+      setCanRetryLastTurn(false);
+      lastFailedTurnRef.current = null;
       setPhase('thinking');
       stopVoicePlayback();
 
@@ -255,11 +265,11 @@ function CallStudioInner() {
           })),
           profileOverride: profileRef.current
             ? {
-                displayName: profileRef.current.displayName,
-                englishLevel: profileRef.current.englishLevel,
-                jobField: profileRef.current.jobField,
-                hobbies: profileRef.current.hobbies,
-              }
+              displayName: profileRef.current.displayName,
+              englishLevel: profileRef.current.englishLevel,
+              jobField: profileRef.current.jobField,
+              hobbies: profileRef.current.hobbies,
+            }
             : undefined,
         };
 
@@ -342,6 +352,8 @@ function CallStudioInner() {
 
         await speakAiSentence(data.aiReplyEn, undefined, true);
       } catch (err) {
+        lastFailedTurnRef.current = opts;
+        setCanRetryLastTurn(true);
         setErrorMsg(
           err instanceof Error ? err.message : 'Có lỗi xảy ra khi gọi AI.'
         );
@@ -605,11 +617,11 @@ function CallStudioInner() {
             })),
             profileOverride: profileRef.current
               ? {
-                  displayName: profileRef.current.displayName,
-                  englishLevel: profileRef.current.englishLevel,
-                  jobField: profileRef.current.jobField,
-                  hobbies: profileRef.current.hobbies,
-                }
+                displayName: profileRef.current.displayName,
+                englishLevel: profileRef.current.englishLevel,
+                jobField: profileRef.current.jobField,
+                hobbies: profileRef.current.hobbies,
+              }
               : undefined,
           }),
         });
@@ -699,8 +711,8 @@ function CallStudioInner() {
   const avgPronunciation =
     spokenScores.length > 0
       ? Math.round(
-          spokenScores.reduce((sum, s) => sum + s, 0) / spokenScores.length
-        )
+        spokenScores.reduce((sum, s) => sum + s, 0) / spokenScores.length
+      )
       : null;
 
   return (
@@ -773,11 +785,10 @@ function CallStudioInner() {
                   key={spd}
                   type="button"
                   onClick={() => setSpeed(spd)}
-                  className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
-                    Math.abs(speed - spd) < 0.03
-                      ? 'bg-indigo-600 text-white'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
+                  className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${Math.abs(speed - spd) < 0.03
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-300 hover:text-white'
+                    }`}
                 >
                   {spd}x
                 </button>
@@ -818,34 +829,30 @@ function CallStudioInner() {
         {/* Strict Lesson Quest Progress Bar for Keeping Streak */}
         <div className="mx-auto mt-2.5 max-w-5xl">
           <div
-            className={`flex items-center justify-between gap-3 rounded-xl px-3 py-1.5 text-[11px] font-bold border ${
-              userTurns >= MIN_CALL_TURNS_FOR_LESSON
-                ? 'border-emerald-500/40 bg-emerald-950/60 text-emerald-300'
-                : 'border-slate-800 bg-slate-950/70 text-slate-300'
-            }`}
+            className={`flex items-center justify-between gap-3 rounded-xl px-3 py-1.5 text-[11px] font-bold border ${userTurns >= MIN_CALL_TURNS_FOR_LESSON
+              ? 'border-emerald-500/40 bg-emerald-950/60 text-emerald-300'
+              : 'border-slate-800 bg-slate-950/70 text-slate-300'
+              }`}
           >
             <span className="inline-flex items-center gap-1.5">
               <Flame
-                className={`h-3.5 w-3.5 ${
-                  userTurns >= MIN_CALL_TURNS_FOR_LESSON
-                    ? 'text-amber-400 fill-amber-400'
-                    : 'text-slate-400'
-                }`}
+                className={`h-3.5 w-3.5 ${userTurns >= MIN_CALL_TURNS_FOR_LESSON
+                  ? 'text-amber-400 fill-amber-400'
+                  : 'text-slate-400'
+                  }`}
               />
               {userTurns >= MIN_CALL_TURNS_FOR_LESSON
                 ? 'Đã hoàn thành nhiệm vụ bài học — Chuỗi hôm nay đã được giữ! (+60 XP · +15 💎)'
-                : `Nhiệm vụ giữ chuỗi: Nói thêm ${
-                    MIN_CALL_TURNS_FOR_LESSON - userTurns
-                  } lượt nữa để hoàn thành 1 bài học`}
+                : `Nhiệm vụ giữ chuỗi: Nói thêm ${MIN_CALL_TURNS_FOR_LESSON - userTurns
+                } lượt nữa để hoàn thành 1 bài học`}
             </span>
             <div className="flex items-center gap-2 shrink-0">
               <div className="hidden sm:block h-1.5 w-24 overflow-hidden rounded-full bg-slate-800">
                 <div
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    userTurns >= MIN_CALL_TURNS_FOR_LESSON
-                      ? 'bg-emerald-400'
-                      : 'bg-gradient-to-r from-amber-400 to-orange-500'
-                  }`}
+                  className={`h-full rounded-full transition-all duration-300 ${userTurns >= MIN_CALL_TURNS_FOR_LESSON
+                    ? 'bg-emerald-400'
+                    : 'bg-gradient-to-r from-amber-400 to-orange-500'
+                    }`}
                   style={{
                     width: `${Math.min(
                       100,
@@ -865,10 +872,14 @@ function CallStudioInner() {
       {/* Main Conversation Stream */}
       <main className="mx-auto flex-1 w-full max-w-4xl px-4 py-5 space-y-4 overflow-y-auto">
         {messages.length === 0 && phase === 'initializing' && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-cyan-400 mb-3" />
-            <p className="text-sm text-slate-300">
-              {persona.name} đang nhấc máy chào {profile?.displayName || 'bạn'}...
+          <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
+            <NovaCompanion
+              mood="excited"
+              className="h-24 w-24 animate-gentle-float drop-shadow-[0_14px_24px_rgba(99,102,241,0.45)]"
+            />
+            <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
+            <p className="text-sm font-semibold text-slate-200">
+              {persona.name} &amp; Nova đang kết nối cuộc gọi cho {profile?.displayName || 'bạn'}...
             </p>
           </div>
         )}
@@ -886,16 +897,14 @@ function CallStudioInner() {
           return (
             <div
               key={msg.id}
-              className={`flex flex-col ${
-                isUser ? 'items-end' : 'items-start'
-              }`}
+              className={`flex flex-col ${isUser ? 'items-end' : 'items-start'
+                }`}
             >
               <div
-                className={`max-w-[92%] sm:max-w-[82%] rounded-2xl px-4 py-3 ${
-                  isUser
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-900 border border-slate-800 text-slate-100'
-                }`}
+                className={`max-w-[92%] sm:max-w-[82%] rounded-2xl px-4 py-3 ${isUser
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-900 border border-slate-800 text-slate-100'
+                  }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-sm sm:text-base font-medium leading-relaxed">
@@ -1059,8 +1068,23 @@ function CallStudioInner() {
         )}
 
         {errorMsg && (
-          <div className="rounded-2xl border border-rose-500/40 bg-rose-950/70 px-4 py-3 text-xs text-rose-200">
-            {errorMsg}
+          <div className="rounded-2xl border border-rose-500/40 bg-rose-950/75 px-4 py-3 text-xs text-rose-100 flex flex-wrap items-center justify-between gap-3">
+            <span>{errorMsg}</span>
+            {canRetryLastTurn && (
+              <button
+                type="button"
+                onClick={() => {
+                  const retryPayload = lastFailedTurnRef.current;
+                  if (retryPayload) {
+                    void sendTurn(retryPayload);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-3 py-1.5 text-[11px] font-extrabold text-white transition cursor-pointer shrink-0"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Thử lại lượt vừa rồi
+              </button>
+            )}
           </div>
         )}
 
@@ -1145,11 +1169,10 @@ function CallStudioInner() {
                   onClick={() =>
                     setMicMode((m) => (m === 'tap' ? 'handsfree' : 'tap'))
                   }
-                  className={`rounded-xl border px-3 py-2.5 text-xs font-semibold transition cursor-pointer ${
-                    micMode === 'handsfree'
-                      ? 'border-cyan-500 bg-cyan-950/70 text-cyan-300'
-                      : 'border-slate-700 bg-slate-800 text-slate-300'
-                  }`}
+                  className={`rounded-xl border px-3 py-2.5 text-xs font-semibold transition cursor-pointer ${micMode === 'handsfree'
+                    ? 'border-cyan-500 bg-cyan-950/70 text-cyan-300'
+                    : 'border-slate-700 bg-slate-800 text-slate-300'
+                    }`}
                 >
                   {micMode === 'handsfree' ? 'Rảnh tay (Auto)' : 'Chạm để nói'}
                 </button>
@@ -1165,11 +1188,10 @@ function CallStudioInner() {
                       void startRecording();
                     }
                   }}
-                  className={`relative flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold shadow-lg transition disabled:opacity-50 cursor-pointer ${
-                    phase === 'recording'
-                      ? 'bg-rose-600 text-white hover:bg-rose-700'
-                      : 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white hover:from-indigo-500 hover:to-cyan-500'
-                  }`}
+                  className={`relative flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold shadow-lg transition disabled:opacity-50 cursor-pointer ${phase === 'recording'
+                    ? 'bg-rose-600 text-white hover:bg-rose-700'
+                    : 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white hover:from-indigo-500 hover:to-cyan-500'
+                    }`}
                 >
                   {phase === 'recording' ? (
                     <>
@@ -1272,11 +1294,10 @@ function CallStudioInner() {
             {/* Strict Streak & XP Reward Banner */}
             {callReward && (
               <div
-                className={`rounded-2xl border p-3.5 text-xs space-y-2 ${
-                  callReward.lessonCompleted
-                    ? 'border-emerald-500/40 bg-emerald-950/50 text-emerald-100'
-                    : 'border-amber-500/40 bg-amber-950/40 text-amber-100'
-                }`}
+                className={`rounded-2xl border p-3.5 text-xs space-y-2 ${callReward.lessonCompleted
+                  ? 'border-emerald-500/40 bg-emerald-950/50 text-emerald-100'
+                  : 'border-amber-500/40 bg-amber-950/40 text-amber-100'
+                  }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-extrabold flex items-center gap-1.5">

@@ -5,32 +5,53 @@ import {
   isServerEncryptionAvailable,
   maskApiKey,
 } from '@/lib/crypto';
-import { parseGeminiKeyPool } from '@/lib/gemini-keys';
+import {
+  isFatalGeminiKeyAuthError,
+  parseGeminiKeyPool,
+} from '@/lib/gemini-keys';
 import {
   getOrderedGeminiModels,
   getThinkingConfigForModel,
 } from '@/lib/gemini-models';
+import { checkSlidingWindowRateLimit } from '@/lib/rate-limit';
+import { extractClientIp } from '@/lib/security';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+const NO_STORE_HEADERS = { 'Cache-Control': 'no-store, private' };
+
 async function verifyGeminiKey(apiKey: string): Promise<boolean> {
   const ai = new GoogleGenAI({ apiKey });
-  const candidates = getOrderedGeminiModels();
+  const candidates = getOrderedGeminiModels().slice(0, 4);
   let lastError: unknown = null;
   for (const model of candidates) {
+    let timer: ReturnType<typeof setTimeout> | null = null;
     try {
       const thinkingConfig = getThinkingConfigForModel(model, 'realtime');
-      const res = await ai.models.generateContent({
-        model,
-        contents: 'Reply with just OK',
-        config: {
-          maxOutputTokens: 16,
-          ...(thinkingConfig ? { thinkingConfig } : {}),
-        },
-      });
+      const res = await Promise.race([
+        ai.models.generateContent({
+          model,
+          contents: 'Reply with just OK',
+          config: {
+            maxOutputTokens: 16,
+            ...(thinkingConfig ? { thinkingConfig } : {}),
+          },
+        }),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error(`Timeout kiểm tra model ${model}`)),
+            8000
+          );
+        }),
+      ]);
       if (res.text) return true;
     } catch (err) {
       lastError = err;
+      if (isFatalGeminiKeyAuthError(err)) {
+        throw new Error('Gemini API Key không hợp lệ hoặc đã bị thu hồi.');
+      }
+    } finally {
+      if (timer) clearTimeout(timer);
     }
   }
   throw lastError instanceof Error
@@ -43,14 +64,17 @@ export async function GET() {
   const encryptionReady = isServerEncryptionAvailable();
 
   if (!isSupabaseConfigured()) {
-    return NextResponse.json({
-      supabaseConfigured: false,
-      apiKeyMode: 'system',
-      hasPersonalKey: false,
-      personalKeyHint: null,
-      sharedPoolCount,
-      encryptionReady,
-    });
+    return NextResponse.json(
+      {
+        supabaseConfigured: false,
+        apiKeyMode: 'system',
+        hasPersonalKey: false,
+        personalKeyHint: null,
+        sharedPoolCount,
+        encryptionReady,
+      },
+      { headers: NO_STORE_HEADERS }
+    );
   }
 
   const supabase = await createSupabaseServerClient();
@@ -98,19 +122,41 @@ export async function POST(request: NextRequest) {
     };
 
     if (body.action === 'test') {
+      const rl = checkSlidingWindowRateLimit({
+        namespace: 'user-key-test',
+        key: extractClientIp(request.headers),
+        limit: 12,
+        windowMs: 60_000,
+      });
+      if (!rl.allowed) {
+        return NextResponse.json(
+          { error: 'Bạn kiểm tra API Key quá nhanh. Vui lòng thử lại sau 1 phút.' },
+          {
+            status: 429,
+            headers: {
+              ...NO_STORE_HEADERS,
+              'Retry-After': String(rl.retryAfterSeconds),
+            },
+          }
+        );
+      }
+
       const keyToTest = body.personalKey?.trim();
       if (!keyToTest) {
         return NextResponse.json(
           { error: 'Vui lòng nhập API Key để kiểm tra.' },
-          { status: 400 }
+          { status: 400, headers: NO_STORE_HEADERS }
         );
       }
       await verifyGeminiKey(keyToTest);
-      return NextResponse.json({
-        ok: true,
-        message: 'API Key hoạt động tốt!',
-        keyHint: maskApiKey(keyToTest),
-      });
+      return NextResponse.json(
+        {
+          ok: true,
+          message: 'API Key hoạt động tốt!',
+          keyHint: maskApiKey(keyToTest),
+        },
+        { headers: NO_STORE_HEADERS }
+      );
     }
 
     if (!isSupabaseConfigured()) {

@@ -7,6 +7,7 @@ import {
   isOwnerDriveConfigured,
   verifyOwnerSetupKey,
 } from '@/lib/google-auth';
+import { sanitizeInternalRedirectPath } from '@/lib/security';
 
 export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin;
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
   const stateMode = isOwnerSetup ? 'owner-setup' : 'login';
   const statePayload = JSON.stringify({
     nonce,
-    next: nextPath.startsWith('/') ? nextPath : '/',
+    next: sanitizeInternalRedirectPath(nextPath, '/'),
     mode: stateMode,
   });
   const encodedState = Buffer.from(statePayload, 'utf8').toString('base64url');

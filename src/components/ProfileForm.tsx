@@ -408,7 +408,7 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
       <button
         type="submit"
         disabled={saving}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-6 py-3.5 text-sm font-bold text-white shadow-md hover:from-indigo-700 hover:to-cyan-700 disabled:opacity-60 transition cursor-pointer"
+        className="btn-duo btn-duo-primary w-full px-6 py-3.5 text-sm uppercase tracking-wide"
       >
         {saving ? (
           <>
