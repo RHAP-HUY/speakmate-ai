@@ -251,10 +251,10 @@ export async function generateGeminiJson(params: {
       if (remainingBudget < 2_500) {
         break;
       }
-      // Keep slower non-lite models bounded so one slow cluster cannot starve fallbacks
+      // Keep individual realtime attempts tightly bounded so no single slow cluster starves fallbacks
       const modelCapMs =
-        speedMode === 'realtime' && !model.includes('lite')
-          ? Math.min(baseAttemptTimeoutMs, 8_500)
+        speedMode === 'realtime'
+          ? Math.min(baseAttemptTimeoutMs, model === 'gemini-3.5-flash-lite' ? 7_500 : 6_500)
           : baseAttemptTimeoutMs;
       const attemptTimeoutMs = Math.min(modelCapMs, remainingBudget);
       const attemptStartedAt = Date.now();
