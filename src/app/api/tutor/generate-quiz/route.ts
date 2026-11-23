@@ -7,7 +7,7 @@ import {
 } from '@/lib/gemini-client';
 import type { SpeedMatchQuestion } from '@/lib/game-data';
 
-export const maxDuration = 25;
+export const maxDuration = 30;
 
 const AI_QUIZ_SCHEMA: Schema = {
   type: Type.OBJECT,
@@ -145,9 +145,9 @@ export async function POST(request: NextRequest) {
         'You are SpeakMate AI, a world-class Duolingo-style English learning designer for Vietnamese learners. Always output crisp, natural spoken English and warm, concise Vietnamese prompts & phonetic reading guides.',
       responseSchema: AI_QUIZ_SCHEMA,
       temperature: 0.85,
-      maxOutputTokens: 1400,
+      maxOutputTokens: 1100,
       speedMode: 'realtime',
-      timeoutMs: 14_000,
+      timeoutMs: 9_000,
     });
 
     const parsed = JSON.parse(result.rawText) as {

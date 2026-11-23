@@ -200,7 +200,9 @@ export async function generateGeminiJson(params: {
 
   const models = getOrderedGeminiModels();
   const speedMode = params.speedMode ?? 'realtime';
-  const timeoutMs = params.timeoutMs ?? (speedMode === 'report' ? 18_000 : 12_000);
+  const baseAttemptTimeoutMs =
+    params.timeoutMs ?? (speedMode === 'report' ? 14_000 : 8_000);
+  const totalBudgetMs = speedMode === 'report' ? 24_000 : 21_000;
   const startedAt = Date.now();
   let lastError: unknown = null;
 
@@ -208,6 +210,13 @@ export async function generateGeminiJson(params: {
     const ai = getCachedClient(candidate.key);
 
     for (const model of models) {
+      const elapsed = Date.now() - startedAt;
+      const remainingBudget = totalBudgetMs - elapsed;
+      if (remainingBudget < 2_500) {
+        break;
+      }
+      const attemptTimeoutMs = Math.min(baseAttemptTimeoutMs, remainingBudget);
+
       try {
         const thinkingConfig = getThinkingConfigForModel(model, speedMode);
         const response = await withTimeout(
@@ -229,7 +238,7 @@ export async function generateGeminiJson(params: {
               ...(thinkingConfig ? { thinkingConfig } : {}),
             },
           }),
-          timeoutMs,
+          attemptTimeoutMs,
           model
         );
 
