@@ -166,7 +166,7 @@ export default function PhrasesPage() {
   const currentCard = phrases[cardIndex % Math.max(1, phrases.length)];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
+    <div className="min-h-screen flex flex-col bg-mesh-light pb-24 lg:pb-12">
       <AppNav profile={profile} authenticated={authenticated} />
 
       <main className="mx-auto w-full max-w-5xl px-4 py-6 space-y-6">

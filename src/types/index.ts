@@ -18,10 +18,19 @@ export interface UserProfile {
   preferredSpeed: number;
   dailyGoalMinutes: number;
   streakDays: number;
+  longestStreak: number;
   lastPracticeDate: string | null;
   onboardingCompleted: boolean;
   apiKeyMode: ApiKeyMode;
   personalKeyHint?: string | null;
+  // Gamification & Rewards
+  xp: number;
+  gems: number;
+  streakFreezes: number;
+  claimedMilestones: number[];
+  unlockedBadges: string[];
+  activeBadge: string | null;
+  totalLessonsCompleted: number;
 }
 
 export interface ReplyHint {
@@ -129,6 +138,45 @@ export interface DailyStat {
   secondsPracticed: number;
   messagesSent: number;
   sessionsCompleted: number;
+  lessonsCompleted: number;
+  xpEarned: number;
+  freezeUsed?: boolean;
+}
+
+export interface StreakMilestone {
+  days: number;
+  titleVi: string;
+  subtitleVi: string;
+  emoji: string;
+  rewardXp: number;
+  rewardGems: number;
+  rewardFreezes: number;
+  badgeId: string;
+  badgeLabel: string;
+  gradient: string;
+}
+
+export interface ShopRewardItem {
+  id: string;
+  type: 'freeze' | 'badge';
+  titleVi: string;
+  descVi: string;
+  emoji: string;
+  costGems: number;
+  badgeId?: string;
+  badgeLabel?: string;
+}
+
+export interface LessonRewardSummary {
+  lessonCompleted: boolean;
+  streakKeptToday: boolean;
+  streakDays: number;
+  longestStreak: number;
+  xpEarned: number;
+  gemsEarned: number;
+  leveledUp: boolean;
+  newLevel: number;
+  newlyClaimableMilestones: number[];
 }
 
 export interface Scenario {

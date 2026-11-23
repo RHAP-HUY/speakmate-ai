@@ -1,3 +1,11 @@
+import {
+  computeStrictStreak,
+  getClaimableMilestones,
+  getLevelInfo,
+  MIN_CALL_TURNS_FOR_LESSON,
+  SHOP_REWARDS,
+  STREAK_MILESTONES,
+} from '@/lib/gamification';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import type {
@@ -6,6 +14,7 @@ import type {
   ConversationRecord,
   DailyStat,
   EnglishLevel,
+  LessonRewardSummary,
   SavedPhrase,
   TopicCategory,
   TutorMessage,
@@ -84,10 +93,61 @@ function defaultLocalProfile(): UserProfile {
     preferredSpeed: 0.85,
     dailyGoalMinutes: 15,
     streakDays: 0,
+    longestStreak: 0,
     lastPracticeDate: null,
     onboardingCompleted: false,
     apiKeyMode: 'system',
     personalKeyHint: null,
+    xp: 0,
+    gems: 30,
+    streakFreezes: 1,
+    claimedMilestones: [],
+    unlockedBadges: [],
+    activeBadge: null,
+    totalLessonsCompleted: 0,
+  };
+}
+
+function normalizeProfile(raw: Partial<UserProfile> | null | undefined): UserProfile {
+  const base = defaultLocalProfile();
+  if (!raw) return base;
+  return {
+    ...base,
+    ...raw,
+    hobbies: Array.isArray(raw.hobbies) ? raw.hobbies : base.hobbies,
+    xp: Number.isFinite(Number(raw.xp)) ? Math.max(0, Number(raw.xp)) : 0,
+    gems: Number.isFinite(Number(raw.gems)) ? Math.max(0, Number(raw.gems)) : 30,
+    streakFreezes: Number.isFinite(Number(raw.streakFreezes))
+      ? Math.max(0, Number(raw.streakFreezes))
+      : 1,
+    streakDays: Number.isFinite(Number(raw.streakDays))
+      ? Math.max(0, Number(raw.streakDays))
+      : 0,
+    longestStreak: Number.isFinite(Number(raw.longestStreak))
+      ? Math.max(0, Number(raw.longestStreak))
+      : Math.max(0, Number(raw.streakDays ?? 0)),
+    claimedMilestones: Array.isArray(raw.claimedMilestones)
+      ? raw.claimedMilestones.map(Number).filter(Number.isFinite)
+      : [],
+    unlockedBadges: Array.isArray(raw.unlockedBadges)
+      ? raw.unlockedBadges.filter((b): b is string => typeof b === 'string')
+      : [],
+    activeBadge: typeof raw.activeBadge === 'string' ? raw.activeBadge : null,
+    totalLessonsCompleted: Number.isFinite(Number(raw.totalLessonsCompleted))
+      ? Math.max(0, Number(raw.totalLessonsCompleted))
+      : 0,
+  };
+}
+
+function normalizeDailyStat(raw: Partial<DailyStat>): DailyStat {
+  return {
+    practiceDate: String(raw.practiceDate ?? ''),
+    secondsPracticed: Math.max(0, Number(raw.secondsPracticed ?? 0)),
+    messagesSent: Math.max(0, Number(raw.messagesSent ?? 0)),
+    sessionsCompleted: Math.max(0, Number(raw.sessionsCompleted ?? 0)),
+    lessonsCompleted: Math.max(0, Number(raw.lessonsCompleted ?? 0)),
+    xpEarned: Math.max(0, Number(raw.xpEarned ?? 0)),
+    freezeUsed: Boolean(raw.freezeUsed),
   };
 }
 
@@ -95,7 +155,7 @@ function mapDbProfile(
   row: Record<string, unknown>,
   keyHint?: string | null
 ): UserProfile {
-  return {
+  return normalizeProfile({
     id: String(row.id ?? ''),
     email: String(row.email ?? ''),
     displayName: String(row.display_name ?? ''),
@@ -106,13 +166,33 @@ function mapDbProfile(
     preferredSpeed: Number(row.preferred_speed ?? 0.85),
     dailyGoalMinutes: Number(row.daily_goal_minutes ?? 15),
     streakDays: Number(row.streak_days ?? 0),
+    longestStreak: Number(row.longest_streak ?? row.streak_days ?? 0),
     lastPracticeDate: row.last_practice_date
       ? String(row.last_practice_date)
       : null,
     onboardingCompleted: Boolean(row.onboarding_completed),
     apiKeyMode: row.api_key_mode === 'personal' ? 'personal' : 'system',
     personalKeyHint: keyHint ?? null,
-  };
+    xp: Number(row.xp ?? 0),
+    gems: row.gems !== undefined && row.gems !== null ? Number(row.gems) : 30,
+    streakFreezes:
+      row.streak_freezes !== undefined && row.streak_freezes !== null
+        ? Number(row.streak_freezes)
+        : 1,
+    claimedMilestones: Array.isArray(row.claimed_milestones)
+      ? (row.claimed_milestones as number[])
+      : [],
+    unlockedBadges: Array.isArray(row.unlocked_badges)
+      ? (row.unlocked_badges as string[])
+      : [],
+    activeBadge: row.active_badge ? String(row.active_badge) : null,
+    totalLessonsCompleted: Number(row.total_lessons_completed ?? 0),
+  });
+}
+
+function readLocalStats(): DailyStat[] {
+  const raw = readLocalJson<Partial<DailyStat>[]>(STORAGE_KEYS.dailyStats, []);
+  return raw.map(normalizeDailyStat).filter((s) => Boolean(s.practiceDate));
 }
 
 export async function getCurrentProfile(): Promise<{
@@ -120,10 +200,21 @@ export async function getCurrentProfile(): Promise<{
   isCloud: boolean;
   authenticated: boolean;
 }> {
+  const today = getTodayLocalDate();
+
   if (!isSupabaseConfigured()) {
-    const local = readLocalJson<UserProfile | null>(STORAGE_KEYS.profile, null);
+    const local = normalizeProfile(
+      readLocalJson<Partial<UserProfile> | null>(STORAGE_KEYS.profile, null)
+    );
+    const stats = readLocalStats();
+    const strict = computeStrictStreak(stats, today);
+    const synced: UserProfile = {
+      ...local,
+      streakDays: strict.currentStreak,
+      longestStreak: Math.max(local.longestStreak, strict.longestStreak),
+    };
     return {
-      profile: local ?? defaultLocalProfile(),
+      profile: synced,
       isCloud: false,
       authenticated: true,
     };
@@ -142,19 +233,40 @@ export async function getCurrentProfile(): Promise<{
     return { profile: null, isCloud: true, authenticated: false };
   }
 
-  const [{ data: row }, { data: keyRow }] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
-    supabase
-      .from('user_api_keys')
-      .select('key_hint')
-      .eq('user_id', user.id)
-      .maybeSingle(),
-  ]);
+  const [{ data: row }, { data: keyRow }, { data: recentStats }] =
+    await Promise.all([
+      supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+      supabase
+        .from('user_api_keys')
+        .select('key_hint')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      supabase
+        .from('daily_stats')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('practice_date', { ascending: false })
+        .limit(90),
+    ]);
+
+  const mappedStats: DailyStat[] = (recentStats ?? []).map((r) =>
+    normalizeDailyStat({
+      practiceDate: r.practice_date,
+      secondsPracticed: r.seconds_practiced,
+      messagesSent: r.messages_sent,
+      sessionsCompleted: r.sessions_completed,
+      lessonsCompleted: r.lessons_completed,
+      xpEarned: r.xp_earned,
+      freezeUsed: r.freeze_used,
+    })
+  );
+  const strict = computeStrictStreak(mappedStats, today);
 
   if (!row) {
     const fallbackName =
       String(user.user_metadata?.display_name ?? '') ||
       String(user.user_metadata?.full_name ?? '') ||
+      String(user.user_metadata?.name ?? '') ||
       '';
     const { data: inserted } = await supabase
       .from('profiles')
@@ -166,17 +278,30 @@ export async function getCurrentProfile(): Promise<{
       .select('*')
       .single();
 
+    const mapped = inserted
+      ? mapDbProfile(inserted, keyRow?.key_hint ?? null)
+      : null;
+
     return {
-      profile: inserted
-        ? mapDbProfile(inserted, keyRow?.key_hint ?? null)
+      profile: mapped
+        ? {
+            ...mapped,
+            streakDays: strict.currentStreak,
+            longestStreak: Math.max(mapped.longestStreak, strict.longestStreak),
+          }
         : null,
       isCloud: true,
       authenticated: true,
     };
   }
 
+  const mapped = mapDbProfile(row, keyRow?.key_hint ?? null);
   return {
-    profile: mapDbProfile(row, keyRow?.key_hint ?? null),
+    profile: {
+      ...mapped,
+      streakDays: strict.currentStreak,
+      longestStreak: Math.max(mapped.longestStreak, strict.longestStreak),
+    },
     isCloud: true,
     authenticated: true,
   };
@@ -186,11 +311,10 @@ export async function saveProfile(
   updates: Partial<UserProfile>
 ): Promise<UserProfile> {
   if (!isSupabaseConfigured()) {
-    const current = readLocalJson<UserProfile>(
-      STORAGE_KEYS.profile,
-      defaultLocalProfile()
+    const current = normalizeProfile(
+      readLocalJson<Partial<UserProfile> | null>(STORAGE_KEYS.profile, null)
     );
-    const next = { ...current, ...updates };
+    const next = normalizeProfile({ ...current, ...updates });
     writeLocalJson(STORAGE_KEYS.profile, next);
     return next;
   }
@@ -224,6 +348,24 @@ export async function saveProfile(
     dbPayload.onboarding_completed = updates.onboardingCompleted;
   if (updates.apiKeyMode !== undefined)
     dbPayload.api_key_mode = updates.apiKeyMode;
+  if (updates.streakDays !== undefined)
+    dbPayload.streak_days = updates.streakDays;
+  if (updates.longestStreak !== undefined)
+    dbPayload.longest_streak = updates.longestStreak;
+  if (updates.lastPracticeDate !== undefined)
+    dbPayload.last_practice_date = updates.lastPracticeDate;
+  if (updates.xp !== undefined) dbPayload.xp = updates.xp;
+  if (updates.gems !== undefined) dbPayload.gems = updates.gems;
+  if (updates.streakFreezes !== undefined)
+    dbPayload.streak_freezes = updates.streakFreezes;
+  if (updates.claimedMilestones !== undefined)
+    dbPayload.claimed_milestones = updates.claimedMilestones;
+  if (updates.unlockedBadges !== undefined)
+    dbPayload.unlocked_badges = updates.unlockedBadges;
+  if (updates.activeBadge !== undefined)
+    dbPayload.active_badge = updates.activeBadge;
+  if (updates.totalLessonsCompleted !== undefined)
+    dbPayload.total_lessons_completed = updates.totalLessonsCompleted;
 
   const { data, error } = await supabase
     .from('profiles')
@@ -231,7 +373,32 @@ export async function saveProfile(
     .select('*')
     .single();
 
-  if (error) throw error;
+  if (error) {
+    // Graceful fallback if existing Supabase DB hasn't run gamification columns migration
+    const corePayload: Record<string, unknown> = { id: user.id };
+    for (const k of [
+      'display_name',
+      'english_level',
+      'job_field',
+      'hobbies',
+      'preferred_accent',
+      'preferred_speed',
+      'daily_goal_minutes',
+      'onboarding_completed',
+      'api_key_mode',
+      'streak_days',
+      'last_practice_date',
+    ]) {
+      if (dbPayload[k] !== undefined) corePayload[k] = dbPayload[k];
+    }
+    const { data: retryData, error: retryErr } = await supabase
+      .from('profiles')
+      .upsert(corePayload, { onConflict: 'id' })
+      .select('*')
+      .single();
+    if (retryErr) throw retryErr;
+    return mapDbProfile(retryData);
+  }
   return mapDbProfile(data);
 }
 
@@ -343,7 +510,6 @@ export async function appendConversationMessages(
 
   const { error } = await supabase.from('messages').insert(rows);
   if (error && error.message?.toLowerCase().includes('pronunciation')) {
-    // Graceful fallback if existing Supabase DB hasn't run the pronunciation column migration yet
     const legacyRows = rows.map((row) => ({
       conversation_id: row.conversation_id,
       user_id: row.user_id,
@@ -358,16 +524,260 @@ export async function appendConversationMessages(
   }
 }
 
+/**
+ * Core strict-streak + lesson reward recorder shared by Voice Calls (/call) and
+ * Play-to-Learn lessons (/play).
+ *
+ * STRICT RULE: Streak ONLY counts a day when `completedLesson === true`
+ * (which increments `daily_stats.lessons_completed >= 1`).
+ */
+export async function recordLessonProgress(params: {
+  durationSeconds: number;
+  userMessagesSent?: number;
+  completedLesson: boolean;
+  xpEarned: number;
+  gemsEarned: number;
+  sessionsDelta?: number;
+}): Promise<LessonRewardSummary> {
+  const today = getTodayLocalDate();
+  const safeDuration = Math.max(0, Math.round(params.durationSeconds));
+  const msgDelta = Math.max(0, Math.round(params.userMessagesSent ?? 0));
+  const lessonDelta = params.completedLesson ? 1 : 0;
+  const sessionDelta = params.sessionsDelta ?? 1;
+
+  if (!isSupabaseConfigured()) {
+    const stats = readLocalStats();
+    const existingToday = stats.find((s) => s.practiceDate === today);
+    const updatedStats: DailyStat[] = existingToday
+      ? stats.map((s) =>
+          s.practiceDate === today
+            ? {
+                ...s,
+                secondsPracticed: s.secondsPracticed + safeDuration,
+                messagesSent: s.messagesSent + msgDelta,
+                sessionsCompleted: s.sessionsCompleted + sessionDelta,
+                lessonsCompleted: s.lessonsCompleted + lessonDelta,
+                xpEarned: s.xpEarned + params.xpEarned,
+              }
+            : s
+        )
+      : [
+          {
+            practiceDate: today,
+            secondsPracticed: safeDuration,
+            messagesSent: msgDelta,
+            sessionsCompleted: sessionDelta,
+            lessonsCompleted: lessonDelta,
+            xpEarned: params.xpEarned,
+            freezeUsed: false,
+          },
+          ...stats,
+        ];
+    writeLocalJson(STORAGE_KEYS.dailyStats, updatedStats);
+
+    const profile = normalizeProfile(
+      readLocalJson<Partial<UserProfile> | null>(STORAGE_KEYS.profile, null)
+    );
+    const prevLevel = getLevelInfo(profile.xp).level;
+    const prevClaimableCount = getClaimableMilestones(
+      profile.streakDays,
+      profile.longestStreak,
+      profile.claimedMilestones
+    ).length;
+
+    const strict = computeStrictStreak(updatedStats, today);
+    const nextXp = profile.xp + params.xpEarned;
+    const nextGems = profile.gems + params.gemsEarned;
+    const nextLongest = Math.max(profile.longestStreak, strict.longestStreak);
+    const nextLevel = getLevelInfo(nextXp).level;
+
+    const nextProfile: UserProfile = {
+      ...profile,
+      xp: nextXp,
+      gems: nextGems,
+      streakDays: strict.currentStreak,
+      longestStreak: nextLongest,
+      lastPracticeDate: strict.studiedToday ? today : profile.lastPracticeDate,
+      totalLessonsCompleted: profile.totalLessonsCompleted + lessonDelta,
+    };
+    writeLocalJson(STORAGE_KEYS.profile, nextProfile);
+
+    const allClaimable = getClaimableMilestones(
+      nextProfile.streakDays,
+      nextProfile.longestStreak,
+      nextProfile.claimedMilestones
+    );
+
+    return {
+      lessonCompleted: params.completedLesson,
+      streakKeptToday: strict.studiedToday,
+      streakDays: nextProfile.streakDays,
+      longestStreak: nextProfile.longestStreak,
+      xpEarned: params.xpEarned,
+      gemsEarned: params.gemsEarned,
+      leveledUp: nextLevel > prevLevel,
+      newLevel: nextLevel,
+      newlyClaimableMilestones:
+        allClaimable.length > prevClaimableCount
+          ? allClaimable.map((m) => m.days)
+          : [],
+    };
+  }
+
+  const supabase = createSupabaseBrowserClient()!;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return {
+      lessonCompleted: params.completedLesson,
+      streakKeptToday: false,
+      streakDays: 0,
+      longestStreak: 0,
+      xpEarned: params.xpEarned,
+      gemsEarned: params.gemsEarned,
+      leveledUp: false,
+      newLevel: 1,
+      newlyClaimableMilestones: [],
+    };
+  }
+
+  const { data: todayRow } = await supabase
+    .from('daily_stats')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('practice_date', today)
+    .maybeSingle();
+
+  if (todayRow) {
+    const { error: updErr } = await supabase
+      .from('daily_stats')
+      .update({
+        seconds_practiced: (todayRow.seconds_practiced ?? 0) + safeDuration,
+        messages_sent: (todayRow.messages_sent ?? 0) + msgDelta,
+        sessions_completed: (todayRow.sessions_completed ?? 0) + sessionDelta,
+        lessons_completed: (todayRow.lessons_completed ?? 0) + lessonDelta,
+        xp_earned: (todayRow.xp_earned ?? 0) + params.xpEarned,
+      })
+      .eq('id', todayRow.id);
+
+    if (updErr) {
+      await supabase
+        .from('daily_stats')
+        .update({
+          seconds_practiced: (todayRow.seconds_practiced ?? 0) + safeDuration,
+          messages_sent: (todayRow.messages_sent ?? 0) + msgDelta,
+          sessions_completed: (todayRow.sessions_completed ?? 0) + sessionDelta,
+        })
+        .eq('id', todayRow.id);
+    }
+  } else {
+    const { error: insErr } = await supabase.from('daily_stats').insert({
+      user_id: user.id,
+      practice_date: today,
+      seconds_practiced: safeDuration,
+      messages_sent: msgDelta,
+      sessions_completed: sessionDelta,
+      lessons_completed: lessonDelta,
+      xp_earned: params.xpEarned,
+      freeze_used: false,
+    });
+    if (insErr) {
+      await supabase.from('daily_stats').insert({
+        user_id: user.id,
+        practice_date: today,
+        seconds_practiced: safeDuration,
+        messages_sent: msgDelta,
+        sessions_completed: sessionDelta,
+      });
+    }
+  }
+
+  const [{ data: allStats }, { data: profRow }] = await Promise.all([
+    supabase
+      .from('daily_stats')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('practice_date', { ascending: false })
+      .limit(120),
+    supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+  ]);
+
+  const mappedStats = (allStats ?? []).map((r) =>
+    normalizeDailyStat({
+      practiceDate: r.practice_date,
+      secondsPracticed: r.seconds_practiced,
+      messagesSent: r.messages_sent,
+      sessionsCompleted: r.sessions_completed,
+      lessonsCompleted: r.lessons_completed,
+      xpEarned: r.xp_earned,
+      freezeUsed: r.freeze_used,
+    })
+  );
+
+  const currentProfile = profRow ? mapDbProfile(profRow) : defaultLocalProfile();
+  const prevLevel = getLevelInfo(currentProfile.xp).level;
+  const prevClaimableCount = getClaimableMilestones(
+    currentProfile.streakDays,
+    currentProfile.longestStreak,
+    currentProfile.claimedMilestones
+  ).length;
+
+  const strict = computeStrictStreak(mappedStats, today);
+  const nextXp = currentProfile.xp + params.xpEarned;
+  const nextGems = currentProfile.gems + params.gemsEarned;
+  const nextLongest = Math.max(
+    currentProfile.longestStreak,
+    strict.longestStreak
+  );
+  const nextLevel = getLevelInfo(nextXp).level;
+
+  await saveProfile({
+    xp: nextXp,
+    gems: nextGems,
+    streakDays: strict.currentStreak,
+    longestStreak: nextLongest,
+    lastPracticeDate: strict.studiedToday
+      ? today
+      : currentProfile.lastPracticeDate,
+    totalLessonsCompleted: currentProfile.totalLessonsCompleted + lessonDelta,
+  });
+
+  const allClaimable = getClaimableMilestones(
+    strict.currentStreak,
+    nextLongest,
+    currentProfile.claimedMilestones
+  );
+
+  return {
+    lessonCompleted: params.completedLesson,
+    streakKeptToday: strict.studiedToday,
+    streakDays: strict.currentStreak,
+    longestStreak: nextLongest,
+    xpEarned: params.xpEarned,
+    gemsEarned: params.gemsEarned,
+    leveledUp: nextLevel > prevLevel,
+    newLevel: nextLevel,
+    newlyClaimableMilestones:
+      allClaimable.length > prevClaimableCount
+        ? allClaimable.map((m) => m.days)
+        : [],
+  };
+}
+
 export async function finishConversationRecord(params: {
   conversationId: string;
   durationSeconds: number;
   messageCount: number;
   userMessagesSent: number;
   summaryVi?: string | null;
-}): Promise<void> {
-  const today = getTodayLocalDate();
-  const yesterday = getYesterdayLocalDate();
+}): Promise<LessonRewardSummary> {
   const safeDuration = Math.max(0, Math.round(params.durationSeconds));
+  const completedLesson = params.userMessagesSent >= MIN_CALL_TURNS_FOR_LESSON;
+  const xpEarned = completedLesson
+    ? 60 + Math.min(40, params.userMessagesSent * 5)
+    : Math.min(15, params.userMessagesSent * 5);
+  const gemsEarned = completedLesson ? 15 : 0;
 
   if (!isSupabaseConfigured()) {
     const convs = readLocalJson<ConversationRecord[]>(
@@ -389,117 +799,37 @@ export async function finishConversationRecord(params: {
           : c
       )
     );
-
-    const stats = readLocalJson<DailyStat[]>(STORAGE_KEYS.dailyStats, []);
-    const existingToday = stats.find((s) => s.practiceDate === today);
-    const updatedStats = existingToday
-      ? stats.map((s) =>
-          s.practiceDate === today
-            ? {
-                ...s,
-                secondsPracticed: s.secondsPracticed + safeDuration,
-                messagesSent: s.messagesSent + params.userMessagesSent,
-                sessionsCompleted: s.sessionsCompleted + 1,
-              }
-            : s
-        )
-      : [
-          {
-            practiceDate: today,
-            secondsPracticed: safeDuration,
-            messagesSent: params.userMessagesSent,
-            sessionsCompleted: 1,
-          },
-          ...stats,
-        ];
-    writeLocalJson(STORAGE_KEYS.dailyStats, updatedStats);
-
-    const profile = readLocalJson<UserProfile>(
-      STORAGE_KEYS.profile,
-      defaultLocalProfile()
-    );
-    let nextStreak = profile.streakDays;
-    if (profile.lastPracticeDate === yesterday) {
-      nextStreak = profile.streakDays + 1;
-    } else if (profile.lastPracticeDate !== today) {
-      nextStreak = 1;
-    }
-    writeLocalJson(STORAGE_KEYS.profile, {
-      ...profile,
-      streakDays: nextStreak,
-      lastPracticeDate: today,
-    });
-    return;
-  }
-
-  const supabase = createSupabaseBrowserClient()!;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const updatePayload: Record<string, unknown> = {
-    duration_seconds: safeDuration,
-    message_count: params.messageCount,
-    ended_at: new Date().toISOString(),
-  };
-  if (params.summaryVi !== undefined) {
-    updatePayload.summary_vi = params.summaryVi;
-  }
-
-  await supabase
-    .from('conversations')
-    .update(updatePayload)
-    .eq('id', params.conversationId)
-    .eq('user_id', user.id);
-
-  const { data: todayRow } = await supabase
-    .from('daily_stats')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('practice_date', today)
-    .maybeSingle();
-
-  if (todayRow) {
-    await supabase
-      .from('daily_stats')
-      .update({
-        seconds_practiced: (todayRow.seconds_practiced ?? 0) + safeDuration,
-        messages_sent: (todayRow.messages_sent ?? 0) + params.userMessagesSent,
-        sessions_completed: (todayRow.sessions_completed ?? 0) + 1,
-      })
-      .eq('id', todayRow.id);
   } else {
-    await supabase.from('daily_stats').insert({
-      user_id: user.id,
-      practice_date: today,
-      seconds_practiced: safeDuration,
-      messages_sent: params.userMessagesSent,
-      sessions_completed: 1,
-    });
-  }
+    const supabase = createSupabaseBrowserClient()!;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const updatePayload: Record<string, unknown> = {
+        duration_seconds: safeDuration,
+        message_count: params.messageCount,
+        ended_at: new Date().toISOString(),
+      };
+      if (params.summaryVi !== undefined) {
+        updatePayload.summary_vi = params.summaryVi;
+      }
 
-  const { data: prof } = await supabase
-    .from('profiles')
-    .select('streak_days, last_practice_date')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  if (prof) {
-    let nextStreak = Number(prof.streak_days ?? 0);
-    if (prof.last_practice_date === yesterday) {
-      nextStreak += 1;
-    } else if (prof.last_practice_date !== today) {
-      nextStreak = 1;
+      await supabase
+        .from('conversations')
+        .update(updatePayload)
+        .eq('id', params.conversationId)
+        .eq('user_id', user.id);
     }
-    await supabase
-      .from('profiles')
-      .update({
-        streak_days: nextStreak,
-        last_practice_date: today,
-      })
-      .eq('id', user.id);
   }
+
+  return recordLessonProgress({
+    durationSeconds: safeDuration,
+    userMessagesSent: params.userMessagesSent,
+    completedLesson,
+    xpEarned,
+    gemsEarned,
+    sessionsDelta: 1,
+  });
 }
 
 export async function updateConversationSummary(
@@ -529,6 +859,153 @@ export async function updateConversationSummary(
     .update({ summary_vi: summaryVi })
     .eq('id', conversationId)
     .eq('user_id', user.id);
+}
+
+export async function claimStreakMilestone(
+  milestoneDays: number
+): Promise<UserProfile> {
+  const milestone = STREAK_MILESTONES.find((m) => m.days === milestoneDays);
+  if (!milestone) {
+    throw new Error('Không tìm thấy mốc phần thưởng này.');
+  }
+
+  const { profile } = await getCurrentProfile();
+  if (!profile) throw new Error('Vui lòng đăng nhập để nhận thưởng.');
+
+  const best = Math.max(profile.streakDays, profile.longestStreak);
+  if (best < milestone.days) {
+    throw new Error(`Bạn cần đạt chuỗi ${milestone.days} ngày để mở khóa phần thưởng này.`);
+  }
+  if (profile.claimedMilestones.includes(milestone.days)) {
+    return profile;
+  }
+
+  const nextClaimed = [...profile.claimedMilestones, milestone.days];
+  const nextBadges = profile.unlockedBadges.includes(milestone.badgeId)
+    ? profile.unlockedBadges
+    : [...profile.unlockedBadges, milestone.badgeId];
+
+  return saveProfile({
+    xp: profile.xp + milestone.rewardXp,
+    gems: profile.gems + milestone.rewardGems,
+    streakFreezes: profile.streakFreezes + milestone.rewardFreezes,
+    claimedMilestones: nextClaimed,
+    unlockedBadges: nextBadges,
+    activeBadge: profile.activeBadge ?? milestone.badgeId,
+  });
+}
+
+export async function purchaseShopReward(itemId: string): Promise<UserProfile> {
+  const item = SHOP_REWARDS.find((r) => r.id === itemId);
+  if (!item) throw new Error('Vật phẩm không tồn tại.');
+
+  const { profile } = await getCurrentProfile();
+  if (!profile) throw new Error('Vui lòng đăng nhập.');
+
+  if (item.type === 'badge' && item.badgeId && profile.unlockedBadges.includes(item.badgeId)) {
+    return saveProfile({ activeBadge: item.badgeId });
+  }
+
+  if (profile.gems < item.costGems) {
+    throw new Error(`Bạn cần ${item.costGems} 💎 để đổi vật phẩm này.`);
+  }
+
+  if (item.type === 'freeze') {
+    return saveProfile({
+      gems: profile.gems - item.costGems,
+      streakFreezes: profile.streakFreezes + 1,
+    });
+  }
+
+  const nextBadges =
+    item.badgeId && !profile.unlockedBadges.includes(item.badgeId)
+      ? [...profile.unlockedBadges, item.badgeId]
+      : profile.unlockedBadges;
+
+  return saveProfile({
+    gems: profile.gems - item.costGems,
+    unlockedBadges: nextBadges,
+    activeBadge: item.badgeId ?? profile.activeBadge,
+  });
+}
+
+export async function equipBadge(badgeId: string | null): Promise<UserProfile> {
+  return saveProfile({ activeBadge: badgeId });
+}
+
+export async function applyStreakFreezeForYesterday(): Promise<{
+  profile: UserProfile;
+  stats: DailyStat[];
+}> {
+  const today = getTodayLocalDate();
+  const [{ profile }, stats] = await Promise.all([
+    getCurrentProfile(),
+    getDailyStats(120),
+  ]);
+
+  if (!profile) throw new Error('Vui lòng đăng nhập.');
+  if (profile.streakFreezes < 1) {
+    throw new Error('Bạn đã hết Khiên Bảo Vệ Chuỗi. Hãy đổi thêm trong Kho quà bằng Ngọc 💎!');
+  }
+
+  const strict = computeStrictStreak(stats, today);
+  if (!strict.canFreezeYesterday) {
+    throw new Error('Ngày hôm qua không cần hoặc không thể dùng Khiên Bảo Vệ.');
+  }
+
+  const yesterday = strict.yesterdayStr;
+
+  if (!isSupabaseConfigured()) {
+    const existing = stats.find((s) => s.practiceDate === yesterday);
+    const updatedStats: DailyStat[] = existing
+      ? stats.map((s) =>
+          s.practiceDate === yesterday ? { ...s, freezeUsed: true } : s
+        )
+      : [
+          {
+            practiceDate: yesterday,
+            secondsPracticed: 0,
+            messagesSent: 0,
+            sessionsCompleted: 0,
+            lessonsCompleted: 0,
+            xpEarned: 0,
+            freezeUsed: true,
+          },
+          ...stats,
+        ];
+    writeLocalJson(STORAGE_KEYS.dailyStats, updatedStats);
+    const nextStrict = computeStrictStreak(updatedStats, today);
+    const updatedProfile = await saveProfile({
+      streakFreezes: Math.max(0, profile.streakFreezes - 1),
+      streakDays: nextStrict.currentStreak,
+      longestStreak: Math.max(profile.longestStreak, nextStrict.longestStreak),
+    });
+    return { profile: updatedProfile, stats: updatedStats };
+  }
+
+  const supabase = createSupabaseBrowserClient()!;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Chưa đăng nhập.');
+
+  await supabase.from('daily_stats').upsert(
+    {
+      user_id: user.id,
+      practice_date: yesterday,
+      freeze_used: true,
+    },
+    { onConflict: 'user_id,practice_date' }
+  );
+
+  const freshStats = await getDailyStats(120);
+  const nextStrict = computeStrictStreak(freshStats, today);
+  const updatedProfile = await saveProfile({
+    streakFreezes: Math.max(0, profile.streakFreezes - 1),
+    streakDays: nextStrict.currentStreak,
+    longestStreak: Math.max(profile.longestStreak, nextStrict.longestStreak),
+  });
+  return { profile: updatedProfile, stats: freshStats };
 }
 
 export async function listConversations(): Promise<ConversationRecord[]> {
@@ -775,9 +1252,11 @@ export async function deletePhrase(id: string): Promise<void> {
   await supabase.from('saved_phrases').delete().eq('id', id);
 }
 
-export async function getDailyStats(limitDays = 7): Promise<DailyStat[]> {
+export async function getDailyStats(limitDays = 120): Promise<DailyStat[]> {
   if (!isSupabaseConfigured()) {
-    const all = readLocalJson<DailyStat[]>(STORAGE_KEYS.dailyStats, []);
+    const all = readLocalStats().sort((a, b) =>
+      b.practiceDate.localeCompare(a.practiceDate)
+    );
     return all.slice(0, limitDays);
   }
 
@@ -794,10 +1273,61 @@ export async function getDailyStats(limitDays = 7): Promise<DailyStat[]> {
     .order('practice_date', { ascending: false })
     .limit(limitDays);
 
-  return (data ?? []).map((row) => ({
-    practiceDate: row.practice_date,
-    secondsPracticed: row.seconds_practiced,
-    messagesSent: row.messages_sent,
-    sessionsCompleted: row.sessions_completed,
-  }));
+  return (data ?? []).map((row) =>
+    normalizeDailyStat({
+      practiceDate: row.practice_date,
+      secondsPracticed: row.seconds_practiced,
+      messagesSent: row.messages_sent,
+      sessionsCompleted: row.sessions_completed,
+      lessonsCompleted: row.lessons_completed,
+      xpEarned: row.xp_earned,
+      freezeUsed: row.freeze_used,
+    })
+  );
+}
+
+/**
+ * Exports local browser progress as a portable JSON backup string (helpful when
+ * moving devices before cloud OAuth is linked).
+ */
+export function exportLocalProgressBackup(): string {
+  const payload = {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    profile: normalizeProfile(
+      readLocalJson<Partial<UserProfile> | null>(STORAGE_KEYS.profile, null)
+    ),
+    dailyStats: readLocalStats(),
+    phrases: readLocalJson<SavedPhrase[]>(STORAGE_KEYS.phrases, []),
+    conversations: readLocalJson<ConversationRecord[]>(
+      STORAGE_KEYS.conversations,
+      []
+    ),
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+export function importLocalProgressBackup(rawJson: string): void {
+  const parsed = JSON.parse(rawJson) as {
+    profile?: Partial<UserProfile>;
+    dailyStats?: Partial<DailyStat>[];
+    phrases?: SavedPhrase[];
+    conversations?: ConversationRecord[];
+  };
+
+  if (parsed.profile) {
+    writeLocalJson(STORAGE_KEYS.profile, normalizeProfile(parsed.profile));
+  }
+  if (Array.isArray(parsed.dailyStats)) {
+    writeLocalJson(
+      STORAGE_KEYS.dailyStats,
+      parsed.dailyStats.map(normalizeDailyStat).filter((s) => Boolean(s.practiceDate))
+    );
+  }
+  if (Array.isArray(parsed.phrases)) {
+    writeLocalJson(STORAGE_KEYS.phrases, parsed.phrases);
+  }
+  if (Array.isArray(parsed.conversations)) {
+    writeLocalJson(STORAGE_KEYS.conversations, parsed.conversations);
+  }
 }

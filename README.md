@@ -4,10 +4,14 @@
 
 ## Tính năng chính
 
-- **Đăng nhập / Đăng ký đa phương thức (Supabase Auth):**
-  - Email + Mật khẩu (nhập tên bạn muốn AI gọi ngay khi đăng ký)
-  - Đăng nhập nhanh bằng **Google**
-  - Đăng nhập qua **Magic Link Email** không cần mật khẩu
+- **Đăng nhập / Đăng ký đa phương thức & Đồng bộ đa thiết bị (Supabase Auth):**
+  - Đăng nhập 1 chạm bằng **Google** và **Apple** để lưu & khôi phục toàn bộ chuỗi học, XP, Ngọc, phần thưởng, sổ tay và lịch sử gọi trên mọi máy tính & điện thoại.
+  - Hỗ trợ thêm Email + Mật khẩu và Magic Link Email.
+- **Chơi để học (Gamification) & Lịch Chuỗi Học Tập:**
+  - 3 chế độ chơi nhanh tại `/play`: **⚡ Phản xạ Bản xứ**, **🧩 Nghe & Ghép câu**, và **🎙️ Đấu trường Phát âm**.
+  - **Lịch Chuỗi theo tháng** (`/history`) ghi rõ ngày nào đã học xong bài, ngày nào nghỉ, ngày nào dùng Khiên bảo vệ.
+  - **Quy tắc giữ chuỗi chặt chẽ:** Chỉ giữ chuỗi khi hoàn thành trọn vẹn ít nhất **1 bài học** (chơi xong 1 màn `/play` hoặc nói tối thiểu **3 lượt** trong cuộc gọi `/call`).
+  - **Phần thưởng cột mốc chuỗi (1, 3, 7, 14, 30 ngày):** Nhận thưởng XP, Ngọc 💎, **Khiên Bảo Vệ Chuỗi 🧊** và Huy hiệu độc quyền + Kho đổi quà bằng Ngọc.
 - **Hồ sơ cá nhân hóa (Onboarding) & Đồng bộ đa thiết bị:**
   - Lưu tên gọi, trình độ (`A0–A1`, `A2–B1`, `B2+`), công việc/lĩnh vực, sở thích, accent ưu tiên và mục tiêu phút/ngày lên **Supabase PostgreSQL** (Row Level Security theo từng người dùng).
 - **Cuộc gọi thoại AI thời gian thực (Gemini Audio + Edge Neural TTS):**

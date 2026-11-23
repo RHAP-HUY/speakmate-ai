@@ -1,10 +1,12 @@
 'use client';
 
 import {
+  Award,
   Bookmark,
   Check,
   Eye,
   EyeOff,
+  Flame,
   Loader2,
   Mic,
   MicOff,
@@ -38,6 +40,7 @@ import {
   savePhrase,
   updateConversationSummary,
 } from '@/lib/data-store';
+import { MIN_CALL_TURNS_FOR_LESSON } from '@/lib/gamification';
 import { AI_PERSONAS, pickPersona, SCENARIOS } from '@/lib/scenarios';
 import {
   buildFallbackConversationReport,
@@ -46,6 +49,7 @@ import {
 import type {
   AiPersona,
   ConversationReport,
+  LessonRewardSummary,
   ReplyHint,
   ReportKeyPhrase,
   TutorMessage,
@@ -102,8 +106,9 @@ function CallStudioInner() {
   const [practiceTarget, setPracticeTarget] =
     useState<PronunciationPracticeTarget | null>(null);
 
-  // Post-call evaluation report
+  // Post-call evaluation report & strict streak reward
   const [callReport, setCallReport] = useState<ConversationReport | null>(null);
+  const [callReward, setCallReward] = useState<LessonRewardSummary | null>(null);
   const [reportLoading, setReportLoading] = useState<boolean>(false);
   const [reportError, setReportError] = useState<string | null>(null);
 
@@ -646,14 +651,15 @@ function CallStudioInner() {
     ).length;
     const convId = conversationIdRef.current ?? conversationId;
 
-    // Immediately save call duration & streak so nothing is lost if user closes early
+    // Immediately save call duration & evaluate strict streak rule (>= 3 turns)
     if (convId) {
-      await finishConversationRecord({
+      const reward = await finishConversationRecord({
         conversationId: convId,
         durationSeconds: elapsedSeconds,
         messageCount: snapshotMessages.length,
         userMessagesSent: userSentCount,
       });
+      setCallReward(reward);
     }
 
     await generatePostCallReport(convId, snapshotMessages, elapsedSeconds);
@@ -795,6 +801,52 @@ function CallStudioInner() {
               <PhoneOff className="h-3.5 w-3.5" />
               Kết thúc
             </button>
+          </div>
+        </div>
+
+        {/* Strict Lesson Quest Progress Bar for Keeping Streak */}
+        <div className="mx-auto mt-2.5 max-w-5xl">
+          <div
+            className={`flex items-center justify-between gap-3 rounded-xl px-3 py-1.5 text-[11px] font-bold border ${
+              userTurns >= MIN_CALL_TURNS_FOR_LESSON
+                ? 'border-emerald-500/40 bg-emerald-950/60 text-emerald-300'
+                : 'border-slate-800 bg-slate-950/70 text-slate-300'
+            }`}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Flame
+                className={`h-3.5 w-3.5 ${
+                  userTurns >= MIN_CALL_TURNS_FOR_LESSON
+                    ? 'text-amber-400 fill-amber-400'
+                    : 'text-slate-400'
+                }`}
+              />
+              {userTurns >= MIN_CALL_TURNS_FOR_LESSON
+                ? 'Đã hoàn thành nhiệm vụ bài học — Chuỗi hôm nay đã được giữ! (+60 XP · +15 💎)'
+                : `Nhiệm vụ giữ chuỗi: Nói thêm ${
+                    MIN_CALL_TURNS_FOR_LESSON - userTurns
+                  } lượt nữa để hoàn thành 1 bài học`}
+            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="hidden sm:block h-1.5 w-24 overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    userTurns >= MIN_CALL_TURNS_FOR_LESSON
+                      ? 'bg-emerald-400'
+                      : 'bg-gradient-to-r from-amber-400 to-orange-500'
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.round((userTurns / MIN_CALL_TURNS_FOR_LESSON) * 100)
+                    )}%`,
+                  }}
+                />
+              </div>
+              <span className="font-mono">
+                {Math.min(userTurns, MIN_CALL_TURNS_FOR_LESSON)}/{MIN_CALL_TURNS_FOR_LESSON}
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -1205,6 +1257,45 @@ function CallStudioInner() {
                 )}
               </div>
             </div>
+
+            {/* Strict Streak & XP Reward Banner */}
+            {callReward && (
+              <div
+                className={`rounded-2xl border p-3.5 text-xs space-y-2 ${
+                  callReward.lessonCompleted
+                    ? 'border-emerald-500/40 bg-emerald-950/50 text-emerald-100'
+                    : 'border-amber-500/40 bg-amber-950/40 text-amber-100'
+                }`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-extrabold flex items-center gap-1.5">
+                    <Flame className="h-4 w-4 text-amber-400" />
+                    {callReward.lessonCompleted
+                      ? `Hoàn thành 1 bài học — Đã giữ chuỗi ${callReward.streakDays} ngày! 🔥`
+                      : `Chưa đủ ${MIN_CALL_TURNS_FOR_LESSON} lượt nói (${userTurns}/${MIN_CALL_TURNS_FOR_LESSON}) nên chưa tính hoàn thành bài để giữ chuỗi hôm nay.`}
+                  </span>
+                  <div className="flex items-center gap-1.5 font-extrabold">
+                    <span className="rounded-lg bg-indigo-500/30 px-2 py-0.5 text-indigo-200">
+                      +{callReward.xpEarned} XP
+                    </span>
+                    {callReward.gemsEarned > 0 && (
+                      <span className="rounded-lg bg-cyan-500/30 px-2 py-0.5 text-cyan-200">
+                        +{callReward.gemsEarned} 💎
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {callReward.newlyClaimableMilestones.length > 0 && (
+                  <Link
+                    href="/history#rewards"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 text-[11px] font-extrabold text-white hover:from-amber-600 hover:to-orange-600"
+                  >
+                    <Award className="h-3.5 w-3.5" />
+                    🎁 Nhận thưởng mốc {callReward.newlyClaimableMilestones[0]} ngày ngay!
+                  </Link>
+                )}
+              </div>
+            )}
 
             {reportLoading ? (
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">

@@ -40,6 +40,7 @@ export async function proxy(request: NextRequest) {
   const isProtected =
     pathname === '/onboarding' ||
     pathname === '/call' ||
+    pathname === '/play' ||
     pathname === '/phrases' ||
     pathname === '/history' ||
     pathname === '/settings';

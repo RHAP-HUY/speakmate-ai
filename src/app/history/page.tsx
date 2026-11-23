@@ -10,6 +10,7 @@ import {
   Loader2,
   MessageSquare,
   Sparkles,
+  Trophy,
   Volume2,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -17,15 +18,26 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppNav } from '@/components/AppNav';
 import { CallReportView } from '@/components/CallReportView';
-import { PronunciationBadge, getScoreTone } from '@/components/PronunciationBadge';
+import {
+  PronunciationBadge,
+  getScoreTone,
+} from '@/components/PronunciationBadge';
+import { StreakCalendar } from '@/components/StreakCalendar';
+import { StreakRewardsPanel } from '@/components/StreakRewardsPanel';
 import { playNaturalVoice } from '@/lib/audio';
 import {
+  applyStreakFreezeForYesterday,
+  claimStreakMilestone,
+  equipBadge,
   getConversationDetail,
   getCurrentProfile,
   getDailyStats,
+  getTodayLocalDate,
   listConversations,
+  purchaseShopReward,
   savePhrase,
 } from '@/lib/data-store';
+import { getLevelInfo } from '@/lib/gamification';
 import { AI_PERSONAS } from '@/lib/scenarios';
 import { parseConversationReport } from '@/lib/tutor-prompt';
 import type {
@@ -73,7 +85,7 @@ export default function HistoryPage() {
     async function load() {
       const { profile: prof, authenticated: isAuth } = await getCurrentProfile();
       if (!active) return;
-      if (!isAuth) {
+      if (!isAuth || !prof) {
         router.replace('/auth?next=/history');
         return;
       }
@@ -82,14 +94,14 @@ export default function HistoryPage() {
 
       const [convs, daily] = await Promise.all([
         listConversations(),
-        getDailyStats(7),
+        getDailyStats(180),
       ]);
       if (!active) return;
       setConversations(convs);
       setStats(daily);
       setLoading(false);
     }
-    load();
+    void load();
     return () => {
       active = false;
     };
@@ -137,74 +149,138 @@ export default function HistoryPage() {
     setSavedKeys((prev) => new Set(prev).add(key));
   }
 
-  if (loading) {
+  if (loading || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-mesh-light">
         <Loader2 className="h-7 w-7 animate-spin text-indigo-600" />
       </div>
     );
   }
 
+  const todayStr = getTodayLocalDate();
   const days = getLast7DaysLabels();
   const statByDate = new Map(stats.map((s) => [s.practiceDate, s]));
   const totalMinutesAll = Math.round(
-    conversations.reduce((acc, c) => acc + c.durationSeconds, 0) / 60
+    stats.reduce((acc, s) => acc + s.secondsPracticed, 0) / 60
   );
-  const goalMinutes = profile?.dailyGoalMinutes ?? 15;
+  const goalMinutes = profile.dailyGoalMinutes ?? 15;
+  const levelInfo = getLevelInfo(profile.xp);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
+    <div className="min-h-screen flex flex-col bg-mesh-light pb-24 lg:pb-12">
       <AppNav profile={profile} authenticated={authenticated} />
 
       <main className="mx-auto w-full max-w-5xl px-4 py-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Tiến độ & Lịch sử Luyện nói
-          </h1>
-          <p className="text-sm text-slate-600">
-            Theo dõi thời gian nói mỗi ngày, báo cáo đánh giá sau cuộc gọi và điểm phát âm từng câu.
-          </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              Lịch Chuỗi, Phần Thưởng & Lịch Sử
+            </h1>
+            <p className="text-sm text-slate-600">
+              Theo dõi ngày nào đã học xong bài, ngày nào nghỉ, nhận quà mốc chuỗi và xem lại báo cáo đánh giá.
+            </p>
+          </div>
+          <Link
+            href="/play"
+            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-xs font-extrabold text-white shadow-md shadow-orange-500/20 hover:from-amber-600 hover:to-orange-600 transition"
+          >
+            🔥 Chơi 1 bài giữ chuỗi ngay
+          </Link>
         </div>
 
         {/* Summary KPIs */}
-        <div className="grid gap-3 grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-              <Flame className="h-4 w-4 text-amber-500" />
-              Chuỗi ngày học
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+          <div className="rounded-2xl border border-orange-200/80 bg-gradient-to-br from-orange-50 to-amber-50 p-4 shadow-xs">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-orange-700">
+              <Flame className="h-4 w-4 text-orange-500" />
+              Chuỗi hiện tại
             </div>
-            <div className="mt-1.5 text-2xl font-bold text-slate-900">
-              {profile?.streakDays ?? 0} ngày
+            <div className="mt-1.5 text-2xl font-extrabold text-orange-600">
+              {profile.streakDays} ngày
+            </div>
+            <div className="text-[11px] text-orange-700/80 mt-0.5">
+              Kỷ lục: {Math.max(profile.streakDays, profile.longestStreak)} ngày
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-              <Clock className="h-4 w-4 text-indigo-600" />
-              Tổng thời gian
+          <div className="rounded-2xl border border-indigo-200/80 bg-white p-4 shadow-xs">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700">
+              <Trophy className="h-4 w-4 text-indigo-600" />
+              Cấp độ & XP
             </div>
-            <div className="mt-1.5 text-2xl font-bold text-slate-900">
+            <div className="mt-1.5 text-2xl font-extrabold text-slate-900">
+              Lv.{levelInfo.level}
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              {profile.xp} XP · {profile.totalLessonsCompleted} bài xong
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-cyan-200/80 bg-white p-4 shadow-xs">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-700">
+              <span>💎</span>
+              Ngọc & Khiên
+            </div>
+            <div className="mt-1.5 text-2xl font-extrabold text-cyan-700">
+              {profile.gems} 💎
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              🧊 {profile.streakFreezes} Khiên bảo vệ
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+              <Clock className="h-4 w-4 text-slate-500" />
+              Tổng luyện tập
+            </div>
+            <div className="mt-1.5 text-2xl font-extrabold text-slate-900">
               {totalMinutesAll} phút
             </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-              <MessageSquare className="h-4 w-4 text-cyan-600" />
-              Số cuộc gọi
-            </div>
-            <div className="mt-1.5 text-2xl font-bold text-slate-900">
-              {conversations.length}
+            <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+              <MessageSquare className="h-3 w-3" />
+              {conversations.length} cuộc gọi AI
             </div>
           </div>
         </div>
 
+        {/* Monthly Interactive Streak Calendar */}
+        <StreakCalendar
+          stats={stats}
+          todayStr={todayStr}
+          streakFreezes={profile.streakFreezes}
+          onApplyYesterdayFreeze={async () => {
+            const res = await applyStreakFreezeForYesterday();
+            setProfile(res.profile);
+            setStats(res.stats);
+          }}
+        />
+
+        {/* Streak Milestone Rewards & Gem Shop */}
+        <div id="rewards">
+          <StreakRewardsPanel
+            profile={profile}
+            onClaimMilestone={async (days) => {
+              const updated = await claimStreakMilestone(days);
+              setProfile(updated);
+            }}
+            onPurchaseItem={async (itemId) => {
+              const updated = await purchaseShopReward(itemId);
+              setProfile(updated);
+            }}
+            onEquipBadge={async (badgeId) => {
+              const updated = await equipBadge(badgeId);
+              setProfile(updated);
+            }}
+          />
+        </div>
+
         {/* 7-day Progress Chart */}
-        <section className="rounded-3xl border border-slate-200 bg-white p-5">
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
               <Calendar className="h-4 w-4 text-indigo-600" />
-              7 ngày gần nhất (Mục tiêu: {goalMinutes} phút/ngày)
+              Thời lượng 7 ngày gần nhất (Mục tiêu: {goalMinutes} phút/ngày)
             </h2>
           </div>
 
@@ -223,7 +299,7 @@ export default function HistoryPage() {
                   key={d.date}
                   className="flex flex-col items-center justify-end h-full gap-1.5"
                 >
-                  <span className="text-[11px] font-semibold text-slate-600">
+                  <span className="text-[11px] font-bold text-slate-600">
                     {mins}p
                   </span>
                   <div className="w-full max-w-10 flex-1 flex items-end bg-slate-100 rounded-xl overflow-hidden">
@@ -249,17 +325,17 @@ export default function HistoryPage() {
 
         {/* Conversation List */}
         <section className="space-y-3">
-          <h2 className="text-base font-bold text-slate-900">
-            Các buổi trò chuyện gần đây
+          <h2 className="text-base font-extrabold text-slate-900">
+            Lịch sử Cuộc gọi AI & Báo cáo Đánh giá
           </h2>
 
           {conversations.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
-              <p className="text-sm font-semibold text-slate-800">
+              <p className="text-sm font-bold text-slate-800">
                 Chưa có lịch sử cuộc gọi nào
               </p>
               <p className="mt-1 text-xs text-slate-500 mb-4">
-                Bắt đầu một cuộc gọi ngắn 3 phút để xem tiến trình và báo cáo đánh giá của bạn tại đây nhé!
+                Bắt đầu một cuộc gọi ngắn 3 lượt để nhận báo cáo đánh giá 4 kỹ năng và giữ chuỗi nhé!
               </p>
               <Link
                 href="/"
@@ -282,7 +358,7 @@ export default function HistoryPage() {
                 return (
                   <div
                     key={conv.id}
-                    className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs"
+                    className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-xs"
                   >
                     <button
                       type="button"
@@ -327,7 +403,6 @@ export default function HistoryPage() {
 
                     {isOpen && (
                       <div className="border-t border-slate-100 bg-slate-50/70 p-4 space-y-4">
-                        {/* Saved Post-Call Evaluation Report */}
                         {parsedReport && (
                           <div className="space-y-2">
                             <div className="text-xs font-bold uppercase tracking-wider text-indigo-600">
@@ -351,7 +426,6 @@ export default function HistoryPage() {
                           </div>
                         )}
 
-                        {/* Detailed Transcript */}
                         <div className="space-y-3">
                           <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
                             Nội dung hội thoại & Chấm phát âm

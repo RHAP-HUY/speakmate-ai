@@ -26,12 +26,30 @@ create table if not exists public.profiles (
   preferred_speed numeric(3,2) not null default 0.85,
   daily_goal_minutes integer not null default 15,
   streak_days integer not null default 0,
+  longest_streak integer not null default 0,
   last_practice_date date,
   onboarding_completed boolean not null default false,
   api_key_mode text not null default 'system' check (api_key_mode in ('system', 'personal')),
+  xp integer not null default 0,
+  gems integer not null default 30,
+  streak_freezes integer not null default 1,
+  claimed_milestones integer[] not null default '{}',
+  unlocked_badges text[] not null default '{}',
+  active_badge text,
+  total_lessons_completed integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Safe idempotent migrations for gamification & streak rewards on existing databases
+alter table public.profiles add column if not exists longest_streak integer not null default 0;
+alter table public.profiles add column if not exists xp integer not null default 0;
+alter table public.profiles add column if not exists gems integer not null default 30;
+alter table public.profiles add column if not exists streak_freezes integer not null default 1;
+alter table public.profiles add column if not exists claimed_milestones integer[] not null default '{}';
+alter table public.profiles add column if not exists unlocked_badges text[] not null default '{}';
+alter table public.profiles add column if not exists active_badge text;
+alter table public.profiles add column if not exists total_lessons_completed integer not null default 0;
 
 drop trigger if exists trg_profiles_updated_at on public.profiles;
 create trigger trg_profiles_updated_at
@@ -198,7 +216,7 @@ create policy "Users manage own phrases"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
--- 6. Daily Practice Statistics (for cross-device progress chart & streak)
+-- 6. Daily Practice Statistics (for cross-device streak calendar, progress chart & rewards)
 create table if not exists public.daily_stats (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -206,8 +224,16 @@ create table if not exists public.daily_stats (
   seconds_practiced integer not null default 0,
   messages_sent integer not null default 0,
   sessions_completed integer not null default 0,
+  lessons_completed integer not null default 0,
+  xp_earned integer not null default 0,
+  freeze_used boolean not null default false,
   unique (user_id, practice_date)
 );
+
+-- Safe idempotent migrations for strict lesson-based streak calendar
+alter table public.daily_stats add column if not exists lessons_completed integer not null default 0;
+alter table public.daily_stats add column if not exists xp_earned integer not null default 0;
+alter table public.daily_stats add column if not exists freeze_used boolean not null default false;
 
 create index if not exists idx_daily_stats_user_date
   on public.daily_stats (user_id, practice_date desc);
