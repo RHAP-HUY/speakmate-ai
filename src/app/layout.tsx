@@ -5,7 +5,7 @@ import './globals.css';
 const beVietnamPro = Be_Vietnam_Pro({
   variable: '--font-be-vietnam',
   subsets: ['latin', 'vietnamese'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700', '800', '900'],
 });
 
 const geistMono = Geist_Mono({
@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'SpeakMate AI — Luyện Giao Tiếp Tiếng Anh Như Người Bản Xứ',
+  title: 'SpeakMate AI — Vừa Học Vừa Chơi, Nói Tiếng Anh Như Người Bản Xứ',
   description:
-    'Ứng dụng gọi thoại AI luyện phản xạ tiếng Anh mọi trình độ A0-C1 với phụ đề song ngữ, sửa câu tự nhiên và đồng bộ đa thiết bị.',
+    'Học giao tiếp tiếng Anh kiểu chơi game giống Duolingo kết hợp gọi thoại AI chấm phát âm từng từ, lịch giữ chuỗi nhận quà và đồng bộ Google Drive 5TB.',
 };
 
 export default function RootLayout({
@@ -29,7 +29,7 @@ export default function RootLayout({
       lang="vi"
       className={`${beVietnamPro.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-slate-50 text-slate-900 flex flex-col">
+      <body className="min-h-full bg-[#F7F9FC] text-[#1E293B] flex flex-col selection:bg-[#DDF4FF] selection:text-[#1899D6]">
         {children}
       </body>
     </html>

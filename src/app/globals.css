@@ -1,8 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f8fc;
-  --foreground: #0f172a;
+  --background: #f7f9fc;
+  --foreground: #1e293b;
+  --duo-green: #58cc02;
+  --duo-green-dark: #46a302;
+  --duo-blue: #1cb0f6;
+  --duo-blue-dark: #1899d6;
+  --duo-orange: #ff9600;
+  --duo-orange-dark: #e07b00;
+  --duo-gold: #ffc800;
+  --duo-gold-dark: #d9a400;
+  --duo-purple: #8b5cf6;
+  --duo-purple-dark: #6d28d9;
+  --duo-red: #ff4b4b;
+  --duo-red-dark: #d93636;
+  --card-border: #e5e7eb;
 }
 
 @theme inline {
@@ -16,14 +29,167 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-be-vietnam), system-ui, -apple-system, sans-serif;
+  text-rendering: optimizeLegibility;
 }
 
+/* Crisp consumer surface background (clean, airy, zero muddy clutter) */
 .bg-mesh-light {
-  background-color: #f6f8fc;
+  background-color: #f7f9fc;
   background-image:
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.1) 0px, transparent 48%),
-    radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.07) 0px, transparent 45%);
+    radial-gradient(circle at 12% 4%, rgba(88, 204, 2, 0.055) 0px, transparent 36%),
+    radial-gradient(circle at 88% 8%, rgba(28, 176, 246, 0.065) 0px, transparent 38%);
+}
+
+/* Crisp Duolingo / Apple-grade Card Surface */
+.card-duo {
+  background-color: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 1.25rem;
+}
+
+.card-duo-elevated {
+  background-color: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-bottom-width: 4px;
+  border-radius: 1.5rem;
+}
+
+/* Tactile 3D Physical Buttons */
+.btn-duo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  border-radius: 1rem;
+  transition: transform 110ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 110ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 140ms ease,
+    filter 140ms ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn-duo:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-duo-green {
+  background-color: #58cc02;
+  color: #ffffff;
+  border: 2px solid #58cc02;
+  box-shadow: 0 4px 0 #46a302;
+}
+.btn-duo-green:hover:not(:disabled) {
+  background-color: #61dc04;
+  border-color: #61dc04;
+}
+.btn-duo-green:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #46a302;
+}
+
+.btn-duo-blue {
+  background-color: #1cb0f6;
+  color: #ffffff;
+  border: 2px solid #1cb0f6;
+  box-shadow: 0 4px 0 #1899d6;
+}
+.btn-duo-blue:hover:not(:disabled) {
+  background-color: #29b9fc;
+  border-color: #29b9fc;
+}
+.btn-duo-blue:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #1899d6;
+}
+
+.btn-duo-orange {
+  background-color: #ff9600;
+  color: #ffffff;
+  border: 2px solid #ff9600;
+  box-shadow: 0 4px 0 #d97706;
+}
+.btn-duo-orange:hover:not(:disabled) {
+  background-color: #ffa21a;
+  border-color: #ffa21a;
+}
+.btn-duo-orange:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #d97706;
+}
+
+.btn-duo-purple {
+  background-color: #7c3aed;
+  color: #ffffff;
+  border: 2px solid #7c3aed;
+  box-shadow: 0 4px 0 #5b21b6;
+}
+.btn-duo-purple:hover:not(:disabled) {
+  background-color: #8b5cf6;
+  border-color: #8b5cf6;
+}
+.btn-duo-purple:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #5b21b6;
+}
+
+.btn-duo-white {
+  background-color: #ffffff;
+  color: #334155;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 4px 0 #cbd5e1;
+}
+.btn-duo-white:hover:not(:disabled) {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+.btn-duo-white:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #cbd5e1;
+}
+
+.btn-duo-dark {
+  background-color: #0f172a;
+  color: #ffffff;
+  border: 2px solid #0f172a;
+  box-shadow: 0 4px 0 #334155;
+}
+.btn-duo-dark:hover:not(:disabled) {
+  background-color: #1e293b;
+}
+.btn-duo-dark:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #334155;
+}
+
+/* Tactile Circular Path Node */
+.path-node-3d {
+  transition: transform 110ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 110ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.path-node-3d:active {
+  transform: translateY(5px);
+}
+
+/* Glossy highlight stripe inside progress bars */
+.progress-gloss {
+  position: relative;
+  overflow: hidden;
+}
+.progress-gloss::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  right: 6px;
+  height: 30%;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.34);
+  pointer-events: none;
 }
 
 @keyframes voicePulse {
@@ -46,10 +212,66 @@ body {
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-4px);
+    transform: translateY(-5px);
   }
 }
 
 .animate-gentle-float {
-  animation: gentleFloat 3s ease-in-out infinite;
+  animation: gentleFloat 2.8s ease-in-out infinite;
+}
+
+@keyframes chestWiggle {
+  0%, 72%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  78% {
+    transform: rotate(-7deg) scale(1.06);
+  }
+  84% {
+    transform: rotate(7deg) scale(1.06);
+  }
+  90% {
+    transform: rotate(-4deg) scale(1.03);
+  }
+  95% {
+    transform: rotate(4deg) scale(1.03);
+  }
+}
+
+.animate-chest-wiggle {
+  animation: chestWiggle 2.4s ease-in-out infinite;
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.86) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-pop-in {
+  animation: popIn 240ms cubic-bezier(0.2, 0.9, 0.25, 1) forwards;
+}
+
+@keyframes confettiDrop {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(95vh) rotate(540deg);
+    opacity: 0;
+  }
+}
+
+.confetti-piece {
+  animation: confettiDrop var(--fall-dur, 2.2s) cubic-bezier(0.2, 0.7, 0.4, 1)
+    var(--fall-delay, 0s) forwards;
 }

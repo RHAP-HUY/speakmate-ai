@@ -1,20 +1,23 @@
 'use client';
 
-import {
-  Check,
-  Gift,
-  Lock,
-  Shield,
-  ShoppingBag,
-  Sparkles,
-  Trophy,
-} from 'lucide-react';
+import { Check, Gift, Lock, ShoppingBag, Sparkles, Trophy } from 'lucide-react';
 import { useState } from 'react';
+import {
+  GemSvg,
+  ShieldFreezeSvg,
+  StreakFlameSvg,
+  TreasureChestSvg,
+} from '@/components/BrandArt';
+import {
+  CelebrationModal,
+  type CelebrationPayload,
+} from '@/components/CelebrationModal';
 import {
   BADGE_DIRECTORY,
   SHOP_REWARDS,
   STREAK_MILESTONES,
 } from '@/lib/gamification';
+import { playChestOpenSound, playTapSound } from '@/lib/sound-fx';
 import type { UserProfile } from '@/types';
 
 interface StreakRewardsPanelProps {
@@ -35,17 +38,25 @@ export function StreakRewardsPanel({
     type: 'success' | 'error';
     text: string;
   } | null>(null);
+  const [celebration, setCelebration] = useState<CelebrationPayload | null>(null);
 
   const bestStreak = Math.max(profile.streakDays, profile.longestStreak);
 
-  async function handleClaim(days: number, titleVi: string) {
+  async function handleClaim(days: number) {
+    const m = STREAK_MILESTONES.find((item) => item.days === days);
+    if (!m) return;
     setBusyId(`m-${days}`);
     setFeedback(null);
     try {
       await onClaimMilestone(days);
-      setFeedback({
-        type: 'success',
-        text: `🎉 Đã nhận thưởng mốc "${titleVi}"! XP, Ngọc 💎 và Huy hiệu đã được cộng vào tài khoản.`,
+      playChestOpenSound();
+      setCelebration({
+        title: `Mốc ${m.days} Ngày: ${m.titleVi}!`,
+        subtitle: m.subtitleVi,
+        xp: m.rewardXp,
+        gems: m.rewardGems,
+        freezes: m.rewardFreezes,
+        badgeLabel: m.badgeLabel,
       });
     } catch (err) {
       setFeedback({
@@ -57,14 +68,19 @@ export function StreakRewardsPanel({
     }
   }
 
-  async function handleBuy(itemId: string, titleVi: string) {
+  async function handleBuy(itemId: string) {
+    const item = SHOP_REWARDS.find((i) => i.id === itemId);
+    if (!item) return;
     setBusyId(`shop-${itemId}`);
     setFeedback(null);
     try {
       await onPurchaseItem(itemId);
-      setFeedback({
-        type: 'success',
-        text: `✨ Đổi thành công "${titleVi}"!`,
+      playChestOpenSound();
+      setCelebration({
+        title: `Đổi thành công ${item.titleVi}!`,
+        subtitle: item.descVi,
+        freezes: item.type === 'freeze' ? 1 : undefined,
+        badgeLabel: item.badgeLabel,
       });
     } catch (err) {
       setFeedback({
@@ -77,6 +93,7 @@ export function StreakRewardsPanel({
   }
 
   async function handleEquip(badgeId: string) {
+    playTapSound();
     setBusyId(`badge-${badgeId}`);
     try {
       await onEquipBadge(profile.activeBadge === badgeId ? null : badgeId);
@@ -89,41 +106,45 @@ export function StreakRewardsPanel({
     <div className="space-y-6">
       {feedback && (
         <div
-          className={`rounded-2xl border px-4 py-3 text-xs font-semibold ${
+          className={`rounded-2xl border-2 px-4 py-3 text-xs font-extrabold ${
             feedback.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-              : 'border-rose-200 bg-rose-50 text-rose-700'
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+              : 'border-rose-300 bg-rose-50 text-rose-700'
           }`}
         >
           {feedback.text}
         </div>
       )}
 
-      {/* Streak Milestone Rewards */}
-      <section className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm space-y-4">
+      {/* Streak Milestone Rewards Chests */}
+      <section className="card-duo-elevated p-5 sm:p-6 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-xs">
-                <Trophy className="h-4 w-4" />
-              </span>
-              Phần Thưởng Mốc Giữ Chuỗi
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Giữ chuỗi liên tiếp đạt từng cột mốc để mở khóa Ngọc 💎, XP, Khiên Bảo Vệ 🧊 và Huy hiệu độc quyền!
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFC800] text-amber-950 shadow-[0_4px_0_#D9A400]">
+              <Trophy className="h-5 w-5 stroke-[2.5]" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-slate-900">
+                Rương Phần Thưởng Mốc Giữ Chuỗi
+              </h2>
+              <p className="text-xs font-medium text-slate-500">
+                Giữ chuỗi liên tiếp đạt từng cột mốc để mở khóa Ngọc 💎, XP, Khiên 🧊 &amp; Huy hiệu độc quyền!
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs font-bold">
-            <span className="rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-orange-700">
-              🔥 Hiện tại: {profile.streakDays} ngày
+
+          <div className="flex items-center gap-2 text-xs font-black">
+            <span className="inline-flex items-center gap-1 rounded-xl border-2 border-orange-200 bg-orange-50 px-3 py-1.5 text-[#FF9600]">
+              <StreakFlameSvg active={profile.streakDays > 0} className="h-4 w-4" />
+              Hiện tại: {profile.streakDays} ngày
             </span>
-            <span className="rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 text-indigo-700">
+            <span className="rounded-xl border-2 border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-800">
               🏅 Kỷ lục: {bestStreak} ngày
             </span>
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {STREAK_MILESTONES.map((m) => {
             const unlocked = bestStreak >= m.days;
             const claimed = profile.claimedMilestones.includes(m.days);
@@ -133,27 +154,34 @@ export function StreakRewardsPanel({
             return (
               <div
                 key={m.days}
-                className={`relative flex flex-col justify-between rounded-2xl border p-4 transition ${
+                className={`relative flex flex-col justify-between rounded-2xl border-2 p-4 transition ${
                   unlocked && !claimed
-                    ? 'border-amber-400 bg-gradient-to-br from-amber-50/90 to-orange-50/70 shadow-md shadow-amber-500/15'
+                    ? 'border-amber-400 bg-gradient-to-br from-amber-50 via-yellow-50/60 to-orange-50 shadow-md shadow-amber-500/10'
                     : claimed
-                      ? 'border-emerald-200 bg-emerald-50/40'
-                      : 'border-slate-200 bg-slate-50/50'
+                      ? 'border-emerald-200 bg-[#F1FDE8]/50'
+                      : 'border-slate-200 bg-[#F7F9FC]'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center justify-between gap-2 mb-3">
                     <div
-                      className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${m.gradient} text-xl shadow-sm`}
+                      className={
+                        unlocked && !claimed ? 'animate-chest-wiggle' : ''
+                      }
                     >
-                      {m.emoji}
+                      <TreasureChestSvg
+                        state={
+                          claimed ? 'opened' : unlocked ? 'ready' : 'locked'
+                        }
+                        className="h-12 w-12"
+                      />
                     </div>
                     <span
-                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${
+                      className={`rounded-xl px-2.5 py-1 text-[11px] font-black uppercase ${
                         claimed
                           ? 'bg-emerald-100 text-emerald-700'
                           : unlocked
-                            ? 'bg-amber-400 text-amber-950 animate-pulse'
+                            ? 'bg-[#FF9600] text-white'
                             : 'bg-slate-200 text-slate-600'
                       }`}
                     >
@@ -161,27 +189,27 @@ export function StreakRewardsPanel({
                     </span>
                   </div>
 
-                  <h3 className="text-sm font-extrabold text-slate-900">
-                    {m.titleVi}
+                  <h3 className="text-sm font-black text-slate-900">
+                    {m.emoji} {m.titleVi}
                   </h3>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
+                  <p className="text-[11px] font-medium text-slate-500 mt-0.5">
                     {m.subtitleVi}
                   </p>
 
                   {/* Rewards pill list */}
-                  <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-bold">
-                    <span className="rounded-lg bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 text-indigo-700">
+                  <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-extrabold">
+                    <span className="rounded-lg bg-amber-100 px-2 py-0.5 text-amber-800">
                       +{m.rewardXp} XP
                     </span>
-                    <span className="rounded-lg bg-cyan-50 border border-cyan-200/80 px-2 py-0.5 text-cyan-700">
+                    <span className="rounded-lg bg-sky-100 px-2 py-0.5 text-sky-800">
                       +{m.rewardGems} 💎
                     </span>
                     {m.rewardFreezes > 0 && (
-                      <span className="rounded-lg bg-sky-50 border border-sky-200/80 px-2 py-0.5 text-sky-700">
+                      <span className="rounded-lg bg-cyan-100 px-2 py-0.5 text-cyan-800">
                         +{m.rewardFreezes} 🧊 Khiên
                       </span>
                     )}
-                    <span className="rounded-lg bg-amber-50 border border-amber-200/80 px-2 py-0.5 text-amber-800">
+                    <span className="rounded-lg bg-indigo-100 px-2 py-0.5 text-indigo-800">
                       {m.badgeLabel}
                     </span>
                   </div>
@@ -189,33 +217,35 @@ export function StreakRewardsPanel({
 
                 <div className="mt-4">
                   {claimed ? (
-                    <div className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-100/80 py-2 text-xs font-bold text-emerald-800">
-                      <Check className="h-3.5 w-3.5" />
-                      Đã nhận phần thưởng
+                    <div className="flex items-center justify-center gap-1.5 rounded-xl border-2 border-emerald-200 bg-emerald-100/70 py-2.5 text-xs font-black text-emerald-800">
+                      <Check className="h-4 w-4 stroke-[3]" />
+                      Đã mở rương thưởng
                     </div>
                   ) : unlocked ? (
                     <button
                       type="button"
                       disabled={busyId === `m-${m.days}`}
-                      onClick={() => void handleClaim(m.days, m.titleVi)}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-2.5 text-xs font-extrabold text-white shadow-md shadow-orange-500/20 hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 cursor-pointer"
+                      onClick={() => void handleClaim(m.days)}
+                      className="btn-duo btn-duo-orange w-full py-2.5 text-xs uppercase tracking-wide"
                     >
-                      <Gift className="h-3.5 w-3.5" />
-                      {busyId === `m-${m.days}` ? 'Đang mở quà...' : '🎁 Nhận thưởng ngay'}
+                      <Gift className="h-4 w-4" />
+                      {busyId === `m-${m.days}`
+                        ? 'Đang mở quà...'
+                        : '🎁 Mở rương thưởng ngay'}
                     </button>
                   ) : (
                     <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                      <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-500">
                         <span className="inline-flex items-center gap-1">
                           <Lock className="h-3 w-3" />
                           Còn {remaining} ngày nữa
                         </span>
                         <span>{pct}%</span>
                       </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200">
                         <div
-                          className={`h-full rounded-full bg-gradient-to-r ${m.gradient}`}
-                          style={{ width: `${pct}%` }}
+                          className="progress-gloss h-full rounded-full bg-gradient-to-r from-[#FF9600] to-[#FFC800]"
+                          style={{ width: `${Math.max(6, pct)}%` }}
                         />
                       </div>
                     </div>
@@ -227,32 +257,36 @@ export function StreakRewardsPanel({
         </div>
       </section>
 
-      {/* Reward Shop & Unlocked Badges */}
-      <section className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm space-y-5">
+      {/* Gem Reward Shop & Unlocked Badges */}
+      <section className="card-duo-elevated p-5 sm:p-6 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 text-white shadow-xs">
-                <ShoppingBag className="h-4 w-4" />
-              </span>
-              Kho Đổi Quà Bằng Ngọc 💎
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Hoàn thành bài học và giữ chuỗi để tích Ngọc 💎 đổi Khiên Bảo Vệ Chuỗi & Danh hiệu!
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1CB0F6] text-white shadow-[0_4px_0_#1899D6]">
+              <ShoppingBag className="h-5 w-5 stroke-[2.4]" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-slate-900">
+                Cửa Hàng Đổi Quà Bằng Ngọc
+              </h2>
+              <p className="text-xs font-medium text-slate-500">
+                Dùng Ngọc 💎 kiếm được từ game &amp; chuỗi học để mua Khiên Bảo Vệ Chuỗi và Danh hiệu nổi bật!
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs font-extrabold">
-            <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1.5 text-cyan-700">
-              💎 {profile.gems} Ngọc
+
+          <div className="flex items-center gap-2 text-xs font-black">
+            <span className="inline-flex items-center gap-1 rounded-xl border-2 border-sky-200 bg-sky-50 px-3 py-1.5 text-[#1899D6]">
+              <GemSvg className="h-4 w-4" />
+              {profile.gems} Ngọc
             </span>
-            <span className="rounded-full bg-sky-50 border border-sky-200 px-3 py-1.5 text-sky-700 inline-flex items-center gap-1">
-              <Shield className="h-3.5 w-3.5" />
+            <span className="inline-flex items-center gap-1 rounded-xl border-2 border-cyan-200 bg-cyan-50 px-3 py-1.5 text-cyan-700">
+              <ShieldFreezeSvg className="h-4 w-4" />
               {profile.streakFreezes} Khiên
             </span>
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
           {SHOP_REWARDS.map((item) => {
             const ownedBadge =
               item.type === 'badge' &&
@@ -265,14 +299,14 @@ export function StreakRewardsPanel({
             return (
               <div
                 key={item.id}
-                className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/60 p-4"
+                className="flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-[#F7F9FC] p-4"
               >
                 <div>
-                  <div className="text-2xl mb-2">{item.emoji}</div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <div className="text-3xl mb-2.5">{item.emoji}</div>
+                  <h3 className="text-sm font-black text-slate-900">
                     {item.titleVi}
                   </h3>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                  <p className="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed">
                     {item.descVi}
                   </p>
                 </div>
@@ -283,28 +317,24 @@ export function StreakRewardsPanel({
                       type="button"
                       disabled={busyId === `badge-${item.badgeId}`}
                       onClick={() => void handleEquip(item.badgeId!)}
-                      className={`w-full rounded-xl py-2 text-xs font-bold transition cursor-pointer ${
-                        isEquipped
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      className={`btn-duo w-full py-2.5 text-xs ${
+                        isEquipped ? 'btn-duo-green' : 'btn-duo-white'
                       }`}
                     >
-                      {isEquipped ? '✓ Đang đeo danh hiệu' : 'Đeo danh hiệu này'}
+                      {isEquipped ? '✓ Đang đeo' : 'Đeo danh hiệu'}
                     </button>
                   ) : (
                     <button
                       type="button"
                       disabled={!canAfford || busyId === `shop-${item.id}`}
-                      onClick={() => void handleBuy(item.id, item.titleVi)}
-                      className={`w-full rounded-xl py-2 text-xs font-extrabold transition cursor-pointer ${
-                        canAfford
-                          ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white hover:from-indigo-700 hover:to-cyan-700 shadow-xs'
-                          : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                      onClick={() => void handleBuy(item.id)}
+                      className={`btn-duo w-full py-2.5 text-xs ${
+                        canAfford ? 'btn-duo-blue' : 'btn-duo-white'
                       }`}
                     >
                       {busyId === `shop-${item.id}`
                         ? 'Đang đổi...'
-                        : `Đổi với ${item.costGems} 💎`}
+                        : `Đổi ${item.costGems} 💎`}
                     </button>
                   )}
                 </div>
@@ -315,10 +345,10 @@ export function StreakRewardsPanel({
 
         {/* Owned Badges Locker */}
         {profile.unlockedBadges.length > 0 && (
-          <div className="border-t border-slate-100 pt-4">
-            <div className="text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              Huy hiệu của bạn (chạm để đeo hiển thị trên thanh hồ sơ):
+          <div className="border-t-2 border-slate-100 pt-4">
+            <div className="text-xs font-black text-slate-700 mb-2.5 flex items-center gap-1.5">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              Bộ sưu tập Huy hiệu của bạn (chạm để đeo lên thanh hồ sơ):
             </div>
             <div className="flex flex-wrap gap-2">
               {profile.unlockedBadges.map((bid) => {
@@ -328,10 +358,10 @@ export function StreakRewardsPanel({
                     key={bid}
                     type="button"
                     onClick={() => void handleEquip(bid)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-bold border transition cursor-pointer ${
+                    className={`rounded-xl px-3.5 py-2 text-xs font-extrabold border-2 transition cursor-pointer ${
                       active
-                        ? 'border-indigo-600 bg-indigo-600 text-white shadow-xs'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-300'
+                        ? 'border-[#58CC02] bg-[#58CC02] text-white shadow-[0_3px_0_#46A302]'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                     }`}
                   >
                     {BADGE_DIRECTORY[bid] || bid} {active ? '✓' : ''}
@@ -342,6 +372,11 @@ export function StreakRewardsPanel({
           </div>
         )}
       </section>
+
+      <CelebrationModal
+        payload={celebration}
+        onClose={() => setCelebration(null)}
+      />
     </div>
   );
 }

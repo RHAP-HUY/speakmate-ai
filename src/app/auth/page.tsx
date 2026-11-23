@@ -12,12 +12,12 @@ import {
   Mail,
   ShieldCheck,
   Smartphone,
-  Sparkles,
   User,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
+import { MascotOwl } from '@/components/BrandArt';
 import { getAuthSessionInfo } from '@/lib/data-store';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { AuthSessionInfo } from '@/types';
@@ -82,22 +82,13 @@ function AuthPageInner() {
   const googleDirectReady = Boolean(sessionInfo?.googleConfigured);
   const ownerDriveReady = Boolean(sessionInfo?.ownerDriveConfigured);
   const supabaseReady = Boolean(sessionInfo?.supabaseConfigured);
+  const googleAuthHref = `/api/auth/google?next=${encodeURIComponent(nextPath)}`;
 
-  async function handleGoogleSignIn() {
+  async function handleGoogleFallbackSignIn() {
     setError(null);
     setNotice(null);
     setSetupHint(null);
 
-    // 1. Direct Google OAuth 2.0 + Google Drive 5TB storage (preferred!)
-    if (googleDirectReady) {
-      setLoadingProvider('google');
-      window.location.assign(
-        `${window.location.origin}/api/auth/google?next=${encodeURIComponent(nextPath)}`
-      );
-      return;
-    }
-
-    // 2. Supabase Google OAuth fallback if configured
     if (supabaseReady) {
       const supabase = createSupabaseBrowserClient();
       if (!supabase) return;
@@ -242,63 +233,64 @@ function AuthPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-mesh-light flex items-center justify-center p-4 sm:p-6">
+    <div className="min-h-screen bg-[#F7F9FC] flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-4xl grid gap-6 lg:grid-cols-12 items-stretch">
-        {/* Left Feature Showcase */}
-        <div className="lg:col-span-5 rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-cyan-600 p-7 text-white shadow-2xl shadow-indigo-500/20 flex flex-col justify-between relative overflow-hidden">
-          <div className="pointer-events-none absolute -top-20 -right-16 h-56 w-56 rounded-full bg-white/15 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-cyan-300/20 blur-3xl" />
-
-          <div className="relative space-y-5">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2.5 rounded-2xl bg-white/15 backdrop-blur-md px-3.5 py-2 border border-white/20"
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-indigo-600 shadow-xs">
-                <Sparkles className="h-4 w-4" />
-              </span>
-              <span className="font-extrabold tracking-tight">SpeakMate AI</span>
+        {/* Left Mascot & Value Pillar Showcase */}
+        <div className="lg:col-span-5 rounded-3xl bg-[#58CC02] border-b-4 border-[#46A302] p-7 text-white flex flex-col justify-between">
+          <div className="space-y-5">
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-xs">
+                <MascotOwl mood="happy" className="h-9 w-9" />
+              </div>
+              <div>
+                <div className="text-xl font-black tracking-tight leading-none">
+                  SpeakMate
+                </div>
+                <div className="text-[10px] font-extrabold uppercase tracking-widest text-white/85 mt-0.5">
+                  Vừa Học Vừa Chơi
+                </div>
+              </div>
             </Link>
 
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">
-                Đăng nhập Google · Lưu thẳng vào Google Drive 5TB
+              <h1 className="text-2xl sm:text-3xl font-black leading-tight">
+                Đăng nhập Google · Lưu trọn đời trên Drive 5TB
               </h1>
-              <p className="mt-2.5 text-sm text-indigo-100 leading-relaxed">
-                Sau khi đăng nhập, bạn sẽ chọn <strong>Ngôn ngữ & Sở thích</strong> trong 30 giây. Mọi tài khoản, chuỗi học, XP, sổ tay & lịch sử gọi được lưu đồng bộ trên <strong>Google Drive</strong> để khôi phục 100% khi đổi máy!
+              <p className="mt-2.5 text-sm font-semibold text-white/90 leading-relaxed">
+                Chọn <strong>Ngôn ngữ &amp; Sở thích</strong> trong 30 giây sau khi đăng nhập. Mọi chuỗi ngày học, rương quà, XP &amp; sổ từ vựng tự động đồng bộ đa thiết bị!
               </p>
             </div>
 
-            <div className="space-y-3 pt-1">
+            <div className="space-y-2.5">
               {[
                 {
-                  icon: HardDrive,
-                  title: 'Lưu dữ liệu trực tiếp trên Google Drive',
-                  desc: 'Tận dụng kho Drive 5TB siêu rộng — tự động khôi phục khi đăng nhập trên PC hay điện thoại mới.',
+                  icon: Gamepad2,
+                  title: 'Mặc định Vừa Học Vừa Chơi',
+                  desc: 'Lộ trình game phản xạ 2 phút + gọi thoại AI chấm từng từ.',
                 },
                 {
                   icon: Flame,
-                  title: 'Lịch chuỗi & Phần thưởng mốc ngày',
-                  desc: 'Hoàn thành ≥ 1 bài mỗi ngày để thắp lửa giữ chuỗi và mở rương quà.',
+                  title: 'Lịch Chuỗi & Rương Phần Thưởng',
+                  desc: 'Giữ chuỗi 1, 3, 7, 14, 30 ngày nhận XP, Ngọc 💎 & Khiên 🧊.',
                 },
                 {
-                  icon: Gamepad2,
-                  title: 'Chơi để học + Gọi AI chấm phát âm',
-                  desc: 'Minigame phản xạ 2 phút, ghép câu bản xứ & gọi thoại AI chấm từng từ.',
+                  icon: HardDrive,
+                  title: 'Đồng bộ Google Drive 5TB',
+                  desc: 'Đổi máy tính hay điện thoại chỉ cần đăng nhập Google là khôi phục 100%.',
                 },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
                   <div
                     key={item.title}
-                    className="flex items-start gap-3 rounded-2xl bg-white/10 border border-white/15 p-3 backdrop-blur-xs"
+                    className="flex items-start gap-3 rounded-2xl bg-white/15 border-2 border-white/20 p-3"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/20">
-                      <Icon className="h-4 w-4" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/25">
+                      <Icon className="h-4 w-4 stroke-[2.5]" />
                     </div>
                     <div>
-                      <div className="text-xs font-bold">{item.title}</div>
-                      <div className="text-[11px] text-indigo-100/90 mt-0.5 leading-snug">
+                      <div className="text-xs font-black">{item.title}</div>
+                      <div className="text-[11px] font-semibold text-white/85 mt-0.5 leading-snug">
                         {item.desc}
                       </div>
                     </div>
@@ -308,21 +300,21 @@ function AuthPageInner() {
             </div>
           </div>
 
-          <div className="relative mt-6 flex items-center gap-2 text-[11px] text-indigo-100/90">
+          <div className="mt-6 flex items-center gap-2 text-[11px] font-bold text-white/90">
             <Smartphone className="h-4 w-4 shrink-0" />
-            <span>Đồng bộ tức thì giữa iPhone, Android, Windows & macOS</span>
+            <span>Đồng bộ mượt giữa iPhone, Android, Windows &amp; macOS</span>
           </div>
         </div>
 
-        {/* Right Auth Card */}
-        <div className="lg:col-span-7 rounded-3xl border border-slate-200/80 bg-white/95 backdrop-blur-md p-6 sm:p-8 shadow-xl shadow-slate-200/60 flex flex-col justify-center">
+        {/* Right Crisp Sign-In Card */}
+        <div className="lg:col-span-7 card-duo-elevated p-6 sm:p-8 flex flex-col justify-center">
           <div className="mb-6">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${
+                className={`inline-flex items-center gap-1.5 rounded-xl border-2 px-3 py-1 text-[11px] font-black ${
                   googleDirectReady || supabaseReady
-                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-                    : 'bg-indigo-50 border border-indigo-200 text-indigo-700'
+                    ? 'border-emerald-200 bg-[#F1FDE8] text-[#3B8702]'
+                    : 'border-sky-200 bg-[#DDF4FF] text-[#1899D6]'
                 }`}
               >
                 {googleDirectReady ? (
@@ -340,83 +332,115 @@ function AuthPageInner() {
                 ) : (
                   <>
                     <HardDrive className="h-3.5 w-3.5" />
-                    Chờ gắn khóa Google Cloud OAuth để bật lưu Drive 5TB
+                    Sẵn sàng thiết lập hồ sơ
                   </>
                 )}
               </span>
               <Link
                 href="/"
-                className="text-xs font-bold text-slate-500 hover:text-indigo-600"
+                className="text-xs font-extrabold text-slate-400 hover:text-slate-800"
               >
                 ← Trang chủ
               </Link>
             </div>
 
-            <h2 className="text-2xl font-extrabold text-slate-900">
-              Đăng nhập & Thiết lập hồ sơ học
+            <h2 className="text-2xl font-black text-slate-900">
+              Chào mừng bạn đến SpeakMate!
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Sau khi đăng nhập Google, bạn sẽ chọn <strong>Ngôn ngữ & Sở thích</strong> (3 bước nhanh) và toàn bộ dữ liệu sẽ tự đồng bộ lên Drive.
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Đăng nhập bằng Google để chọn <strong>Ngôn ngữ &amp; Sở thích</strong> và lưu tiến độ vĩnh viễn.
             </p>
           </div>
 
           {sessionInfo?.authenticated && sessionInfo.user && (
-            <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-xs text-emerald-900">
-                <div className="font-extrabold">
+            <div className="mb-5 rounded-2xl border-2 border-[#B8F28B] bg-[#F1FDE8] p-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-xs text-[#2E6E00]">
+                <div className="font-black">
                   ✓ Đang đăng nhập: {sessionInfo.user.name}
                 </div>
-                <div className="text-emerald-700 mt-0.5">
-                  {sessionInfo.user.email} · Dữ liệu đang đồng bộ đám mây
+                <div className="font-semibold mt-0.5">
+                  {sessionInfo.user.email} · Dữ liệu đang đồng bộ Google Drive 5TB
                 </div>
               </div>
               <Link
                 href="/"
-                className="rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-extrabold text-white hover:bg-emerald-700"
+                className="btn-duo btn-duo-green px-4 py-2 text-xs uppercase"
               >
                 Vào học ngay →
               </Link>
             </div>
           )}
 
-          {/* Primary OAuth Buttons: Google & Apple */}
+          {/* Primary 3D OAuth Buttons */}
           <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => void handleGoogleSignIn()}
-              disabled={loadingProvider !== null}
-              className="group flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-slate-200 bg-white px-5 py-3.5 text-sm font-extrabold text-slate-800 shadow-xs hover:border-indigo-400 hover:bg-indigo-50/40 hover:shadow-md disabled:opacity-60 transition cursor-pointer"
-            >
-              {loadingProvider === 'google' ? (
-                <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
-              ) : (
-                <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="#4285F4"
-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z"
-                  />
-                </svg>
-              )}
-              <span>Tiếp tục với Google (Lưu Google Drive)</span>
-            </button>
+            {googleDirectReady ? (
+              <a
+                href={googleAuthHref}
+                onClick={() => setLoadingProvider('google')}
+                className="btn-duo btn-duo-white w-full px-5 py-4 text-sm text-slate-800"
+              >
+                {loadingProvider === 'google' ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-[#1CB0F6]" />
+                ) : (
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z"
+                    />
+                  </svg>
+                )}
+                <span>Tiếp tục với Google (Lưu Drive 5TB)</span>
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void handleGoogleFallbackSignIn()}
+                disabled={loadingProvider !== null}
+                className="btn-duo btn-duo-white w-full px-5 py-4 text-sm text-slate-800"
+              >
+                {loadingProvider === 'google' ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-[#1CB0F6]" />
+                ) : (
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z"
+                    />
+                  </svg>
+                )}
+                <span>Tiếp tục với Google (Lưu Drive 5TB)</span>
+              </button>
+            )}
 
             <button
               type="button"
               onClick={() => void handleAppleSignIn()}
               disabled={loadingProvider !== null}
-              className="group flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-slate-900 bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-sm hover:bg-slate-800 hover:shadow-md disabled:opacity-60 transition cursor-pointer"
+              className="btn-duo btn-duo-dark w-full px-5 py-4 text-sm"
             >
               {loadingProvider === 'apple' ? (
                 <Loader2 className="h-5 w-5 animate-spin text-white" />
@@ -433,46 +457,25 @@ function AuthPageInner() {
             </button>
           </div>
 
-          {/* Setup guide when Google OAuth credentials aren't attached on Vercel yet */}
-          {!googleDirectReady && !supabaseReady && (
-            <div className="mt-4 space-y-3">
-              <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-xs text-amber-950 space-y-1.5">
-                <div className="font-extrabold text-amber-900">
-                  {setupHint === 'Apple'
-                    ? 'Kích hoạt đăng nhập Apple:'
-                    : 'Chỉ cần thêm khóa Google Cloud OAuth để bật lưu trực tiếp lên Google Drive 5TB:'}
-                </div>
-                <p className="leading-relaxed text-amber-900/90">
-                  {setupHint === 'Apple' ? (
-                    <>
-                      Đăng nhập Apple yêu cầu Apple Developer Services ID (hoặc bật Apple Provider trên Supabase). Trong khi đó, <strong>Google + Google Drive 5TB</strong> hoàn toàn miễn phí 100%!
-                    </>
-                  ) : (
-                    <>
-                      Thêm 2 biến môi trường{' '}
-                      <code className="font-mono font-bold">GOOGLE_CLIENT_ID</code> và{' '}
-                      <code className="font-mono font-bold">GOOGLE_CLIENT_SECRET</code>{' '}
-                      (với Redirect URI{' '}
-                      <code className="font-mono font-bold">
-                        https://speakmate-ai-nu.vercel.app/api/auth/google/callback
-                      </code>
-                      ) trên Vercel là đăng nhập Google + tự lưu Drive 5TB hoạt động ngay!
-                    </>
-                  )}
-                </p>
-              </div>
+          {setupHint === 'Apple' && (
+            <div className="mt-4 rounded-2xl border-2 border-amber-200 bg-amber-50 p-4 text-xs font-medium text-amber-900">
+              Đăng nhập Apple cần Apple Developer Services ID (trả phí Apple). Bạn nên chọn{' '}
+              <strong>Tiếp tục với Google</strong> ở trên — miễn phí 100% và tự lưu ngay vào Google Drive 5TB!
+            </div>
+          )}
 
+          {!googleDirectReady && !supabaseReady && (
+            <div className="mt-4">
               <Link
                 href="/onboarding"
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-5 py-3.5 text-sm font-extrabold text-white shadow-md shadow-indigo-500/20 hover:from-indigo-700 hover:to-cyan-700 transition"
+                className="btn-duo btn-duo-green w-full py-3.5 text-sm uppercase"
               >
-                Chọn Ngôn ngữ & Sở thích (3 bước) ngay
-                <ArrowRight className="h-4 w-4" />
+                Chọn Ngôn ngữ &amp; Sở thích ngay
+                <ArrowRight className="h-4 w-4 stroke-[3]" />
               </Link>
             </div>
           )}
 
-          {/* Optional Email fallback when Supabase is configured */}
           {supabaseReady && (
             <>
               <div className="my-5 flex items-center gap-3">
@@ -480,7 +483,7 @@ function AuthPageInner() {
                 <button
                   type="button"
                   onClick={() => setShowEmailForm((v) => !v)}
-                  className="text-xs font-semibold text-slate-500 hover:text-indigo-600 cursor-pointer"
+                  className="text-xs font-extrabold text-slate-500 hover:text-[#1899D6] cursor-pointer"
                 >
                   {showEmailForm
                     ? 'Ẩn đăng nhập Email'
@@ -507,9 +510,9 @@ function AuthPageInner() {
                           setError(null);
                           setNotice(null);
                         }}
-                        className={`rounded-xl py-2 text-xs font-semibold transition cursor-pointer ${
+                        className={`rounded-xl py-2 text-xs font-extrabold transition cursor-pointer ${
                           mode === tab.id
-                            ? 'bg-white text-indigo-700 shadow-xs'
+                            ? 'bg-white text-[#1899D6] shadow-xs'
                             : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
@@ -521,7 +524,7 @@ function AuthPageInner() {
                   <form onSubmit={handleSubmit} className="space-y-3.5">
                     {mode === 'signup' && (
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        <label className="block text-xs font-extrabold text-slate-700 mb-1.5">
                           Tên bạn muốn AI gọi
                         </label>
                         <div className="relative">
@@ -531,14 +534,14 @@ function AuthPageInner() {
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             placeholder="Ví dụ: Huy, Minh, Alex..."
-                            className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm focus:border-indigo-500 focus:outline-none"
+                            className="w-full rounded-xl border-2 border-slate-200 py-2.5 pl-10 pr-4 text-sm font-semibold focus:border-[#1CB0F6] focus:outline-none"
                           />
                         </div>
                       </div>
                     )}
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      <label className="block text-xs font-extrabold text-slate-700 mb-1.5">
                         Email
                       </label>
                       <div className="relative">
@@ -549,14 +552,14 @@ function AuthPageInner() {
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="ban@example.com"
                           required
-                          className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm focus:border-indigo-500 focus:outline-none"
+                          className="w-full rounded-xl border-2 border-slate-200 py-2.5 pl-10 pr-4 text-sm font-semibold focus:border-[#1CB0F6] focus:outline-none"
                         />
                       </div>
                     </div>
 
                     {mode !== 'magic' && (
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        <label className="block text-xs font-extrabold text-slate-700 mb-1.5">
                           Mật khẩu
                         </label>
                         <div className="relative">
@@ -567,7 +570,7 @@ function AuthPageInner() {
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Ít nhất 6 ký tự"
                             required
-                            className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm focus:border-indigo-500 focus:outline-none"
+                            className="w-full rounded-xl border-2 border-slate-200 py-2.5 pl-10 pr-4 text-sm font-semibold focus:border-[#1CB0F6] focus:outline-none"
                           />
                         </div>
                       </div>
@@ -576,7 +579,7 @@ function AuthPageInner() {
                     <button
                       type="submit"
                       disabled={loadingProvider !== null}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-5 py-3 text-sm font-bold text-white shadow-md hover:from-indigo-700 hover:to-cyan-700 disabled:opacity-60 transition cursor-pointer"
+                      className="btn-duo btn-duo-green w-full py-3.5 text-sm uppercase"
                     >
                       {loadingProvider === 'email' ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -585,7 +588,7 @@ function AuthPageInner() {
                           {mode === 'login' && 'Đăng nhập'}
                           {mode === 'signup' && 'Tạo tài khoản & Chọn sở thích'}
                           {mode === 'magic' && 'Gửi link đăng nhập qua Email'}
-                          <ArrowRight className="h-4 w-4" />
+                          <ArrowRight className="h-4 w-4 stroke-[3]" />
                         </>
                       )}
                     </button>
@@ -596,14 +599,14 @@ function AuthPageInner() {
           )}
 
           {error && (
-            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-700">
+            <div className="mt-4 rounded-xl border-2 border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-bold text-rose-700">
               {error}
             </div>
           )}
 
           {notice && (
-            <div className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs text-emerald-800">
-              <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-emerald-600" />
+            <div className="mt-4 flex items-start gap-2 rounded-xl border-2 border-emerald-200 bg-[#F1FDE8] px-3.5 py-2.5 text-xs font-extrabold text-[#3B8702]">
+              <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-[#58CC02]" />
               <span>{notice}</span>
             </div>
           )}
@@ -617,8 +620,8 @@ export default function AuthPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-mesh-light">
-          <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+        <div className="min-h-screen flex items-center justify-center bg-[#F7F9FC]">
+          <Loader2 className="h-6 w-6 animate-spin text-[#58CC02]" />
         </div>
       }
     >
