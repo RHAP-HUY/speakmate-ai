@@ -19,6 +19,7 @@ export const maxDuration = 30;
 interface TurnPayload {
   scenarioId: string;
   personaId: string;
+  customTopic?: string;
   isStart?: boolean;
   userText?: string;
   history: Pick<TutorMessage, 'role' | 'englishText'>[];
@@ -65,8 +66,17 @@ export async function POST(request: NextRequest) {
       payload.profileOverride
     );
 
-    const scenario =
+    const baseScenario =
       SCENARIOS.find((s) => s.id === payload.scenarioId) ?? SCENARIOS[0];
+    const cleanCustomTopic = payload.customTopic?.trim().slice(0, 140);
+    const scenario = cleanCustomTopic
+      ? {
+          ...baseScenario,
+          titleVi: cleanCustomTopic,
+          titleEn: cleanCustomTopic,
+          starterContext: `You are a friendly native English speaker roleplaying this custom real-life topic chosen by the learner: "${cleanCustomTopic}". Greet them warmly, jump right into the roleplay, and keep turns concise and natural.`,
+        }
+      : baseScenario;
     const persona =
       AI_PERSONAS.find((p) => p.id === payload.personaId) ?? AI_PERSONAS[0];
 

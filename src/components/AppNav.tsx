@@ -4,6 +4,7 @@ import {
   BookOpen,
   Cloud,
   Compass,
+  Crown,
   Gamepad2,
   LogIn,
   LogOut,
@@ -12,6 +13,7 @@ import {
   Trophy,
   Volume2,
   VolumeX,
+  Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -19,7 +21,6 @@ import { useEffect, useState } from 'react';
 import {
   GemSvg,
   MascotOwl,
-  ShieldFreezeSvg,
   StreakFlameSvg,
 } from '@/components/BrandArt';
 import { stopVoicePlayback } from '@/lib/audio';
@@ -32,6 +33,8 @@ import {
   BADGE_DIRECTORY,
   getClaimableMilestones,
   getLevelInfo,
+  getXpBoostRemainingMinutes,
+  isXpBoostActive,
 } from '@/lib/gamification';
 import { isSoundMuted, playTapSound, setSoundMuted } from '@/lib/sound-fx';
 import type { AuthSessionInfo, UserProfile } from '@/types';
@@ -72,6 +75,13 @@ const SIDEBAR_ITEMS = [
     iconBg: 'bg-[#FFC800] text-amber-950',
   },
   {
+    href: '/leaderboard',
+    label: 'Bảng Xếp Hạng',
+    shortLabel: 'Xếp hạng',
+    icon: Crown,
+    iconBg: 'bg-[#F59E0B] text-white',
+  },
+  {
     href: '/phrases',
     label: 'Sổ Từ Vựng',
     shortLabel: 'Sổ tay',
@@ -87,7 +97,9 @@ const SIDEBAR_ITEMS = [
   },
 ];
 
-const MOBILE_TABS = SIDEBAR_ITEMS.filter((i) => i.href !== '/phrases');
+const MOBILE_TABS = SIDEBAR_ITEMS.filter(
+  (i) => i.href !== '/phrases' && i.href !== '/settings'
+);
 
 export function AppNav({ profile, authenticated, variant }: AppNavProps) {
   const pathname = usePathname();
@@ -141,6 +153,12 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
         currentProfile.longestStreak,
         currentProfile.claimedMilestones
       ).length
+    : 0;
+  const xpBoostOn = currentProfile
+    ? isXpBoostActive(currentProfile.xpBoostUntil)
+    : false;
+  const xpBoostMins = currentProfile
+    ? getXpBoostRemainingMinutes(currentProfile.xpBoostUntil)
     : 0;
 
   const isCloudLoggedIn = Boolean(
@@ -265,8 +283,20 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
           </nav>
         </div>
 
-        {/* Sidebar Footer: Sound Toggle + Cloud Identity Card */}
+        {/* Sidebar Footer: 2x XP Status + Sound Toggle + Cloud Identity Card */}
         <div className="space-y-2.5 pt-4 border-t-2 border-slate-100">
+          {xpBoostOn && (
+            <div className="flex items-center justify-between rounded-xl border-2 border-violet-300 bg-violet-50 px-3 py-2 text-xs font-black text-violet-700">
+              <span className="flex items-center gap-1.5">
+                <Zap className="h-4 w-4 fill-[#FFC800] text-[#FF9600]" />
+                Đang bật 2x XP
+              </span>
+              <span className="rounded-md bg-violet-600 px-1.5 py-0.5 text-[10px] text-white">
+                {xpBoostMins}p
+              </span>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={toggleSound}
@@ -360,10 +390,15 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
           </Link>
 
           {currentProfile && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              {xpBoostOn && (
+                <span className="inline-flex items-center gap-0.5 rounded-xl border-2 border-violet-300 bg-violet-50 px-2 py-1 text-[10px] font-black text-violet-700">
+                  ⚡2x
+                </span>
+              )}
               <Link
                 href="/history"
-                className="inline-flex items-center gap-1 rounded-xl border-2 border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-black text-[#FF9600]"
+                className="inline-flex items-center gap-1 rounded-xl border-2 border-orange-200 bg-orange-50 px-2 py-1 text-xs font-black text-[#FF9600]"
               >
                 <StreakFlameSvg
                   active={currentProfile.streakDays > 0}
@@ -374,18 +409,18 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
 
               <Link
                 href="/history#rewards"
-                className="inline-flex items-center gap-1 rounded-xl border-2 border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-black text-[#1899D6]"
+                className="inline-flex items-center gap-1 rounded-xl border-2 border-sky-200 bg-sky-50 px-2 py-1 text-xs font-black text-[#1899D6]"
               >
                 <GemSvg className="h-4 w-4" />
                 <span>{currentProfile.gems}</span>
               </Link>
 
               <Link
-                href="/history"
-                className="hidden sm:inline-flex items-center gap-1 rounded-xl border-2 border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-black text-cyan-700"
+                href="/settings"
+                aria-label="Hồ sơ & Cài đặt"
+                className="rounded-xl border-2 border-slate-200 bg-slate-50 p-1.5 text-slate-600"
               >
-                <ShieldFreezeSvg className="h-4 w-4" />
-                <span>{currentProfile.streakFreezes}</span>
+                <Settings className="h-4 w-4" />
               </Link>
 
               <button

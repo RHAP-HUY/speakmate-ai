@@ -14,6 +14,8 @@ import {
 } from '@/components/CelebrationModal';
 import {
   BADGE_DIRECTORY,
+  getXpBoostRemainingMinutes,
+  isXpBoostActive,
   SHOP_REWARDS,
   STREAK_MILESTONES,
 } from '@/lib/gamification';
@@ -78,7 +80,10 @@ export function StreakRewardsPanel({
       playChestOpenSound();
       setCelebration({
         title: `Đổi thành công ${item.titleVi}!`,
-        subtitle: item.descVi,
+        subtitle:
+          item.type === 'xp_boost'
+            ? `Đã bật nhân đôi 2x XP trong ${item.boostMinutes ?? 15} phút! Vào chơi game hoặc gọi AI ngay nhé!`
+            : item.descVi,
         freezes: item.type === 'freeze' ? 1 : undefined,
         badgeLabel: item.badgeLabel,
       });
@@ -286,7 +291,7 @@ export function StreakRewardsPanel({
           </div>
         </div>
 
-        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
           {SHOP_REWARDS.map((item) => {
             const ownedBadge =
               item.type === 'badge' &&
@@ -295,14 +300,30 @@ export function StreakRewardsPanel({
             const isEquipped =
               item.badgeId && profile.activeBadge === item.badgeId;
             const canAfford = profile.gems >= item.costGems;
+            const boostActive =
+              item.type === 'xp_boost' && isXpBoostActive(profile.xpBoostUntil);
+            const boostMins = boostActive
+              ? getXpBoostRemainingMinutes(profile.xpBoostUntil)
+              : 0;
 
             return (
               <div
                 key={item.id}
-                className="flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-[#F7F9FC] p-4"
+                className={`flex flex-col justify-between rounded-2xl border-2 p-4 ${
+                  boostActive
+                    ? 'border-violet-300 bg-violet-50/70'
+                    : 'border-slate-200 bg-[#F7F9FC]'
+                }`}
               >
                 <div>
-                  <div className="text-3xl mb-2.5">{item.emoji}</div>
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <span className="text-3xl">{item.emoji}</span>
+                    {boostActive && (
+                      <span className="rounded-lg bg-violet-600 px-2 py-0.5 text-[10px] font-black text-white">
+                        Đang bật ({boostMins}p)
+                      </span>
+                    )}
+                  </div>
                   <h3 className="text-sm font-black text-slate-900">
                     {item.titleVi}
                   </h3>
@@ -329,12 +350,18 @@ export function StreakRewardsPanel({
                       disabled={!canAfford || busyId === `shop-${item.id}`}
                       onClick={() => void handleBuy(item.id)}
                       className={`btn-duo w-full py-2.5 text-xs ${
-                        canAfford ? 'btn-duo-blue' : 'btn-duo-white'
+                        canAfford
+                          ? item.type === 'xp_boost'
+                            ? 'btn-duo-purple'
+                            : 'btn-duo-blue'
+                          : 'btn-duo-white'
                       }`}
                     >
                       {busyId === `shop-${item.id}`
                         ? 'Đang đổi...'
-                        : `Đổi ${item.costGems} 💎`}
+                        : boostActive
+                          ? `Cộng thêm +15p (${item.costGems} 💎)`
+                          : `Đổi ${item.costGems} 💎`}
                     </button>
                   )}
                 </div>

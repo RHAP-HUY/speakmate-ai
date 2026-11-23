@@ -340,3 +340,54 @@ export async function saveAccountBundleToDrive(
 
   return { fileId, mode: target.mode };
 }
+
+export interface PublicLeaderboardRosterItem {
+  accountId: string;
+  displayName: string;
+  englishLevel: string;
+  streakDays: number;
+  xp: number;
+  updatedAt: string;
+}
+
+/**
+ * Privacy-safe leaderboard reader from the central 5TB Owner Google Drive.
+ * Strips emails completely — only returns displayName, level, streak & XP.
+ */
+export async function readOwnerLeaderboardRoster(): Promise<
+  PublicLeaderboardRosterItem[]
+> {
+  const cfg = getGoogleOAuthConfig();
+  if (!cfg.ownerDriveConfigured) return [];
+
+  try {
+    const ownerToken = await getOwnerDriveAccessToken();
+    const rootFolderId = await findDriveItem({
+      accessToken: ownerToken,
+      name: cfg.ownerFolderName,
+      mimeType: 'application/vnd.google-apps.folder',
+    });
+    if (!rootFolderId) return [];
+
+    const index =
+      (await readDriveJsonFile<AccountIndexEntry[]>({
+        accessToken: ownerToken,
+        folderId: rootFolderId,
+        fileName: 'accounts_index.json',
+      })) ?? [];
+
+    return index
+      .filter((item) => Boolean(item && item.accountId))
+      .map((item) => ({
+        accountId: item.accountId,
+        displayName:
+          (item.displayName || '').trim() || 'Học viên SpeakMate',
+        englishLevel: item.englishLevel || 'A0-A1',
+        streakDays: Math.max(0, Number(item.streakDays || 0)),
+        xp: Math.max(0, Number(item.xp || 0)),
+        updatedAt: item.updatedAt || '',
+      }));
+  } catch {
+    return [];
+  }
+}

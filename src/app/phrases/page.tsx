@@ -166,7 +166,13 @@ export default function PhrasesPage() {
       ? STARTER_PHRASES
       : STARTER_PHRASES.filter((s) => s.category === starterFilter);
 
-  const currentCard = phrases[cardIndex % Math.max(1, phrases.length)];
+  // Smart SRS Flashcard deck: prioritize phrases not yet mastered (masteryLevel 0 -> 1 -> 2 -> 3)
+  const dueCount = phrases.filter((p) => p.masteryLevel < 3).length;
+  const flashcardDeck = [...phrases].sort(
+    (a, b) => a.masteryLevel - b.masteryLevel
+  );
+  const currentCard =
+    flashcardDeck[cardIndex % Math.max(1, flashcardDeck.length)];
 
   return (
     <AppShell profile={profile} authenticated={authenticated}>
@@ -229,7 +235,7 @@ export default function PhrasesPage() {
           }`}
         >
           <Layers className="h-4 w-4" />
-          Ôn Flashcard
+          Ôn Flashcard SRS {dueCount > 0 ? `(${dueCount} cần ôn)` : ''}
         </button>
 
         <button

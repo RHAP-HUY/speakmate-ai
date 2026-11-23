@@ -67,6 +67,30 @@ export const STREAK_MILESTONES: StreakMilestone[] = [
     badgeLabel: '👑 Huyền Thoại Bản Xứ',
     gradient: 'from-amber-400 via-yellow-500 to-rose-500',
   },
+  {
+    days: 60,
+    titleVi: 'Bậc thầy 60 ngày',
+    subtitleVi: '2 tháng kiên trì — phản xạ tiếng Anh tự nhiên như hơi thở',
+    emoji: '💎',
+    rewardXp: 3000,
+    rewardGems: 1200,
+    rewardFreezes: 4,
+    badgeId: 'master-60',
+    badgeLabel: '💎 Bậc Thầy Giao Tiếp',
+    gradient: 'from-sky-400 via-cyan-500 to-indigo-600',
+  },
+  {
+    days: 100,
+    titleVi: 'Bất bại 100 ngày',
+    subtitleVi: 'Cột mốc danh giá nhất của cộng đồng SpeakMate AI',
+    emoji: '🌟',
+    rewardXp: 6000,
+    rewardGems: 2500,
+    rewardFreezes: 5,
+    badgeId: 'immortal-100',
+    badgeLabel: '🌟 Bất Bại 100 Ngày',
+    gradient: 'from-emerald-400 via-teal-500 to-cyan-600',
+  },
 ];
 
 export const SHOP_REWARDS: ShopRewardItem[] = [
@@ -77,6 +101,15 @@ export const SHOP_REWARDS: ShopRewardItem[] = [
     descVi: 'Cứu chuỗi ngay lập tức nếu hôm qua bạn bận không kịp học 1 bài.',
     emoji: '🧊',
     costGems: 80,
+  },
+  {
+    id: 'xp-boost-15m',
+    type: 'xp_boost',
+    titleVi: 'Bình Nhân Đôi XP (15p)',
+    descVi: 'Nhận x2 toàn bộ XP từ mọi game & cuộc gọi AI trong 15 phút để leo top Bảng Xếp Hạng!',
+    emoji: '⚡',
+    costGems: 50,
+    boostMinutes: 15,
   },
   {
     id: 'badge-speedster',
@@ -107,6 +140,42 @@ export const SHOP_REWARDS: ShopRewardItem[] = [
     costGems: 260,
     badgeId: 'comm-crown',
     badgeLabel: '👑 Vương Miện Giao Tiếp',
+  },
+];
+
+export interface DailyQuestDef {
+  id: 'lesson_1' | 'xp_60' | 'minutes_goal';
+  titleVi: string;
+  rewardGems: number;
+  rewardXp: number;
+  icon: string;
+  barColor: string;
+}
+
+export const DAILY_QUEST_DEFS: DailyQuestDef[] = [
+  {
+    id: 'lesson_1',
+    titleVi: 'Hoàn thành 1 bài Học & Chơi',
+    rewardGems: 15,
+    rewardXp: 20,
+    icon: '🔥',
+    barColor: 'bg-[#58CC02]',
+  },
+  {
+    id: 'xp_60',
+    titleVi: 'Kiếm 60 XP trong ngày',
+    rewardGems: 20,
+    rewardXp: 25,
+    icon: '⚡',
+    barColor: 'bg-[#FFC800]',
+  },
+  {
+    id: 'minutes_goal',
+    titleVi: 'Đạt mục tiêu phút hôm nay',
+    rewardGems: 25,
+    rewardXp: 30,
+    icon: '⏱️',
+    barColor: 'bg-[#1CB0F6]',
   },
 ];
 
@@ -167,6 +236,46 @@ export function getLevelInfo(rawXp: number): LevelInfo {
     xpForNextLevel: step,
     progressPct,
   };
+}
+
+export type LeagueTier = 'bronze' | 'silver' | 'gold' | 'emerald' | 'diamond';
+
+export interface LeagueInfo {
+  tier: LeagueTier;
+  nameVi: string;
+  minXp: number;
+  nextXp: number | null;
+}
+
+export const LEAGUE_TIERS: LeagueInfo[] = [
+  { tier: 'bronze', nameVi: 'Giải Đồng', minXp: 0, nextXp: 200 },
+  { tier: 'silver', nameVi: 'Giải Bạc', minXp: 200, nextXp: 550 },
+  { tier: 'gold', nameVi: 'Giải Vàng', minXp: 550, nextXp: 1100 },
+  { tier: 'emerald', nameVi: 'Giải Ngọc Lục Bảo', minXp: 1100, nextXp: 2000 },
+  { tier: 'diamond', nameVi: 'Giải Kim Cương', minXp: 2000, nextXp: null },
+];
+
+export function getLeagueInfo(rawXp: number): LeagueInfo {
+  const xp = Math.max(0, Math.floor(rawXp || 0));
+  for (let i = LEAGUE_TIERS.length - 1; i >= 0; i--) {
+    if (xp >= LEAGUE_TIERS[i].minXp) return LEAGUE_TIERS[i];
+  }
+  return LEAGUE_TIERS[0];
+}
+
+export function isXpBoostActive(
+  xpBoostUntil?: number | null,
+  nowMs = Date.now()
+): boolean {
+  return typeof xpBoostUntil === 'number' && xpBoostUntil > nowMs;
+}
+
+export function getXpBoostRemainingMinutes(
+  xpBoostUntil?: number | null,
+  nowMs = Date.now()
+): number {
+  if (!isXpBoostActive(xpBoostUntil, nowMs)) return 0;
+  return Math.max(1, Math.ceil(((xpBoostUntil as number) - nowMs) / 60_000));
 }
 
 export function formatLocalDate(date: Date): string {

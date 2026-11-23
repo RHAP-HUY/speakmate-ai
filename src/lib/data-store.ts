@@ -1,7 +1,9 @@
 import {
   computeStrictStreak,
+  DAILY_QUEST_DEFS,
   getClaimableMilestones,
   getLevelInfo,
+  isXpBoostActive,
   MIN_CALL_TURNS_FOR_LESSON,
   SHOP_REWARDS,
   STREAK_MILESTONES,
@@ -146,6 +148,8 @@ function defaultLocalProfile(seed?: {
     unlockedBadges: [],
     activeBadge: null,
     totalLessonsCompleted: 0,
+    xpBoostUntil: null,
+    claimedDailyQuests: {},
   };
 }
 
@@ -197,6 +201,16 @@ function normalizeProfile(
     totalLessonsCompleted: Number.isFinite(Number(raw.totalLessonsCompleted))
       ? Math.max(0, Number(raw.totalLessonsCompleted))
       : 0,
+    xpBoostUntil:
+      typeof raw.xpBoostUntil === 'number' && Number.isFinite(raw.xpBoostUntil)
+        ? raw.xpBoostUntil
+        : null,
+    claimedDailyQuests:
+      raw.claimedDailyQuests &&
+      typeof raw.claimedDailyQuests === 'object' &&
+      !Array.isArray(raw.claimedDailyQuests)
+        ? (raw.claimedDailyQuests as Record<string, string[]>)
+        : {},
   };
 }
 
@@ -937,35 +951,6 @@ export async function recordLessonProgress(params: {
     const accountId =
       session.provider === 'google' ? session.user?.id : null;
     const keys = getScopedKeys(accountId);
-    const stats = readLocalStatsFor(accountId);
-    const existingToday = stats.find((s) => s.practiceDate === today);
-    const updatedStats: DailyStat[] = existingToday
-      ? stats.map((s) =>
-          s.practiceDate === today
-            ? {
-                ...s,
-                secondsPracticed: s.secondsPracticed + safeDuration,
-                messagesSent: s.messagesSent + msgDelta,
-                sessionsCompleted: s.sessionsCompleted + sessionDelta,
-                lessonsCompleted: s.lessonsCompleted + lessonDelta,
-                xpEarned: s.xpEarned + params.xpEarned,
-              }
-            : s
-        )
-      : [
-          {
-            practiceDate: today,
-            secondsPracticed: safeDuration,
-            messagesSent: msgDelta,
-            sessionsCompleted: sessionDelta,
-            lessonsCompleted: lessonDelta,
-            xpEarned: params.xpEarned,
-            freezeUsed: false,
-          },
-          ...stats,
-        ];
-    writeLocalJson(keys.dailyStats, updatedStats);
-
     const profile = normalizeProfile(
       readLocalJson<Partial<UserProfile> | null>(keys.profile, null),
       session.user
@@ -977,6 +962,39 @@ export async function recordLessonProgress(params: {
           }
         : undefined
     );
+    const effectiveXp = isXpBoostActive(profile.xpBoostUntil)
+      ? params.xpEarned * 2
+      : params.xpEarned;
+
+    const stats = readLocalStatsFor(accountId);
+    const existingToday = stats.find((s) => s.practiceDate === today);
+    const updatedStats: DailyStat[] = existingToday
+      ? stats.map((s) =>
+          s.practiceDate === today
+            ? {
+                ...s,
+                secondsPracticed: s.secondsPracticed + safeDuration,
+                messagesSent: s.messagesSent + msgDelta,
+                sessionsCompleted: s.sessionsCompleted + sessionDelta,
+                lessonsCompleted: s.lessonsCompleted + lessonDelta,
+                xpEarned: s.xpEarned + effectiveXp,
+              }
+            : s
+        )
+      : [
+          {
+            practiceDate: today,
+            secondsPracticed: safeDuration,
+            messagesSent: msgDelta,
+            sessionsCompleted: sessionDelta,
+            lessonsCompleted: lessonDelta,
+            xpEarned: effectiveXp,
+            freezeUsed: false,
+          },
+          ...stats,
+        ];
+    writeLocalJson(keys.dailyStats, updatedStats);
+
     const prevLevel = getLevelInfo(profile.xp).level;
     const prevClaimableCount = getClaimableMilestones(
       profile.streakDays,
@@ -985,7 +1003,7 @@ export async function recordLessonProgress(params: {
     ).length;
 
     const strict = computeStrictStreak(updatedStats, today);
-    const nextXp = profile.xp + params.xpEarned;
+    const nextXp = profile.xp + effectiveXp;
     const nextGems = profile.gems + params.gemsEarned;
     const nextLongest = Math.max(profile.longestStreak, strict.longestStreak);
     const nextLevel = getLevelInfo(nextXp).level;
@@ -1339,6 +1357,15 @@ export async function purchaseShopReward(itemId: string): Promise<UserProfile> {
     });
   }
 
+  if (item.type === 'xp_boost') {
+    const minutes = item.boostMinutes ?? 15;
+    const baseMs = Math.max(Date.now(), profile.xpBoostUntil ?? 0);
+    return saveProfile({
+      gems: profile.gems - item.costGems,
+      xpBoostUntil: baseMs + minutes * 60_000,
+    });
+  }
+
   const nextBadges =
     item.badgeId && !profile.unlockedBadges.includes(item.badgeId)
       ? [...profile.unlockedBadges, item.badgeId]
@@ -1349,6 +1376,45 @@ export async function purchaseShopReward(itemId: string): Promise<UserProfile> {
     unlockedBadges: nextBadges,
     activeBadge: item.badgeId ?? profile.activeBadge,
   });
+}
+
+export async function claimDailyQuestReward(questId: string): Promise<{
+  profile: UserProfile;
+  gemsEarned: number;
+  xpEarned: number;
+}> {
+  const def = DAILY_QUEST_DEFS.find((q) => q.id === questId);
+  if (!def) throw new Error('Nhiệm vụ không tồn tại.');
+
+  const { profile } = await getCurrentProfile();
+  if (!profile) throw new Error('Vui lòng đăng nhập.');
+
+  const today = getTodayLocalDate();
+  const prevMap = profile.claimedDailyQuests ?? {};
+  const todayClaimed = prevMap[today] ?? [];
+  if (todayClaimed.includes(questId)) {
+    return { profile, gemsEarned: 0, xpEarned: 0 };
+  }
+
+  const effectiveXp = isXpBoostActive(profile.xpBoostUntil)
+    ? def.rewardXp * 2
+    : def.rewardXp;
+
+  // Keep only recent 7 date keys to keep profile bundle lean
+  const nextMap: Record<string, string[]> = {};
+  const sortedDates = Object.keys(prevMap).sort().slice(-6);
+  for (const d of sortedDates) {
+    nextMap[d] = prevMap[d];
+  }
+  nextMap[today] = [...todayClaimed, questId];
+
+  const updated = await saveProfile({
+    gems: profile.gems + def.rewardGems,
+    xp: profile.xp + effectiveXp,
+    claimedDailyQuests: nextMap,
+  });
+
+  return { profile: updated, gemsEarned: def.rewardGems, xpEarned: effectiveXp };
 }
 
 export async function equipBadge(badgeId: string | null): Promise<UserProfile> {

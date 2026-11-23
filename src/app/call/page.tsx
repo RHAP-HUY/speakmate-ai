@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CallReportView } from '@/components/CallReportView';
 import { PronunciationBadge } from '@/components/PronunciationBadge';
 import {
@@ -76,9 +76,19 @@ function CallStudioInner() {
   const searchParams = useSearchParams();
   const scenarioId = searchParams.get('scenario') || 'daily-small-talk';
   const personaParam = searchParams.get('persona') || '';
+  const customTopic = (searchParams.get('customTopic') || '').trim().slice(0, 140);
 
-  const scenario =
-    SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
+  const scenario = useMemo(() => {
+    const baseScenario =
+      SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
+    return customTopic
+      ? {
+          ...baseScenario,
+          titleVi: customTopic,
+          titleEn: customTopic,
+        }
+      : baseScenario;
+  }, [scenarioId, customTopic]);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [persona, setPersona] = useState<AiPersona>(AI_PERSONAS[0]);
@@ -235,6 +245,7 @@ function CallStudioInner() {
         const payload = {
           scenarioId: scenario.id,
           personaId: personaRef.current.id,
+          customTopic: customTopic || undefined,
           isStart: opts.isStart,
           userText: opts.userText,
           // Keep payload lean: only send recent 8 turns
@@ -337,7 +348,7 @@ function CallStudioInner() {
         setPhase('idle');
       }
     },
-    [buildAuthHeaders, scenario.id, speakAiSentence]
+    [buildAuthHeaders, customTopic, scenario.id, speakAiSentence]
   );
 
   // Initialize session on mount

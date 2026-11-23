@@ -41,6 +41,8 @@ export interface UserProfile {
   unlockedBadges: string[];
   activeBadge: string | null;
   totalLessonsCompleted: number;
+  xpBoostUntil?: number | null;
+  claimedDailyQuests?: Record<string, string[]>;
 }
 
 export interface AccountCloudBundle {
@@ -196,13 +198,25 @@ export interface StreakMilestone {
 
 export interface ShopRewardItem {
   id: string;
-  type: 'freeze' | 'badge';
+  type: 'freeze' | 'badge' | 'xp_boost';
   titleVi: string;
   descVi: string;
   emoji: string;
   costGems: number;
   badgeId?: string;
   badgeLabel?: string;
+  boostMinutes?: number;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  displayName: string;
+  englishLevel: string;
+  streakDays: number;
+  xp: number;
+  isCurrentUser?: boolean;
+  isBot?: boolean;
+  leagueTier: 'bronze' | 'silver' | 'gold' | 'emerald' | 'diamond';
 }
 
 export interface LessonRewardSummary {

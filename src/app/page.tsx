@@ -19,6 +19,7 @@ import {
   Shield,
   Sparkles,
   Star,
+  Wand2,
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -40,6 +41,7 @@ import {
 } from '@/components/CelebrationModal';
 import {
   applyStreakFreezeForYesterday,
+  claimDailyQuestReward,
   claimStreakMilestone,
   getAuthSessionInfo,
   getCurrentProfile,
@@ -48,8 +50,12 @@ import {
 } from '@/lib/data-store';
 import {
   computeStrictStreak,
+  DAILY_QUEST_DEFS,
   getClaimableMilestones,
+  getLeagueInfo,
   getLevelInfo,
+  getXpBoostRemainingMinutes,
+  isXpBoostActive,
   shiftDateString,
   STREAK_MILESTONES,
 } from '@/lib/gamification';
@@ -62,7 +68,15 @@ import type {
   UserProfile,
 } from '@/types';
 
-type PathStationKind = 'speed' | 'build' | 'call' | 'pronounce' | 'chest' | 'boss';
+type PathStationKind =
+  | 'speed'
+  | 'build'
+  | 'listen'
+  | 'ai-quiz'
+  | 'call'
+  | 'pronounce'
+  | 'chest'
+  | 'boss';
 
 interface PathStation {
   id: string;
@@ -81,7 +95,7 @@ interface LearningUnit {
   sectionLabel: string;
   titleVi: string;
   subtitleVi: string;
-  category: Exclude<TopicCategory, 'freetalk'>;
+  category: TopicCategory;
   bannerBg: string;
   bannerLip: string;
   nodeBg: string;
@@ -96,14 +110,16 @@ const LEARNING_UNITS: LearningUnit[] = [
     id: 'unit-daily',
     sectionLabel: 'CHẶNG 1 · ĐỜI SỐNG',
     titleVi: 'Phản xạ Quán Cà Phê & Kết bạn',
-    subtitleVi: 'Vừa chơi game vừa tập nói tự nhiên như người bản xứ trong 2 phút/màn',
+    subtitleVi:
+      'Vừa chơi game vừa luyện nghe – nói tự nhiên như người bản xứ chỉ 2 phút/màn',
     category: 'daily',
     bannerBg: 'bg-[#58CC02]',
     bannerLip: 'border-b-4 border-[#46A302]',
     nodeBg: 'bg-[#58CC02]',
     nodeShadow: 'shadow-[0_7px_0_#46A302]',
     accentText: 'text-[#46A302]',
-    mascotTipVi: 'Chơi xong chỉ 1 trạm là thắp lửa giữ chuỗi hôm nay rồi! 🔥',
+    mascotTipVi:
+      'Chơi xong chỉ 1 trạm là thắp lửa giữ chuỗi hôm nay & mở quà Nhiệm vụ! 🔥',
     stations: [
       {
         id: 'u1-1',
@@ -117,38 +133,38 @@ const LEARNING_UNITS: LearningUnit[] = [
       },
       {
         id: 'u1-2',
-        kind: 'build',
-        titleVi: 'Game Nghe & Ghép Câu',
-        subtitleVi: 'Nghe giọng bản xứ rồi xếp thẻ từ siêu vui',
-        xpLabel: '+95 XP',
+        kind: 'listen',
+        titleVi: 'Nghe Hiểu Bản Xứ',
+        subtitleVi: 'Nghe giọng thật ở quán cà phê & đoán đúng ý người nói',
+        xpLabel: '+90 XP',
         gemsLabel: '+25 💎',
-        href: '/play?mode=build&category=daily',
+        href: '/play?mode=listen&category=daily',
         offsetPx: -54,
       },
       {
         id: 'u1-3',
-        kind: 'call',
-        titleVi: 'Nhập vai Quán Cà Phê',
-        subtitleVi: 'Gọi ly iced latte & tám chuyện cùng Barista AI',
-        xpLabel: '+60 XP',
-        gemsLabel: '+15 💎',
-        scenarioId: 'daily-coffee-shop',
-        offsetPx: -78,
+        kind: 'build',
+        titleVi: 'Nghe & Ghép Câu',
+        subtitleVi: 'Xếp thẻ từ siêu vui để nhớ chắc cấu trúc bản xứ',
+        xpLabel: '+95 XP',
+        gemsLabel: '+25 💎',
+        href: '/play?mode=build&category=daily',
+        offsetPx: -76,
       },
       {
         id: 'u1-4',
-        kind: 'pronounce',
-        titleVi: 'Đấu trường Phát âm AI',
-        subtitleVi: 'Đọc to 3 câu thực tế — AI chấm từng từ 0–100',
-        xpLabel: '+110 XP',
-        gemsLabel: '+30 💎',
-        href: '/play?mode=pronounce&category=daily',
+        kind: 'call',
+        titleVi: 'Nhập vai Quán Cà Phê',
+        subtitleVi: 'Gọi ly iced latte & tám chuyện trực tiếp cùng Barista AI',
+        xpLabel: '+60 XP',
+        gemsLabel: '+15 💎',
+        scenarioId: 'daily-coffee-shop',
         offsetPx: -26,
       },
       {
         id: 'u1-5',
         kind: 'chest',
-        titleVi: 'Rương Thưởng Chuỗi Học Tập',
+        titleVi: 'Rương Thưởng Chuỗi',
         subtitleVi: 'Mở rương nhận Ngọc 💎, XP, Khiên 🧊 & Huy hiệu',
         xpLabel: 'Quà mốc ngày',
         gemsLabel: '💎 + 🧊',
@@ -157,8 +173,8 @@ const LEARNING_UNITS: LearningUnit[] = [
       {
         id: 'u1-6',
         kind: 'boss',
-        titleVi: 'Thử thách Boss: Small Talk',
-        subtitleVi: 'Nói chuyện tự do theo sở thích cá nhân của bạn',
+        titleVi: 'Boss: Small Talk Sở thích',
+        subtitleVi: 'Trò chuyện tự nhiên xoay quanh chính sở thích của bạn',
         xpLabel: '+80 XP',
         gemsLabel: '+25 💎',
         scenarioId: 'daily-small-talk',
@@ -170,14 +186,16 @@ const LEARNING_UNITS: LearningUnit[] = [
     id: 'unit-business',
     sectionLabel: 'CHẶNG 2 · CÔNG SỞ',
     titleVi: 'Tự tin Họp hành & Phỏng vấn',
-    subtitleVi: 'Luyện phản xạ tiếng Anh công việc chuẩn quốc tế qua game & nhập vai',
+    subtitleVi:
+      'Luyện phản xạ tiếng Anh công việc chuẩn quốc tế qua game, nghe hiểu & nhập vai',
     category: 'business',
     bannerBg: 'bg-[#1CB0F6]',
     bannerLip: 'border-b-4 border-[#1899D6]',
     nodeBg: 'bg-[#1CB0F6]',
     nodeShadow: 'shadow-[0_7px_0_#1899D6]',
     accentText: 'text-[#1899D6]',
-    mascotTipVi: 'Cụm "get back to you" & "schedule a quick call" dùng cực xịn ở công ty!',
+    mascotTipVi:
+      'Cụm "heads-up", "circle back" & "get back to you" dùng cực chuyên nghiệp ở công ty!',
     stations: [
       {
         id: 'u2-1',
@@ -191,29 +209,29 @@ const LEARNING_UNITS: LearningUnit[] = [
       },
       {
         id: 'u2-2',
-        kind: 'build',
-        titleVi: 'Ghép câu Họp Nhanh',
-        subtitleVi: 'Xếp cấu trúc câu chuyên nghiệp không dịch word-by-word',
-        xpLabel: '+95 XP',
+        kind: 'listen',
+        titleVi: 'Nghe Hiểu Họp Zoom',
+        subtitleVi: 'Nghe thông báo deadline, dời lịch họp & phản xạ nhanh',
+        xpLabel: '+90 XP',
         gemsLabel: '+25 💎',
-        href: '/play?mode=build&category=business',
+        href: '/play?mode=listen&category=business',
         offsetPx: -54,
       },
       {
         id: 'u2-3',
-        kind: 'call',
-        titleVi: 'Giới thiệu Nghề nghiệp',
-        subtitleVi: 'Nói trôi chảy về chuyên ngành & công việc hàng ngày',
-        xpLabel: '+60 XP',
-        gemsLabel: '+15 💎',
-        scenarioId: 'business-intro',
-        offsetPx: -78,
+        kind: 'build',
+        titleVi: 'Ghép câu Công việc',
+        subtitleVi: 'Xếp cấu trúc câu chuyên nghiệp không dịch từng chữ',
+        xpLabel: '+95 XP',
+        gemsLabel: '+25 💎',
+        href: '/play?mode=build&category=business',
+        offsetPx: -76,
       },
       {
         id: 'u2-4',
         kind: 'pronounce',
         titleVi: 'Phát âm Chuẩn Quốc tế',
-        subtitleVi: 'Chấm điểm trọng âm & nối âm câu công sở',
+        subtitleVi: 'AI chấm điểm trọng âm & nối âm câu công sở',
         xpLabel: '+110 XP',
         gemsLabel: '+30 💎',
         href: '/play?mode=pronounce&category=business',
@@ -232,7 +250,7 @@ const LEARNING_UNITS: LearningUnit[] = [
         id: 'u2-6',
         kind: 'boss',
         titleVi: 'Boss: Phỏng vấn Xin việc',
-        subtitleVi: 'Trả lời câu hỏi nhà tuyển dụng nước ngoài',
+        subtitleVi: 'Trả lời câu hỏi nhà tuyển dụng nước ngoài tự tin',
         xpLabel: '+90 XP',
         gemsLabel: '+30 💎',
         scenarioId: 'business-interview',
@@ -244,14 +262,16 @@ const LEARNING_UNITS: LearningUnit[] = [
     id: 'unit-travel',
     sectionLabel: 'CHẶNG 3 · DU LỊCH',
     titleVi: 'Du lịch Quốc tế Không Ngại Giao Tiếp',
-    subtitleVi: 'Sân bay, nhà hàng, khách sạn — chơi vui là thuộc lòng câu bản xứ',
+    subtitleVi:
+      'Sân bay, nhà hàng, khách sạn — chơi vui là thuộc lòng câu bản xứ',
     category: 'travel',
     bannerBg: 'bg-[#8B5CF6]',
     bannerLip: 'border-b-4 border-[#6D28D9]',
     nodeBg: 'bg-[#8B5CF6]',
     nodeShadow: 'shadow-[0_7px_0_#6D28D9]',
     accentText: 'text-[#6D28D9]',
-    mascotTipVi: 'Luyện xong chặng này đi du lịch nước ngoài tự tin gọi món & check-in ngay! ✈️',
+    mascotTipVi:
+      'Chinh phục xong chặng này đi du lịch nước ngoài tự tin check-in & gọi món ngay! ✈️',
     stations: [
       {
         id: 'u3-1',
@@ -265,12 +285,12 @@ const LEARNING_UNITS: LearningUnit[] = [
       },
       {
         id: 'u3-2',
-        kind: 'build',
-        titleVi: 'Ghép câu Nhà hàng & Khách sạn',
-        subtitleVi: 'Nghe mẫu và sắp xếp câu giao tiếp du lịch',
-        xpLabel: '+95 XP',
+        kind: 'listen',
+        titleVi: 'Nghe Loa Sân bay & Chỉ đường',
+        subtitleVi: 'Luyện nghe thông báo đổi cổng bay, bữa sáng & đường đi',
+        xpLabel: '+90 XP',
         gemsLabel: '+25 💎',
-        href: '/play?mode=build&category=travel',
+        href: '/play?mode=listen&category=travel',
         offsetPx: -54,
       },
       {
@@ -281,13 +301,13 @@ const LEARNING_UNITS: LearningUnit[] = [
         xpLabel: '+60 XP',
         gemsLabel: '+15 💎',
         scenarioId: 'travel-airport',
-        offsetPx: -78,
+        offsetPx: -76,
       },
       {
         id: 'u3-4',
         kind: 'pronounce',
         titleVi: 'Đấu trường Phát âm Du lịch',
-        subtitleVi: 'Luyện đọc rõ âm cuối để người bản xứ hiểu ngay lần đầu',
+        subtitleVi: 'Đọc rõ âm cuối để người bản xứ hiểu ngay lần đầu',
         xpLabel: '+110 XP',
         gemsLabel: '+30 💎',
         href: '/play?mode=pronounce&category=travel',
@@ -305,9 +325,85 @@ const LEARNING_UNITS: LearningUnit[] = [
       {
         id: 'u3-6',
         kind: 'boss',
-        titleVi: 'Boss: Nói chuyện Tự do AI',
-        subtitleVi: 'Tự do trò chuyện mọi chủ đề như bạn thân nước ngoài',
+        titleVi: 'Boss: Gọi món Nhà hàng',
+        subtitleVi: 'Đặt bàn, hỏi món gợi ý & thanh toán trôi chảy',
         xpLabel: '+90 XP',
+        gemsLabel: '+30 💎',
+        scenarioId: 'travel-restaurant',
+        offsetPx: 6,
+      },
+    ],
+  },
+  {
+    id: 'unit-ai-infinite',
+    sectionLabel: 'CHẶNG 4 · AI CÁ NHÂN HÓA',
+    titleVi: 'Đấu trường Vô Tận Theo Sở Thích Của Bạn',
+    subtitleVi:
+      'AI tạo màn chơi mới không bao giờ trùng lặp theo đúng nghề nghiệp & sở thích bạn chọn',
+    category: 'freetalk',
+    bannerBg: 'bg-gradient-to-r from-[#FF9600] to-[#F43F5E]',
+    bannerLip: 'border-b-4 border-[#BE123C]',
+    nodeBg: 'bg-[#FF9600]',
+    nodeShadow: 'shadow-[0_7px_0_#D97706]',
+    accentText: 'text-[#EA580C]',
+    mascotTipVi:
+      'Mỗi lần bấm "AI Tạo Màn Chơi" là một bộ 5 câu mới toanh đúng gu của riêng bạn! ✨',
+    stations: [
+      {
+        id: 'u4-1',
+        kind: 'ai-quiz',
+        titleVi: 'AI Tạo Màn Chơi Theo Gu',
+        subtitleVi: 'Gemini tự chế 5 câu phản xạ mới toanh từ sở thích của bạn',
+        xpLabel: '+100 XP',
+        gemsLabel: '+25 💎',
+        href: '/play?mode=ai-quiz',
+        offsetPx: 0,
+      },
+      {
+        id: 'u4-2',
+        kind: 'listen',
+        titleVi: 'Siêu Nghe Hiểu Hỗn Hợp',
+        subtitleVi: 'Tổng hợp câu nói tự nhiên từ Đời sống, Công sở & Du lịch',
+        xpLabel: '+95 XP',
+        gemsLabel: '+25 💎',
+        href: '/play?mode=listen',
+        offsetPx: -54,
+      },
+      {
+        id: 'u4-3',
+        kind: 'pronounce',
+        titleVi: 'Đấu trường Phát âm Chuyên sâu',
+        subtitleVi: 'Phá kỷ lục 90/100 điểm phát âm cùng AI chấm từng từ',
+        xpLabel: '+120 XP',
+        gemsLabel: '+30 💎',
+        href: '/play?mode=pronounce',
+        offsetPx: -76,
+      },
+      {
+        id: 'u4-4',
+        kind: 'speed',
+        titleVi: 'Tốc độ Tổng hợp 15s',
+        subtitleVi: 'Trộn toàn bộ kho câu bản xứ 30+ tình huống thực tế',
+        xpLabel: '+100 XP',
+        gemsLabel: '+25 💎',
+        href: '/play?mode=speed',
+        offsetPx: -26,
+      },
+      {
+        id: 'u4-5',
+        kind: 'chest',
+        titleVi: 'Rương Huyền Thoại 60–100 Ngày',
+        subtitleVi: 'Chinh phục rương lớn nhất cộng đồng SpeakMate AI!',
+        xpLabel: 'Siêu thưởng',
+        gemsLabel: '💎 + 👑',
+        offsetPx: 50,
+      },
+      {
+        id: 'u4-6',
+        kind: 'boss',
+        titleVi: 'Boss: Trò chuyện Tự do AI',
+        subtitleVi: 'Gọi điện tám chuyện không giới hạn như bạn thân nước ngoài',
+        xpLabel: '+100 XP',
         gemsLabel: '+30 💎',
         scenarioId: 'free-talk-custom',
         offsetPx: 6,
@@ -316,17 +412,12 @@ const LEARNING_UNITS: LearningUnit[] = [
   },
 ];
 
-function getLeagueFromXp(xp: number): {
-  tier: 'bronze' | 'silver' | 'gold' | 'emerald' | 'diamond';
-  nameVi: string;
-  nextXp: number;
-} {
-  if (xp >= 2000) return { tier: 'diamond', nameVi: 'Giải Kim Cương', nextXp: 3500 };
-  if (xp >= 1100) return { tier: 'emerald', nameVi: 'Giải Ngọc Lục Bảo', nextXp: 2000 };
-  if (xp >= 550) return { tier: 'gold', nameVi: 'Giải Vàng', nextXp: 1100 };
-  if (xp >= 200) return { tier: 'silver', nameVi: 'Giải Bạc', nextXp: 550 };
-  return { tier: 'bronze', nameVi: 'Giải Đồng', nextXp: 200 };
-}
+const CUSTOM_ROLEPLAY_PRESETS = [
+  'Phỏng vấn lập trình viên bằng tiếng Anh',
+  'Mặc cả mua quà lưu niệm khi đi du lịch',
+  'Trò chuyện về phim ảnh & game với bạn mới',
+  'Đặt lịch khám bệnh & mô tả triệu chứng',
+];
 
 function getStationIcon(kind: PathStationKind) {
   switch (kind) {
@@ -334,6 +425,10 @@ function getStationIcon(kind: PathStationKind) {
       return Zap;
     case 'build':
       return Puzzle;
+    case 'listen':
+      return Headphones;
+    case 'ai-quiz':
+      return Wand2;
     case 'call':
       return PhoneCall;
     case 'pronounce':
@@ -357,7 +452,9 @@ export default function HomePage() {
   const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('auto');
   const [showScenarioDrawer, setShowScenarioDrawer] = useState(false);
+  const [customRoleplayInput, setCustomRoleplayInput] = useState('');
   const [claimingDays, setClaimingDays] = useState<number | null>(null);
+  const [claimingQuestId, setClaimingQuestId] = useState<string | null>(null);
   const [freezing, setFreezing] = useState(false);
   const [celebration, setCelebration] = useState<CelebrationPayload | null>(null);
 
@@ -392,17 +489,20 @@ export default function HomePage() {
     };
   }, [router]);
 
-  function startCall(scenarioId: string) {
+  function startCall(scenarioId: string, customTopic?: string) {
     playTapSound();
     const resolvedPersona =
       selectedPersonaId === 'auto'
         ? pickPersona(profile?.preferredAccent ?? 'US').id
         : selectedPersonaId;
-    router.push(
-      `/call?scenario=${encodeURIComponent(scenarioId)}&persona=${encodeURIComponent(
-        resolvedPersona
-      )}`
-    );
+    const params = new URLSearchParams({
+      scenario: scenarioId,
+      persona: resolvedPersona,
+    });
+    if (customTopic?.trim()) {
+      params.set('customTopic', customTopic.trim());
+    }
+    router.push(`/call?${params.toString()}`);
   }
 
   async function handleClaimStreakReward(days: number) {
@@ -423,6 +523,25 @@ export default function HomePage() {
       });
     } finally {
       setClaimingDays(null);
+    }
+  }
+
+  async function handleClaimDailyQuest(questId: string, questTitle: string) {
+    setClaimingQuestId(questId);
+    try {
+      const res = await claimDailyQuestReward(questId);
+      setProfile(res.profile);
+      if (res.gemsEarned > 0 || res.xpEarned > 0) {
+        playChestOpenSound();
+        setCelebration({
+          title: 'Hoàn thành Nhiệm Vụ Hôm Nay! 🎁',
+          subtitle: questTitle,
+          xp: res.xpEarned,
+          gems: res.gemsEarned,
+        });
+      }
+    } finally {
+      setClaimingQuestId(null);
     }
   }
 
@@ -458,12 +577,9 @@ export default function HomePage() {
         <AppNav profile={null} authenticated={false} variant="landing" />
 
         <main className="flex-1">
-          {/* Split Hero */}
           <section className="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-20 grid gap-10 lg:grid-cols-12 items-center">
-            {/* Left Illustrated Showcase */}
             <div className="lg:col-span-6 flex flex-col items-center">
               <div className="relative w-full max-w-md rounded-3xl border-2 border-slate-200 bg-[#F7F9FC] p-7 shadow-sm">
-                {/* Floating Streak Pill */}
                 <div className="absolute -top-4 -right-3 flex items-center gap-1.5 rounded-2xl border-2 border-orange-300 bg-white px-3.5 py-2 shadow-md animate-gentle-float">
                   <StreakFlameSvg active className="h-5 w-5" />
                   <span className="text-xs font-black text-[#FF9600]">
@@ -471,7 +587,6 @@ export default function HomePage() {
                   </span>
                 </div>
 
-                {/* Floating Gem Reward Pill */}
                 <div className="absolute -bottom-4 -left-3 flex items-center gap-1.5 rounded-2xl border-2 border-sky-300 bg-white px-3.5 py-2 shadow-md">
                   <GemSvg className="h-5 w-5" />
                   <span className="text-xs font-black text-[#1899D6]">
@@ -498,11 +613,10 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Bold Headline & Tactile 3D CTAs */}
             <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
               <span className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-xs font-extrabold text-emerald-700">
                 <Sparkles className="h-3.5 w-3.5" />
-                Vừa học vừa chơi · Gọi thoại AI · Lưu Drive 5TB
+                Vừa học vừa chơi · Bảng Xếp Hạng · Gọi AI · Lưu Drive 5TB
               </span>
 
               <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-[1.15]">
@@ -512,7 +626,7 @@ export default function HomePage() {
               </h1>
 
               <p className="text-base sm:text-lg font-medium text-slate-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                Chinh phục lộ trình trò chơi phản xạ 2 phút, gọi thoại trực tiếp với gia sư AI chấm phát âm từng từ, giữ chuỗi trên Lịch tháng để mở rương thưởng và đồng bộ trọn đời qua Google!
+                Chinh phục 4 Chặng lộ trình 5 chế độ game (kể cả AI tự tạo màn theo sở thích), gọi thoại nhập vai chấm phát âm từng từ, leo Bảng Xếp Hạng tuần, mở Rương Thưởng Chuỗi và đồng bộ trọn đời qua Google!
               </p>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 max-w-md mx-auto lg:mx-0">
@@ -533,33 +647,32 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* 4 Crisp Consumer Feature Pillars */}
           <section className="border-t-2 border-slate-100 bg-[#F7F9FC] py-14">
             <div className="mx-auto max-w-6xl px-4 sm:px-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {
                   icon: Gamepad2,
                   bg: 'bg-[#58CC02] text-white',
-                  title: 'Mặc định Vừa Học Vừa Chơi',
-                  desc: 'Lộ trình game phản xạ, ghép câu bản xứ & đấu trường phát âm 2 phút siêu cuốn.',
+                  title: '5 Chế độ Chơi & Học AI',
+                  desc: 'Phản xạ 15s, Nghe hiểu bản xứ, Ghép câu, Đấu trường Phát âm & AI tạo màn vô tận.',
                 },
                 {
                   icon: Flame,
                   bg: 'bg-[#FF9600] text-white',
                   title: 'Lịch Chuỗi & Rương Thưởng',
-                  desc: 'Hoàn thành ≥ 1 bài/ngày để thắp lửa giữ chuỗi, mở rương nhận XP, Ngọc 💎 & Khiên 🧊.',
+                  desc: 'Mốc thưởng 1–100 ngày, Nhiệm vụ mở rương mỗi ngày, Bình 2x XP & Khiên bảo vệ.',
                 },
                 {
-                  icon: Mic,
-                  bg: 'bg-[#1CB0F6] text-white',
-                  title: 'Gọi AI Chấm Phát Âm',
-                  desc: 'Luyện giọng Mỹ, Anh, Úc, Canada kèm chấm điểm từng từ và báo cáo 4 kỹ năng.',
+                  icon: Crown,
+                  bg: 'bg-[#FFC800] text-amber-950',
+                  title: 'Bảng Xếp Hạng 5 Hạng Giải',
+                  desc: 'Đua Top 3 thăng hạng mỗi tuần từ Giải Đồng lên Giải Kim Cương cùng cộng đồng.',
                 },
                 {
                   icon: Cloud,
-                  bg: 'bg-[#8B5CF6] text-white',
+                  bg: 'bg-[#1CB0F6] text-white',
                   title: 'Đồng bộ Google Drive 5TB',
-                  desc: 'Đổi điện thoại hay máy tính chỉ cần đăng nhập Google là khôi phục 100% tiến độ.',
+                  desc: 'Cài đặt lên màn hình điện thoại như app thật — đổi máy khôi phục 100% dữ liệu.',
                 },
               ].map((item) => {
                 const Icon = item.icon;
@@ -595,7 +708,10 @@ export default function HomePage() {
   const todayStats = statByDate.get(todayStr) ?? null;
   const strict = computeStrictStreak(stats, todayStr);
   const levelInfo = getLevelInfo(profile.xp);
-  const league = getLeagueFromXp(profile.xp);
+  const league = getLeagueInfo(profile.xp);
+  const boostActive = isXpBoostActive(profile.xpBoostUntil);
+  const boostMins = getXpBoostRemainingMinutes(profile.xpBoostUntil);
+
   const claimableMilestones = getClaimableMilestones(
     profile.streakDays,
     profile.longestStreak,
@@ -610,10 +726,9 @@ export default function HomePage() {
   const practicedMinutes = Math.round((todayStats?.secondsPracticed ?? 0) / 60);
   const todayLessons = todayStats?.lessonsCompleted ?? 0;
   const todayXp = todayStats?.xpEarned ?? 0;
+  const claimedQuestsToday = profile.claimedDailyQuests?.[todayStr] ?? [];
 
   const currentUnit = LEARNING_UNITS[activeUnitIdx] ?? LEARNING_UNITS[0];
-
-  // Progress along current unit's 6 stations (cycles smoothly so returning users always see active progression)
   const completedInUnit = Math.min(
     currentUnit.stations.length,
     Math.max(0, profile.totalLessonsCompleted - activeUnitIdx * 5)
@@ -623,7 +738,6 @@ export default function HomePage() {
     completedInUnit
   );
 
-  // 7-day mini strip (past 6 days + today)
   const miniWeek = Array.from({ length: 7 }).map((_, idx) => {
     const dateStr = shiftDateString(todayStr, idx - 6);
     const st = statByDate.get(dateStr);
@@ -662,7 +776,7 @@ export default function HomePage() {
     }
   }
 
-  // RIGHT STICKY GAMIFICATION RAIL (Duolingo's iconic Engagement Column)
+  // RIGHT STICKY GAMIFICATION RAIL
   const rightRail = (
     <>
       {/* 1. Top Live Stats Bar (Desktop) */}
@@ -699,7 +813,20 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {/* 2. CLAIMABLE STREAK REWARD CHEST CARD (Always Front & Center!) */}
+      {/* Active 2x XP Boost Pill */}
+      {boostActive && (
+        <div className="rounded-2xl border-2 border-violet-300 bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs font-black text-violet-800">
+            <Zap className="h-4 w-4 fill-[#FFC800] text-[#FF9600]" />
+            Đang nhân đôi 2x toàn bộ XP!
+          </div>
+          <span className="rounded-xl bg-violet-600 px-2.5 py-1 text-[11px] font-black text-white">
+            Còn {boostMins}p
+          </span>
+        </div>
+      )}
+
+      {/* 2. CLAIMABLE STREAK REWARD CHEST CARD */}
       <section
         className={`rounded-3xl border-2 p-5 space-y-4 transition ${
           claimableMilestones.length > 0
@@ -744,15 +871,15 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* Milestone Progress Pips (1 · 3 · 7 · 14 · 30 days) */}
-        <div className="grid grid-cols-5 gap-1.5">
+        {/* All 7 Milestone Pips (1 · 3 · 7 · 14 · 30 · 60 · 100 days) */}
+        <div className="grid grid-cols-7 gap-1">
           {STREAK_MILESTONES.map((m) => {
             const claimed = profile.claimedMilestones.includes(m.days);
             const ready = bestStreak >= m.days && !claimed;
             return (
               <div
                 key={m.days}
-                className={`flex flex-col items-center rounded-xl border-2 py-1.5 px-1 text-center ${
+                className={`flex flex-col items-center rounded-xl border-2 py-1.5 px-0.5 text-center ${
                   ready
                     ? 'border-amber-400 bg-amber-100 text-amber-900'
                     : claimed
@@ -760,10 +887,10 @@ export default function HomePage() {
                       : 'border-slate-200 bg-slate-50 text-slate-400'
                 }`}
               >
-                <span className="text-sm leading-none">
+                <span className="text-xs leading-none">
                   {claimed ? '✅' : ready ? '🎁' : m.emoji}
                 </span>
-                <span className="mt-1 text-[10px] font-black leading-none">
+                <span className="mt-1 text-[9px] font-black leading-none">
                   {m.days}d
                 </span>
               </div>
@@ -771,7 +898,6 @@ export default function HomePage() {
           })}
         </div>
 
-        {/* Reward Breakdown Chips */}
         <div className="flex flex-wrap gap-1.5 text-[11px] font-extrabold">
           <span className="rounded-lg bg-amber-100/90 px-2 py-1 text-amber-800">
             +{nextMilestone.rewardXp} XP
@@ -781,7 +907,7 @@ export default function HomePage() {
           </span>
           {nextMilestone.rewardFreezes > 0 && (
             <span className="rounded-lg bg-cyan-100/90 px-2 py-1 text-cyan-800">
-              +{nextMilestone.rewardFreezes} 🧊 Khiên
+              +{nextMilestone.rewardFreezes} 🧊
             </span>
           )}
           <span className="rounded-lg bg-indigo-100/80 px-2 py-1 text-indigo-800">
@@ -825,7 +951,77 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* 3. LỊCH CHUỖI 7 NGÀY (Interactive Streak Card) */}
+      {/* 3. NHIỆM VỤ HÔM NAY CÓ RƯƠNG MỞ TRỰC TIẾP (Claimable Daily Quests!) */}
+      <section className="card-duo p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-black uppercase tracking-wide text-slate-800">
+            Nhiệm vụ hôm nay
+          </h2>
+          <span className="text-[11px] font-black text-amber-600">
+            {claimedQuestsToday.length}/{DAILY_QUEST_DEFS.length} rương
+          </span>
+        </div>
+
+        <div className="space-y-3.5">
+          {DAILY_QUEST_DEFS.map((q) => {
+            const current =
+              q.id === 'lesson_1'
+                ? Math.min(1, todayLessons)
+                : q.id === 'xp_60'
+                  ? Math.min(60, todayXp)
+                  : Math.min(profile.dailyGoalMinutes, practicedMinutes);
+            const target =
+              q.id === 'lesson_1'
+                ? 1
+                : q.id === 'xp_60'
+                  ? 60
+                  : Math.max(1, profile.dailyGoalMinutes);
+            const unit =
+              q.id === 'lesson_1' ? 'bài' : q.id === 'xp_60' ? 'XP' : 'phút';
+            const title =
+              q.id === 'minutes_goal'
+                ? `Luyện tập ${profile.dailyGoalMinutes} phút`
+                : q.titleVi;
+            const pct = Math.min(100, Math.round((current / target) * 100));
+            const done = current >= target;
+            const claimed = claimedQuestsToday.includes(q.id);
+
+            return (
+              <div key={q.id} className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2 text-xs font-extrabold">
+                  <span className="text-slate-700 truncate">
+                    {q.icon} {title}
+                  </span>
+                  {claimed ? (
+                    <span className="text-[#58CC02] shrink-0">✓ Đã nhận</span>
+                  ) : done ? (
+                    <button
+                      type="button"
+                      disabled={claimingQuestId === q.id}
+                      onClick={() => void handleClaimDailyQuest(q.id, title)}
+                      className="shrink-0 inline-flex items-center gap-1 rounded-xl bg-[#FF9600] px-2.5 py-1 text-[10px] font-black text-white shadow-[0_2px_0_#D97706] hover:bg-[#FFA21A] animate-chest-wiggle cursor-pointer"
+                    >
+                      🎁 +{q.rewardGems} 💎
+                    </button>
+                  ) : (
+                    <span className="text-slate-400 shrink-0">
+                      {current}/{target} {unit}
+                    </span>
+                  )}
+                </div>
+                <div className="h-3.5 w-full rounded-full bg-slate-200 overflow-hidden">
+                  <div
+                    className={`progress-gloss h-full rounded-full transition-all duration-500 ${q.barColor}`}
+                    style={{ width: `${Math.max(done ? 100 : 6, pct)}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 4. LỊCH CHUỖI 7 NGÀY */}
       <section className="card-duo p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -889,97 +1085,36 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* 4. NHIỆM VỤ HÔM NAY (Duolingo Daily Quests) */}
-      <section className="card-duo p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-black uppercase tracking-wide text-slate-800">
-            Nhiệm vụ hôm nay
-          </h2>
-          <Link
-            href="/play"
-            className="text-xs font-extrabold text-[#1899D6] hover:underline"
-          >
-            Làm ngay
-          </Link>
-        </div>
-
-        <div className="space-y-3.5">
-          {[
-            {
-              title: 'Hoàn thành 1 bài Học & Chơi',
-              current: Math.min(1, todayLessons),
-              target: 1,
-              unit: 'bài',
-              barColor: 'bg-[#58CC02]',
-              icon: '🔥',
-            },
-            {
-              title: 'Kiếm 60 XP trong ngày',
-              current: Math.min(60, todayXp),
-              target: 60,
-              unit: 'XP',
-              barColor: 'bg-[#FFC800]',
-              icon: '⚡',
-            },
-            {
-              title: `Luyện tập ${profile.dailyGoalMinutes} phút`,
-              current: Math.min(profile.dailyGoalMinutes, practicedMinutes),
-              target: Math.max(1, profile.dailyGoalMinutes),
-              unit: 'phút',
-              barColor: 'bg-[#1CB0F6]',
-              icon: '⏱️',
-            },
-          ].map((q) => {
-            const pct = Math.min(100, Math.round((q.current / q.target) * 100));
-            const done = q.current >= q.target;
-            return (
-              <div key={q.title} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-extrabold">
-                  <span className="text-slate-700">
-                    {q.icon} {q.title}
-                  </span>
-                  <span className={done ? 'text-[#58CC02]' : 'text-slate-400'}>
-                    {done ? '✓ Xong' : `${q.current}/${q.target} ${q.unit}`}
-                  </span>
-                </div>
-                <div className="h-3.5 w-full rounded-full bg-slate-200 overflow-hidden">
-                  <div
-                    className={`progress-gloss h-full rounded-full transition-all duration-500 ${q.barColor}`}
-                    style={{ width: `${Math.max(done ? 100 : 6, pct)}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* 5. GIẢI ĐẤU & CẤP ĐỘ */}
+      {/* 5. GIẢI ĐẤU TUẦN & BẢNG XẾP HẠNG */}
       <section className="card-duo p-5 space-y-3">
-        <div className="flex items-center gap-3">
-          <LeagueTrophySvg tier={league.tier} className="h-12 w-12 shrink-0" />
-          <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-              {league.nameVi}
-            </div>
-            <div className="text-sm font-black text-slate-900 truncate">
-              Lv.{levelInfo.level} · {levelInfo.titleVi}
-            </div>
-            <div className="mt-1.5 h-2.5 w-full rounded-full bg-slate-200 overflow-hidden">
-              <div
-                className="progress-gloss h-full rounded-full bg-[#8B5CF6] transition-all duration-500"
-                style={{ width: `${Math.max(8, levelInfo.progressPct)}%` }}
-              />
-            </div>
-            <div className="mt-1 flex items-center justify-between text-[10px] font-bold text-slate-500">
-              <span>{profile.xp} XP tích lũy</span>
-              <span>
-                {levelInfo.xpInLevel}/{levelInfo.xpForNextLevel} lên Lv.
-                {levelInfo.level + 1}
-              </span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <LeagueTrophySvg tier={league.tier} className="h-12 w-12 shrink-0" />
+            <div className="min-w-0">
+              <div className="text-[11px] font-black uppercase tracking-wider text-amber-600">
+                {league.nameVi}
+              </div>
+              <div className="text-sm font-black text-slate-900 truncate">
+                Lv.{levelInfo.level} · {levelInfo.titleVi}
+              </div>
+              <div className="text-[11px] font-bold text-slate-500">
+                {profile.xp} XP ·{' '}
+                {league.nextXp
+                  ? `Còn ${Math.max(0, league.nextXp - profile.xp)} XP lên giải`
+                  : 'Hạng cao nhất 👑'}
+              </div>
             </div>
           </div>
         </div>
+
+        <Link
+          href="/leaderboard"
+          onClick={() => playTapSound()}
+          className="btn-duo btn-duo-white w-full py-2.5 text-xs uppercase text-amber-700"
+        >
+          <Crown className="h-4 w-4 text-[#FFC800] fill-[#FFC800]" />
+          Xem Bảng Xếp Hạng Tuần →
+        </Link>
 
         <div className="pt-2 border-t-2 border-slate-100 flex items-center justify-between text-[11px] font-bold">
           <span className="flex items-center gap-1.5 text-slate-500">
@@ -999,7 +1134,7 @@ export default function HomePage() {
 
   return (
     <AppShell profile={profile} authenticated={authenticated} rightRail={rightRail}>
-      {/* Top Unit Selector + Accent Switcher */}
+      {/* Top Unit Selector (4 Chapters!) + Accent Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex flex-wrap items-center gap-1.5">
           {LEARNING_UNITS.map((u, idx) => {
@@ -1013,19 +1148,18 @@ export default function HomePage() {
                   setActiveUnitIdx(idx);
                   setSelectedStationId(null);
                 }}
-                className={`rounded-2xl border-2 px-3.5 py-2 text-xs font-black uppercase tracking-wide transition cursor-pointer ${
+                className={`rounded-2xl border-2 px-3 py-2 text-xs font-black uppercase tracking-wide transition cursor-pointer ${
                   active
                     ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
                 }`}
               >
-                Chặng {idx + 1}
+                {idx === 3 ? '✨ AI Gu' : `Chặng ${idx + 1}`}
               </button>
             );
           })}
         </div>
 
-        {/* Compact Voice Accent Pill */}
         <div className="flex items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white px-3 py-1.5">
           <Headphones className="h-3.5 w-3.5 text-[#1CB0F6]" />
           <select
@@ -1046,7 +1180,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Claimable Milestone Alert Strip (visible on mobile/tablet too) */}
+      {/* Claimable Milestone Alert Strip */}
       {claimableMilestones.length > 0 && (
         <div className="rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 p-4 flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
@@ -1059,7 +1193,7 @@ export default function HomePage() {
               </div>
               <div className="text-xs font-semibold text-amber-800">
                 Mở rương nhận +{claimableMilestones[0].rewardXp} XP, +
-                {claimableMilestones[0].rewardGems} 💎 và huy hiệu{' '}
+                {claimableMilestones[0].rewardGems} 💎 &amp; huy hiệu{' '}
                 {claimableMilestones[0].badgeLabel}
               </div>
             </div>
@@ -1110,7 +1244,6 @@ export default function HomePage() {
 
       {/* INTERACTIVE DUOLINGO S-CURVE WINDING LEARNING PATH */}
       <section className="card-duo relative overflow-hidden px-4 sm:px-8 py-8">
-        {/* Subtle decorative floating Mascot Milo beside the path */}
         <div className="hidden sm:flex flex-col items-center gap-2 absolute right-5 top-1/2 -translate-y-1/2 w-44 pointer-events-none select-none">
           <div className="rounded-2xl border-2 border-slate-200 bg-white px-3.5 py-2.5 text-[11px] font-extrabold text-slate-700 shadow-xs text-center leading-snug">
             {strict.studiedToday
@@ -1123,7 +1256,6 @@ export default function HomePage() {
           />
         </div>
 
-        {/* S-Curve Nodes Stack */}
         <div className="relative mx-auto flex max-w-md sm:mr-48 flex-col items-center gap-7">
           {currentUnit.stations.map((station, idx) => {
             const Icon = getStationIcon(station.kind);
@@ -1141,7 +1273,6 @@ export default function HomePage() {
                   transform: `translateX(${station.offsetPx}px)`,
                 }}
               >
-                {/* Floating bouncing START / OPEN CHEST pill */}
                 {(isActive || chestReady) && !isSelected && (
                   <div className="mb-2.5 animate-gentle-float">
                     <div
@@ -1157,7 +1288,6 @@ export default function HomePage() {
                   </div>
                 )}
 
-                {/* Tactile 3D Circular Path Node */}
                 <button
                   type="button"
                   onClick={() => {
@@ -1194,8 +1324,7 @@ export default function HomePage() {
                   )}
                 </button>
 
-                {/* Crisp Node Label directly underneath */}
-                <div className="mt-2.5 text-center max-w-[175px]">
+                <div className="mt-2.5 text-center max-w-[180px]">
                   <div className="text-xs font-black text-slate-800 leading-tight">
                     {station.titleVi}
                   </div>
@@ -1204,7 +1333,6 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Expanded Tactile Popover Card when tapped */}
                 {isSelected && (
                   <div className="animate-pop-in mt-3 w-72 rounded-2xl border-2 border-slate-200 bg-white p-4 shadow-xl z-20 space-y-3 text-left">
                     <div className="flex items-start justify-between gap-2">
@@ -1231,7 +1359,9 @@ export default function HomePage() {
                           ? 'btn-duo-orange'
                           : station.kind === 'call' || station.kind === 'boss'
                             ? 'btn-duo-blue'
-                            : 'btn-duo-green'
+                            : station.kind === 'ai-quiz'
+                              ? 'btn-duo-purple'
+                              : 'btn-duo-green'
                       }`}
                     >
                       {isChest
@@ -1240,7 +1370,9 @@ export default function HomePage() {
                           : 'Xem mốc thưởng chuỗi'
                         : station.kind === 'call' || station.kind === 'boss'
                           ? 'Bắt đầu gọi AI ngay'
-                          : 'Chơi ngay (2 phút)'}
+                          : station.kind === 'ai-quiz'
+                            ? '✨ AI Tạo Màn Ngay'
+                            : 'Chơi ngay (2 phút)'}
                       <ArrowRight className="h-4 w-4 stroke-[3]" />
                     </button>
                   </div>
@@ -1251,46 +1383,54 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* QUICK PLAY ARCADE STRIP (Direct 1-tap to any of the 3 games) */}
+      {/* QUICK PLAY ARCADE STRIP (4 + AI Infinite!) */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-black uppercase tracking-wide text-slate-800 flex items-center gap-2">
             <Gamepad2 className="h-4 w-4 text-[#FF9600]" />
-            Chơi nhanh không cần chờ
+            Đấu trường 5 Chế độ Chơi Nhanh
           </h2>
           <Link
             href="/play"
             className="text-xs font-extrabold text-[#1899D6] hover:underline"
           >
-            Vào Đấu trường →
+            Xem tất cả →
           </Link>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              title: 'Phản xạ 15 giây',
-              sub: 'Chọn câu chuẩn bản xứ',
+              title: 'Phản xạ 15s',
+              sub: 'Chọn câu chuẩn Tây',
               badge: '+85 XP · 🔥',
               href: '/play?mode=speed',
               icon: Zap,
               accent: 'bg-[#FF9600] text-white',
             },
             {
+              title: 'Nghe Hiểu Bản Xứ',
+              sub: 'Đoán ý qua giọng thật',
+              badge: '+90 XP · 🔥',
+              href: '/play?mode=listen',
+              icon: Headphones,
+              accent: 'bg-[#1CB0F6] text-white',
+            },
+            {
               title: 'Nghe & Ghép câu',
-              sub: 'Luyện nghe + xếp thẻ từ',
+              sub: 'Xếp thẻ từ siêu cuốn',
               badge: '+95 XP · 🔥',
               href: '/play?mode=build',
               icon: Puzzle,
               accent: 'bg-[#8B5CF6] text-white',
             },
             {
-              title: 'Đấu trường Phát âm',
-              sub: 'AI chấm từng từ 0–100',
-              badge: '+110 XP · 🔥',
-              href: '/play?mode=pronounce',
-              icon: Mic,
-              accent: 'bg-[#58CC02] text-white',
+              title: 'AI Tạo Màn Theo Gu',
+              sub: 'Mới 100% theo sở thích',
+              badge: '✨ Vô tận · 🔥',
+              href: '/play?mode=ai-quiz',
+              icon: Wand2,
+              accent: 'bg-gradient-to-br from-[#F43F5E] to-[#FF9600] text-white',
             },
           ].map((g) => {
             const Icon = g.icon;
@@ -1299,7 +1439,7 @@ export default function HomePage() {
                 key={g.title}
                 href={g.href}
                 onClick={() => playTapSound()}
-                className="card-duo-elevated p-4 flex items-center gap-3 hover:-translate-y-0.5 hover:border-slate-300 transition"
+                className="card-duo-elevated p-3.5 flex items-center gap-3 hover:-translate-y-0.5 hover:border-slate-300 transition"
               >
                 <div
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${g.accent}`}
@@ -1323,16 +1463,71 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* COLLAPSIBLE VOICE CALL SCENARIOS LIBRARY */}
+      {/* CUSTOM AI VOICE ROLEPLAY BUILDER */}
+      <section className="card-duo-elevated p-5 space-y-4">
+        <div>
+          <span className="inline-flex items-center gap-1 rounded-xl bg-[#DDF4FF] px-2.5 py-1 text-[10px] font-black uppercase text-[#1899D6]">
+            <Sparkles className="h-3 w-3" />
+            Tính năng Pro AI
+          </span>
+          <h2 className="mt-1.5 text-base font-black text-slate-900">
+            Tạo Tình Huống Gọi Thoại AI Bất Kỳ Bạn Muốn
+          </h2>
+          <p className="text-xs font-medium text-slate-500 mt-0.5">
+            Gõ bất kỳ bối cảnh thực tế nào — Gia sư AI sẽ nhập vai nói chuyện trực tiếp cùng bạn ngay lập tức!
+          </p>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!customRoleplayInput.trim()) return;
+            startCall('free-talk-custom', customRoleplayInput.trim());
+          }}
+          className="flex flex-col sm:flex-row gap-2.5"
+        >
+          <input
+            type="text"
+            value={customRoleplayInput}
+            onChange={(e) => setCustomRoleplayInput(e.target.value)}
+            maxLength={140}
+            placeholder="Ví dụ: Phỏng vấn xin việc React, Trả giá ở chợ đêm, Hỏi đường ở London..."
+            className="flex-1 rounded-2xl border-2 border-slate-200 bg-[#F7F9FC] px-4 py-3 text-sm font-semibold text-slate-800 focus:border-[#1CB0F6] focus:bg-white focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={!customRoleplayInput.trim()}
+            className="btn-duo btn-duo-blue px-5 py-3 text-xs uppercase shrink-0"
+          >
+            <PhoneCall className="h-4 w-4" />
+            Gọi nhập vai ngay
+          </button>
+        </form>
+
+        <div className="flex flex-wrap gap-1.5">
+          {CUSTOM_ROLEPLAY_PRESETS.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => startCall('free-talk-custom', preset)}
+              className="rounded-xl border border-slate-200 bg-[#F7F9FC] px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:border-[#1CB0F6] hover:bg-[#DDF4FF]/50 hover:text-[#1899D6] transition cursor-pointer"
+            >
+              ✨ {preset}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* VOICE CALL SCENARIOS LIBRARY */}
       <section className="card-duo p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-black uppercase tracking-wide text-slate-800 flex items-center gap-2">
               <PhoneCall className="h-4 w-4 text-[#1CB0F6]" />
-              Thư viện Gọi Thoại Nhập Vai AI ({SCENARIOS.length} tình huống)
+              Thư viện Gọi Thoại AI Có Sẵn ({SCENARIOS.length} tình huống)
             </h2>
             <p className="text-xs font-medium text-slate-500 mt-0.5">
-              Nói chuyện trực tiếp với gia sư AI — hoàn thành ≥ 3 lượt thoại để giữ chuỗi 🔥 &amp; nhận báo cáo 4 kỹ năng.
+              Hoàn thành ≥ 3 lượt thoại để giữ chuỗi 🔥 &amp; nhận báo cáo đánh giá 4 kỹ năng.
             </p>
           </div>
           <button
@@ -1381,11 +1576,15 @@ export default function HomePage() {
             className="inline-flex items-center gap-1.5 font-extrabold text-slate-600 hover:text-[#1899D6]"
           >
             <BookOpen className="h-4 w-4 text-[#8B5CF6]" />
-            Ôn Flashcard Sổ tay câu bản xứ →
+            Ôn Flashcard thông minh (SRS) →
           </Link>
-          <span className="text-[11px] font-bold text-slate-400">
-            Mẹo: Đổi giọng Mỹ/Anh/Úc/Canada ở góc trên phải
-          </span>
+          <Link
+            href="/leaderboard"
+            className="inline-flex items-center gap-1.5 font-extrabold text-amber-600 hover:underline"
+          >
+            <Crown className="h-4 w-4" />
+            Đua Top Bảng Xếp Hạng →
+          </Link>
         </div>
       </section>
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  LISTENING_CHALLENGES,
   pickShuffledItems,
   PRONUNCIATION_CHALLENGES,
   SENTENCE_BUILD_QUESTIONS,
@@ -8,14 +9,19 @@ import {
 import {
   buildMonthCalendarGrid,
   computeStrictStreak,
+  DAILY_QUEST_DEFS,
   getClaimableMilestones,
+  getLeagueInfo,
   getLevelInfo,
+  getXpBoostRemainingMinutes,
   isStreakQualifyingStat,
+  isXpBoostActive,
   MIN_CALL_TURNS_FOR_LESSON,
+  STREAK_MILESTONES,
 } from '@/lib/gamification';
 import type { DailyStat } from '@/types';
 
-describe('gamification & strict streak rules', () => {
+describe('gamification, leagues, 2x XP boost & strict streak rules', () => {
   it('requires at least 1 completed lesson (or freeze) to qualify a day for streak', () => {
     expect(MIN_CALL_TURNS_FOR_LESSON).toBe(3);
 
@@ -49,7 +55,7 @@ describe('gamification & strict streak rules', () => {
         secondsPracticed: 30,
         messagesSent: 1,
         sessionsCompleted: 1,
-        lessonsCompleted: 0, // Incomplete call today should NOT count!
+        lessonsCompleted: 0,
         xpEarned: 5,
       },
       {
@@ -81,11 +87,10 @@ describe('gamification & strict streak rules', () => {
 
     const res = computeStrictStreak(stats, '2026-11-23');
     expect(res.studiedToday).toBe(false);
-    expect(res.currentStreak).toBe(3); // 20, 21 (freeze), 22
+    expect(res.currentStreak).toBe(3);
     expect(res.longestStreak).toBe(3);
     expect(res.canFreezeYesterday).toBe(false);
 
-    // If yesterday (2026-11-22) was missed while 2026-11-21 was studied -> canFreezeYesterday is true
     const missedYesterday = stats.filter((s) => s.practiceDate !== '2026-11-22');
     const resMissed = computeStrictStreak(missedYesterday, '2026-11-23');
     expect(resMissed.currentStreak).toBe(0);
@@ -121,7 +126,6 @@ describe('gamification & strict streak rules', () => {
       },
     ];
 
-    // November 2026 (monthIndex = 10)
     const grid = buildMonthCalendarGrid(2026, 10, stats, '2026-11-23');
     expect(grid.length % 7).toBe(0);
 
@@ -135,22 +139,45 @@ describe('gamification & strict streak rules', () => {
     expect(byDate.get('2026-11-24')?.status).toBe('future');
   });
 
-  it('calculates levels and claimable streak milestones accurately', () => {
+  it('calculates levels, 5-tier leagues, 2x XP boost, and 1..100-day streak milestones', () => {
     expect(getLevelInfo(0).level).toBe(1);
     expect(getLevelInfo(120).level).toBe(2);
     expect(getLevelInfo(500).level).toBeGreaterThanOrEqual(3);
 
-    const claimable = getClaimableMilestones(7, 7, [1]);
-    expect(claimable.map((m) => m.days)).toEqual([3, 7]);
+    expect(STREAK_MILESTONES.map((m) => m.days)).toEqual([
+      1, 3, 7, 14, 30, 60, 100,
+    ]);
+    const claimable = getClaimableMilestones(100, 100, [1, 3, 7, 14, 30]);
+    expect(claimable.map((m) => m.days)).toEqual([60, 100]);
+
+    expect(getLeagueInfo(0).tier).toBe('bronze');
+    expect(getLeagueInfo(250).tier).toBe('silver');
+    expect(getLeagueInfo(600).tier).toBe('gold');
+    expect(getLeagueInfo(1200).tier).toBe('emerald');
+    expect(getLeagueInfo(2500).tier).toBe('diamond');
+
+    const now = 1_700_000_000_000;
+    expect(isXpBoostActive(null, now)).toBe(false);
+    expect(isXpBoostActive(now - 1000, now)).toBe(false);
+    expect(isXpBoostActive(now + 10 * 60_000, now)).toBe(true);
+    expect(getXpBoostRemainingMinutes(now + 10 * 60_000, now)).toBe(10);
+
+    expect(DAILY_QUEST_DEFS).toHaveLength(3);
   });
 
-  it('provides valid play-to-learn game question banks', () => {
-    expect(SPEED_MATCH_QUESTIONS.length).toBeGreaterThanOrEqual(10);
+  it('provides valid expanded play-to-learn question banks including Listening Challenges', () => {
+    expect(SPEED_MATCH_QUESTIONS.length).toBeGreaterThanOrEqual(24);
     for (const q of SPEED_MATCH_QUESTIONS) {
       expect(q.options).toContain(q.correctEn);
     }
-    expect(SENTENCE_BUILD_QUESTIONS.length).toBeGreaterThanOrEqual(8);
-    expect(PRONUNCIATION_CHALLENGES.length).toBeGreaterThanOrEqual(6);
+    expect(SENTENCE_BUILD_QUESTIONS.length).toBeGreaterThanOrEqual(16);
+    expect(PRONUNCIATION_CHALLENGES.length).toBeGreaterThanOrEqual(12);
+    expect(LISTENING_CHALLENGES.length).toBeGreaterThanOrEqual(15);
+    for (const item of LISTENING_CHALLENGES) {
+      expect(item.spokenEn.length).toBeGreaterThan(8);
+      expect(item.optionsVi).toContain(item.correctAnswerVi);
+      expect(item.optionsVi.length).toBe(4);
+    }
     expect(pickShuffledItems(SPEED_MATCH_QUESTIONS, 5)).toHaveLength(5);
   });
 });

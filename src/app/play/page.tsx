@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Gamepad2,
   Gift,
+  Headphones,
   Heart,
   Loader2,
   Mic,
@@ -16,6 +17,7 @@ import {
   Timer,
   Trophy,
   Volume2,
+  Wand2,
   X,
   XCircle,
   Zap,
@@ -49,10 +51,12 @@ import {
   recordLessonProgress,
 } from '@/lib/data-store';
 import {
+  LISTENING_CHALLENGES,
   pickShuffledItems,
   PRONUNCIATION_CHALLENGES,
   SENTENCE_BUILD_QUESTIONS,
   SPEED_MATCH_QUESTIONS,
+  type ListeningChallengeItem,
   type PronunciationChallengeItem,
   type SentenceBuildQuestion,
   type SpeedMatchQuestion,
@@ -60,6 +64,8 @@ import {
 import {
   computeStrictStreak,
   getLevelInfo,
+  getXpBoostRemainingMinutes,
+  isXpBoostActive,
   STREAK_MILESTONES,
 } from '@/lib/gamification';
 import { AI_PERSONAS, pickPersona } from '@/lib/scenarios';
@@ -78,11 +84,15 @@ import type {
   UserProfile,
 } from '@/types';
 
-type GameMode = 'lobby' | 'speed' | 'build' | 'pronounce' | 'victory';
+type GameMode = 'lobby' | 'speed' | 'listen' | 'build' | 'pronounce' | 'victory';
 type GameCategoryFilter = Exclude<TopicCategory, 'freetalk'> | null;
 
 interface ShuffledSpeedItem extends SpeedMatchQuestion {
   shuffledOptions: string[];
+}
+
+interface ShuffledListeningItem extends ListeningChallengeItem {
+  shuffledOptionsVi: string[];
 }
 
 interface WordTile {
@@ -124,7 +134,8 @@ function PlayPageInner() {
   const [mode, setMode] = useState<GameMode>('lobby');
   const [roundStartTs, setRoundStartTs] = useState<number>(0);
 
-  // Speed Match state
+  // Speed Match (+ AI Custom Quiz) state
+  const [speedRoundTitle, setSpeedRoundTitle] = useState('⚡ Phản xạ Bản xứ');
   const [speedItems, setSpeedItems] = useState<ShuffledSpeedItem[]>([]);
   const [speedIdx, setSpeedIdx] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -133,6 +144,17 @@ function PlayPageInner() {
   const [bestCombo, setBestCombo] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [timeLeft, setTimeLeft] = useState(15);
+
+  // AI Custom Quiz Generator state
+  const [customQuizTopic, setCustomQuizTopic] = useState('');
+  const [generatingAiQuiz, setGeneratingAiQuiz] = useState(false);
+  const [aiQuizError, setAiQuizError] = useState<string | null>(null);
+
+  // Listening Comprehension state
+  const [listenItems, setListenItems] = useState<ShuffledListeningItem[]>([]);
+  const [listenIdx, setListenIdx] = useState(0);
+  const [listenSelected, setListenSelected] = useState<string | null>(null);
+  const [showListenScript, setShowListenScript] = useState(false);
 
   // Sentence Build state
   const [buildItems, setBuildItems] = useState<SentenceBuildQuestion[]>([]);
@@ -214,6 +236,19 @@ function PlayPageInner() {
     }
   }, []);
 
+  const speakText = useCallback(
+    (text: string, speed = 0.88, customPersona?: AiPersona) => {
+      const p = customPersona ?? persona;
+      void playNaturalVoice({
+        text,
+        voice: p.edgeVoice,
+        browserLang: p.browserLang,
+        speed,
+      });
+    },
+    [persona]
+  );
+
   const setupBuildTiles = useCallback(
     (q: SentenceBuildQuestion, activePersona: AiPersona) => {
       const shuffled = pickShuffledItems(
@@ -233,28 +268,72 @@ function PlayPageInner() {
     []
   );
 
-  const launchSpeedMatch = useCallback((cat: GameCategoryFilter = null) => {
-    stopVoicePlayback();
-    const picked: ShuffledSpeedItem[] = pickByCategory(
-      SPEED_MATCH_QUESTIONS,
-      5,
-      cat
-    ).map((q) => ({
-      ...q,
-      shuffledOptions: pickShuffledItems(q.options, q.options.length),
-    }));
-    setSpeedItems(picked);
-    setSpeedIdx(0);
-    setSelectedOption(null);
-    setHearts(3);
-    setCombo(0);
-    setBestCombo(0);
-    setCorrectCount(0);
-    setTimeLeft(15);
-    setRoundStartTs(Date.now());
-    setClaimedInVictory([]);
-    setMode('speed');
-  }, []);
+  const launchSpeedWithItems = useCallback(
+    (rawItems: SpeedMatchQuestion[], title = '⚡ Phản xạ Bản xứ') => {
+      stopVoicePlayback();
+      const picked: ShuffledSpeedItem[] = rawItems.map((q) => ({
+        ...q,
+        shuffledOptions: pickShuffledItems(q.options, q.options.length),
+      }));
+      setSpeedRoundTitle(title);
+      setSpeedItems(picked);
+      setSpeedIdx(0);
+      setSelectedOption(null);
+      setHearts(3);
+      setCombo(0);
+      setBestCombo(0);
+      setCorrectCount(0);
+      setTimeLeft(15);
+      setRoundStartTs(Date.now());
+      setClaimedInVictory([]);
+      setMode('speed');
+    },
+    []
+  );
+
+  const launchSpeedMatch = useCallback(
+    (cat: GameCategoryFilter = null) => {
+      const picked = pickByCategory(SPEED_MATCH_QUESTIONS, 5, cat);
+      launchSpeedWithItems(picked, '⚡ Phản xạ Bản xứ');
+    },
+    [launchSpeedWithItems]
+  );
+
+  const launchListeningChallenge = useCallback(
+    (activePersona: AiPersona, cat: GameCategoryFilter = null) => {
+      stopVoicePlayback();
+      const picked: ShuffledListeningItem[] = pickByCategory(
+        LISTENING_CHALLENGES,
+        5,
+        cat
+      ).map((item) => ({
+        ...item,
+        shuffledOptionsVi: pickShuffledItems(
+          item.optionsVi,
+          item.optionsVi.length
+        ),
+      }));
+      setListenItems(picked);
+      setListenIdx(0);
+      setListenSelected(null);
+      setShowListenScript(false);
+      setCorrectCount(0);
+      setCombo(0);
+      setBestCombo(0);
+      setRoundStartTs(Date.now());
+      setClaimedInVictory([]);
+      setMode('listen');
+      if (picked[0]) {
+        void playNaturalVoice({
+          text: picked[0].spokenEn,
+          voice: activePersona.edgeVoice,
+          browserLang: activePersona.browserLang,
+          speed: 0.88,
+        });
+      }
+    },
+    []
+  );
 
   const launchSentenceBuild = useCallback(
     (activePersona: AiPersona, cat: GameCategoryFilter = null) => {
@@ -289,6 +368,51 @@ function PlayPageInner() {
     setMode('pronounce');
   }, []);
 
+  const launchAiCustomQuiz = useCallback(
+    async (prof: UserProfile | null, topicOverride?: string) => {
+      setAiQuizError(null);
+      setGeneratingAiQuiz(true);
+      try {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        const personalKey = getLocalPersonalKey();
+        if (personalKey && prof?.apiKeyMode === 'personal') {
+          headers['x-user-gemini-key'] = personalKey;
+        }
+        const res = await fetch('/api/tutor/generate-quiz', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            hobbies: prof?.hobbies ?? [],
+            jobField: prof?.jobField ?? '',
+            englishLevel: prof?.englishLevel ?? 'A0-A1',
+            customTopic: topicOverride?.trim() || undefined,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !Array.isArray(data.questions) || data.questions.length < 3) {
+          throw new Error(
+            data.error || 'AI chưa tạo xong màn chơi. Bạn hãy bấm thử lại nhé!'
+          );
+        }
+        launchSpeedWithItems(
+          data.questions as SpeedMatchQuestion[],
+          `✨ ${data.topicTitleVi || 'Màn chơi AI theo sở thích'}`
+        );
+      } catch (err) {
+        setAiQuizError(
+          err instanceof Error
+            ? err.message
+            : 'Không thể kết nối AI tạo màn chơi lúc này.'
+        );
+      } finally {
+        setGeneratingAiQuiz(false);
+      }
+    },
+    [launchSpeedWithItems]
+  );
+
   useEffect(() => {
     let active = true;
     async function load() {
@@ -308,7 +432,6 @@ function PlayPageInner() {
       setPersona(resolvedPersona);
       setLoading(false);
 
-      // Direct deep-link launch from the Duolingo Learning Path nodes!
       if (!autoLaunchedRef.current && initialModeParam) {
         autoLaunchedRef.current = true;
         const validCat: GameCategoryFilter =
@@ -319,10 +442,14 @@ function PlayPageInner() {
             : null;
         if (initialModeParam === 'speed') {
           launchSpeedMatch(validCat);
+        } else if (initialModeParam === 'listen') {
+          launchListeningChallenge(resolvedPersona, validCat);
         } else if (initialModeParam === 'build') {
           launchSentenceBuild(resolvedPersona, validCat);
         } else if (initialModeParam === 'pronounce') {
           launchPronunciationArena(validCat);
+        } else if (initialModeParam === 'ai-quiz') {
+          void launchAiCustomQuiz(prof);
         }
       }
     }
@@ -335,8 +462,10 @@ function PlayPageInner() {
     initialModeParam,
     initialCategoryParam,
     launchSpeedMatch,
+    launchListeningChallenge,
     launchSentenceBuild,
     launchPronunciationArena,
+    launchAiCustomQuiz,
   ]);
 
   // Countdown timer for Speed Match
@@ -355,54 +484,210 @@ function PlayPageInner() {
     return () => clearTimeout(timer);
   }, [mode, selectedOption, timeLeft]);
 
-  function speakText(text: string, speed = 0.88) {
-    void playNaturalVoice({
-      text,
-      voice: persona.edgeVoice,
-      browserLang: persona.browserLang,
-      speed,
-    });
-  }
-
-  async function finishGameRound(params: {
-    gameTitle: string;
-    xpEarned: number;
-    gemsEarned: number;
-    scoreText: string;
-    extraTip: string;
-    completedLesson: boolean;
-  }) {
-    setSavingVictory(true);
-    setMode('victory');
-    setVictoryMeta({
-      gameTitle: params.gameTitle,
-      scoreText: params.scoreText,
-      extraTip: params.extraTip,
-    });
-
-    const elapsedSec = Math.max(
-      20,
-      Math.round((Date.now() - roundStartTs) / 1000)
-    );
-
-    try {
-      const reward = await recordLessonProgress({
-        durationSeconds: elapsedSec,
-        userMessagesSent: 5,
-        completedLesson: params.completedLesson,
-        xpEarned: params.xpEarned,
-        gemsEarned: params.gemsEarned,
-        sessionsDelta: 1,
+  const finishGameRound = useCallback(
+    async (params: {
+      gameTitle: string;
+      xpEarned: number;
+      gemsEarned: number;
+      scoreText: string;
+      extraTip: string;
+      completedLesson: boolean;
+    }) => {
+      setSavingVictory(true);
+      setMode('victory');
+      setVictoryMeta({
+        gameTitle: params.gameTitle,
+        scoreText: params.scoreText,
+        extraTip: params.extraTip,
       });
-      setVictoryReward(reward);
-      if (reward.lessonCompleted) {
-        playVictoryFanfare();
+
+      const elapsedSec = Math.max(
+        20,
+        Math.round((Date.now() - roundStartTs) / 1000)
+      );
+
+      try {
+        const reward = await recordLessonProgress({
+          durationSeconds: elapsedSec,
+          userMessagesSent: 5,
+          completedLesson: params.completedLesson,
+          xpEarned: params.xpEarned,
+          gemsEarned: params.gemsEarned,
+          sessionsDelta: 1,
+        });
+        setVictoryReward(reward);
+        if (reward.lessonCompleted) {
+          playVictoryFanfare();
+        }
+        await refreshProgress();
+      } finally {
+        setSavingVictory(false);
       }
-      await refreshProgress();
-    } finally {
-      setSavingVictory(false);
+    },
+    [roundStartTs, refreshProgress]
+  );
+
+  const handleSelectSpeedOption = useCallback(
+    (opt: string) => {
+      if (selectedOption !== null) return;
+      const current = speedItems[speedIdx];
+      if (!current) return;
+
+      setSelectedOption(opt);
+      const isCorrect = opt === current.correctEn;
+      if (isCorrect) {
+        playCorrectSound();
+        setCorrectCount((c) => c + 1);
+        setCombo((c) => {
+          const next = c + 1;
+          setBestCombo((b) => Math.max(b, next));
+          return next;
+        });
+      } else {
+        playWrongSound();
+        setCombo(0);
+        setHearts((h) => Math.max(0, h - 1));
+      }
+      speakText(current.correctEn, 0.9);
+    },
+    [selectedOption, speedItems, speedIdx, speakText]
+  );
+
+  const handleNextSpeedQuestion = useCallback(() => {
+    playTapSound();
+    stopVoicePlayback();
+    if (speedIdx + 1 >= speedItems.length) {
+      const bonusXp = bestCombo * 5 + correctCount * 8;
+      const passed = correctCount >= 3;
+      void finishGameRound({
+        gameTitle: speedRoundTitle,
+        xpEarned: passed ? 65 + bonusXp : 25,
+        gemsEarned: passed ? 20 + Math.min(10, bestCombo * 2) : 5,
+        scoreText: `${correctCount}/${speedItems.length} câu đúng · Combo cao nhất x${bestCombo}`,
+        extraTip: passed
+          ? 'Tuyệt vời! Bạn đã hoàn thành trọn vẹn 1 bài học và thắp lửa giữ chuỗi hôm nay!'
+          : 'Bạn cần đúng ít nhất 3/5 câu để tính hoàn thành bài giữ chuỗi. Thử lại nhé!',
+        completedLesson: passed,
+      });
+      return;
     }
-  }
+    setSpeedIdx((i) => i + 1);
+    setSelectedOption(null);
+    setTimeLeft(15);
+  }, [speedIdx, speedItems.length, bestCombo, correctCount, speedRoundTitle, finishGameRound]);
+
+  const handleSelectListenOption = useCallback(
+    (optVi: string) => {
+      if (listenSelected !== null) return;
+      const current = listenItems[listenIdx];
+      if (!current) return;
+
+      setListenSelected(optVi);
+      setShowListenScript(true);
+      const isCorrect = optVi === current.correctAnswerVi;
+      if (isCorrect) {
+        playCorrectSound();
+        setCorrectCount((c) => c + 1);
+        setCombo((c) => {
+          const next = c + 1;
+          setBestCombo((b) => Math.max(b, next));
+          return next;
+        });
+      } else {
+        playWrongSound();
+        setCombo(0);
+      }
+    },
+    [listenSelected, listenItems, listenIdx]
+  );
+
+  const handleNextListenQuestion = useCallback(() => {
+    playTapSound();
+    stopVoicePlayback();
+    if (listenIdx + 1 >= listenItems.length) {
+      const passed = correctCount >= 3;
+      void finishGameRound({
+        gameTitle: '🎧 Nghe Hiểu Bản Xứ',
+        xpEarned: passed ? 70 + correctCount * 8 + bestCombo * 4 : 25,
+        gemsEarned: passed ? 25 : 5,
+        scoreText: `${correctCount}/${listenItems.length} tình huống nghe chuẩn`,
+        extraTip: passed
+          ? 'Đôi tai cực nhạy! Bạn đã nghe hiểu chính xác cách nói đời thực của người bản xứ và giữ chuỗi hôm nay!'
+          : 'Bạn cần nghe đúng ít nhất 3/5 tình huống để giữ chuỗi. Bấm Nghe chậm 0.7x và thử lại nhé!',
+        completedLesson: passed,
+      });
+      return;
+    }
+    const nextIdx = listenIdx + 1;
+    setListenIdx(nextIdx);
+    setListenSelected(null);
+    setShowListenScript(false);
+    const nextItem = listenItems[nextIdx];
+    if (nextItem) {
+      speakText(nextItem.spokenEn, 0.88);
+    }
+  }, [listenIdx, listenItems, correctCount, bestCombo, finishGameRound, speakText]);
+
+  // Power-user keyboard shortcuts (1-4 to pick, Enter to continue, R to replay audio)
+  useEffect(() => {
+    if (mode !== 'speed' && mode !== 'listen') return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      if (mode === 'speed') {
+        const cur = speedItems[speedIdx];
+        if (!cur) return;
+        if (selectedOption === null) {
+          const idx = Number(e.key) - 1;
+          if (idx >= 0 && idx < cur.shuffledOptions.length) {
+            e.preventDefault();
+            handleSelectSpeedOption(cur.shuffledOptions[idx]);
+          }
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleNextSpeedQuestion();
+        } else if (e.key.toLowerCase() === 'r') {
+          speakText(cur.correctEn, 0.85);
+        }
+      } else if (mode === 'listen') {
+        const cur = listenItems[listenIdx];
+        if (!cur) return;
+        if (e.key.toLowerCase() === 'r') {
+          speakText(cur.spokenEn, 0.88);
+          return;
+        }
+        if (listenSelected === null) {
+          const idx = Number(e.key) - 1;
+          if (idx >= 0 && idx < cur.shuffledOptionsVi.length) {
+            e.preventDefault();
+            handleSelectListenOption(cur.shuffledOptionsVi[idx]);
+          }
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleNextListenQuestion();
+        }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    mode,
+    speedItems,
+    speedIdx,
+    selectedOption,
+    listenItems,
+    listenIdx,
+    listenSelected,
+    handleSelectSpeedOption,
+    handleNextSpeedQuestion,
+    handleSelectListenOption,
+    handleNextListenQuestion,
+    speakText,
+  ]);
 
   async function handleClaimVictoryMilestone(days: number) {
     const m = STREAK_MILESTONES.find((item) => item.days === days);
@@ -424,52 +709,6 @@ function PlayPageInner() {
     } finally {
       setClaimingDays(null);
     }
-  }
-
-  function handleSelectSpeedOption(opt: string) {
-    if (selectedOption !== null) return;
-    const current = speedItems[speedIdx];
-    if (!current) return;
-
-    setSelectedOption(opt);
-    const isCorrect = opt === current.correctEn;
-    if (isCorrect) {
-      playCorrectSound();
-      setCorrectCount((c) => c + 1);
-      setCombo((c) => {
-        const next = c + 1;
-        setBestCombo((b) => Math.max(b, next));
-        return next;
-      });
-    } else {
-      playWrongSound();
-      setCombo(0);
-      setHearts((h) => Math.max(0, h - 1));
-    }
-    speakText(current.correctEn, 0.9);
-  }
-
-  function handleNextSpeedQuestion() {
-    playTapSound();
-    stopVoicePlayback();
-    if (speedIdx + 1 >= speedItems.length) {
-      const bonusXp = bestCombo * 5 + correctCount * 8;
-      const passed = correctCount >= 3;
-      void finishGameRound({
-        gameTitle: '⚡ Phản xạ Bản xứ',
-        xpEarned: passed ? 65 + bonusXp : 25,
-        gemsEarned: passed ? 20 + Math.min(10, bestCombo * 2) : 5,
-        scoreText: `${correctCount}/${speedItems.length} câu đúng · Combo cao nhất x${bestCombo}`,
-        extraTip: passed
-          ? 'Tuyệt vời! Bạn đã hoàn thành trọn vẹn 1 bài học và thắp lửa giữ chuỗi hôm nay!'
-          : 'Bạn cần đúng ít nhất 3/5 câu để tính hoàn thành bài giữ chuỗi. Thử lại nhé!',
-        completedLesson: passed,
-      });
-      return;
-    }
-    setSpeedIdx((i) => i + 1);
-    setSelectedOption(null);
-    setTimeLeft(15);
   }
 
   function handlePickWordTile(tile: WordTile) {
@@ -718,26 +957,37 @@ function PlayPageInner() {
   }
 
   const levelInfo = getLevelInfo(profile.xp);
+  const boostActive = isXpBoostActive(profile.xpBoostUntil);
+  const boostMins = getXpBoostRemainingMinutes(profile.xpBoostUntil);
   const currentSpeed = speedItems[speedIdx];
+  const currentListen = listenItems[listenIdx];
   const currentBuild = buildItems[buildIdx];
   const currentPron = pronItems[pronIdx];
 
-  // ACTIVE DISTRACTION-FREE DUOLINGO LESSON SCREEN (speed / build / pronounce)
-  if (mode === 'speed' || mode === 'build' || mode === 'pronounce') {
+  // ACTIVE DISTRACTION-FREE DUOLINGO LESSON SCREEN
+  if (
+    mode === 'speed' ||
+    mode === 'listen' ||
+    mode === 'build' ||
+    mode === 'pronounce'
+  ) {
     const progressPct =
       mode === 'speed'
         ? ((speedIdx + (selectedOption ? 1 : 0)) / Math.max(1, speedItems.length)) *
           100
-        : mode === 'build'
-          ? ((buildIdx + (buildChecked !== 'idle' ? 1 : 0)) /
-              Math.max(1, buildItems.length)) *
+        : mode === 'listen'
+          ? ((listenIdx + (listenSelected ? 1 : 0)) /
+              Math.max(1, listenItems.length)) *
             100
-          : ((pronIdx + (pronResult ? 1 : 0)) / Math.max(1, pronItems.length)) *
-            100;
+          : mode === 'build'
+            ? ((buildIdx + (buildChecked !== 'idle' ? 1 : 0)) /
+                Math.max(1, buildItems.length)) *
+              100
+            : ((pronIdx + (pronResult ? 1 : 0)) / Math.max(1, pronItems.length)) *
+              100;
 
     return (
       <div className="min-h-screen bg-white flex flex-col">
-        {/* Top Duolingo Glossy Progress Bar Header */}
         <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b-2 border-slate-100">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 py-4 flex items-center gap-4">
             <button
@@ -754,7 +1004,6 @@ function PlayPageInner() {
               <X className="h-6 w-6 stroke-[2.6]" />
             </button>
 
-            {/* Glossy Chunky Emerald Progress Bar */}
             <div className="flex-1 h-4 rounded-full bg-slate-200 overflow-hidden">
               <div
                 className="progress-gloss h-full rounded-full bg-[#58CC02] transition-all duration-300"
@@ -762,9 +1011,14 @@ function PlayPageInner() {
               />
             </div>
 
-            {/* Live Mode Counters */}
+            {boostActive && (
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-xl border-2 border-violet-300 bg-violet-50 px-2.5 py-1 text-[11px] font-black text-violet-700">
+                ⚡ 2x XP
+              </span>
+            )}
+
             {mode === 'speed' && (
-              <div className="flex items-center gap-2.5 text-xs font-black">
+              <div className="flex items-center gap-2 text-xs font-black">
                 {combo >= 2 && (
                   <span className="rounded-xl bg-amber-100 border border-amber-300 px-2.5 py-1 text-amber-800 animate-bounce">
                     🔥 x{combo}
@@ -795,8 +1049,21 @@ function PlayPageInner() {
               </div>
             )}
 
+            {mode === 'listen' && (
+              <div className="flex items-center gap-2 text-xs font-black">
+                {combo >= 2 && (
+                  <span className="rounded-xl bg-amber-100 border border-amber-300 px-2 py-0.5 text-amber-800">
+                    🔥 x{combo}
+                  </span>
+                )}
+                <span className="text-[#1899D6]">
+                  {listenIdx + 1}/{listenItems.length}
+                </span>
+              </div>
+            )}
+
             {mode === 'build' && (
-              <span className="text-xs font-black text-[#1899D6]">
+              <span className="text-xs font-black text-[#8B5CF6]">
                 {buildIdx + 1}/{buildItems.length}
               </span>
             )}
@@ -809,9 +1076,8 @@ function PlayPageInner() {
           </div>
         </header>
 
-        {/* CENTER LESSON STAGE */}
         <main className="flex-1 mx-auto w-full max-w-2xl px-4 sm:px-6 py-6 sm:py-10 flex flex-col justify-center">
-          {/* GAME 1: SPEED MATCH */}
+          {/* GAME 1 & 5: SPEED MATCH / AI CUSTOM QUIZ */}
           {mode === 'speed' && currentSpeed && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
@@ -825,7 +1091,7 @@ function PlayPageInner() {
                 />
                 <div className="flex-1 space-y-2">
                   <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#DDF4FF] px-3 py-1 text-xs font-extrabold text-[#1899D6]">
-                    ⚡ Câu {speedIdx + 1}/{speedItems.length} ·{' '}
+                    {speedRoundTitle} · Câu {speedIdx + 1}/{speedItems.length} ·{' '}
                     {currentSpeed.contextVi}
                   </span>
                   <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">
@@ -877,10 +1143,118 @@ function PlayPageInner() {
                   );
                 })}
               </div>
+
+              <p className="hidden sm:block text-center text-[11px] font-bold text-slate-400">
+                Mẹo bàn phím: nhấn <kbd className="rounded border px-1.5 py-0.5">1</kbd>–
+                <kbd className="rounded border px-1.5 py-0.5">4</kbd> để chọn nhanh ·{' '}
+                <kbd className="rounded border px-1.5 py-0.5">Enter</kbd> để sang câu tiếp
+              </p>
             </div>
           )}
 
-          {/* GAME 2: SENTENCE BUILD */}
+          {/* GAME 2 (NEW!): LISTENING COMPREHENSION */}
+          {mode === 'listen' && currentListen && (
+            <div className="space-y-6">
+              <div className="rounded-3xl border-2 border-[#84D8FF] bg-[#EBF9FF] p-6 text-center space-y-4">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white border-2 border-[#84D8FF] px-3.5 py-1 text-xs font-black text-[#1899D6]">
+                  🎧 {currentListen.contextVi}
+                </span>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+                  {currentListen.questionVi}
+                </h1>
+
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => speakText(currentListen.spokenEn, 0.9)}
+                    className="btn-duo btn-duo-blue px-6 py-3.5 text-sm uppercase"
+                  >
+                    <Volume2 className="h-5 w-5" />
+                    Nghe giọng {persona.name} ({persona.accent})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => speakText(currentListen.spokenEn, 0.7)}
+                    className="btn-duo btn-duo-white px-4 py-3.5 text-xs uppercase"
+                  >
+                    🐢 Nghe chậm
+                  </button>
+                </div>
+
+                {showListenScript ? (
+                  <div className="rounded-2xl border-2 border-sky-200 bg-white p-3.5 text-left space-y-1">
+                    <div className="text-sm font-black text-slate-900">
+                      “{currentListen.spokenEn}”
+                    </div>
+                    <div className="text-xs font-bold text-[#1899D6]">
+                      /{currentListen.phonetic}/
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowListenScript(true)}
+                    className="text-xs font-extrabold text-[#1899D6] hover:underline cursor-pointer"
+                  >
+                    👀 Gợi ý: Xem câu tiếng Anh
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                {currentListen.shuffledOptionsVi.map((optVi, idx) => {
+                  const isPicked = listenSelected === optVi;
+                  const isCorrectOpt = optVi === currentListen.correctAnswerVi;
+                  let cardCls =
+                    'border-slate-200 border-b-4 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-300 active:translate-y-[2px]';
+                  if (listenSelected !== null) {
+                    if (isCorrectOpt) {
+                      cardCls =
+                        'border-[#58CC02] border-b-4 bg-[#D7FFB8]/65 text-[#2E6E00]';
+                    } else if (isPicked && !isCorrectOpt) {
+                      cardCls =
+                        'border-[#FF4B4B] border-b-4 bg-[#FFDFE0] text-[#B91C1C]';
+                    } else {
+                      cardCls =
+                        'border-slate-200 bg-slate-50 text-slate-400 opacity-60';
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={optVi}
+                      type="button"
+                      disabled={listenSelected !== null}
+                      onClick={() => handleSelectListenOption(optVi)}
+                      className={`flex w-full items-center justify-between gap-3 rounded-2xl border-2 px-4 py-4 text-left text-sm font-extrabold transition cursor-pointer ${cardCls}`}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-current/20 bg-white/70 text-xs font-black">
+                          {idx + 1}
+                        </span>
+                        <span>{optVi}</span>
+                      </span>
+                      {listenSelected !== null && isCorrectOpt && (
+                        <CheckCircle2 className="h-6 w-6 shrink-0 text-[#58CC02]" />
+                      )}
+                      {listenSelected !== null && isPicked && !isCorrectOpt && (
+                        <XCircle className="h-6 w-6 shrink-0 text-[#FF4B4B]" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="hidden sm:block text-center text-[11px] font-bold text-slate-400">
+                Phím tắt: <kbd className="rounded border px-1.5 py-0.5">R</kbd> nghe lại ·{' '}
+                <kbd className="rounded border px-1.5 py-0.5">1</kbd>–
+                <kbd className="rounded border px-1.5 py-0.5">4</kbd> chọn đáp án ·{' '}
+                <kbd className="rounded border px-1.5 py-0.5">Enter</kbd> tiếp tục
+              </p>
+            </div>
+          )}
+
+          {/* GAME 3: SENTENCE BUILD */}
           {mode === 'build' && currentBuild && (
             <div className="space-y-6">
               <div className="flex items-center gap-4">
@@ -912,7 +1286,6 @@ function PlayPageInner() {
                 </div>
               </div>
 
-              {/* Answer Construction Line */}
               <div className="min-h-24 rounded-2xl border-2 border-dashed border-slate-300 bg-[#F7F9FC] p-4 flex flex-wrap items-center gap-2.5">
                 {chosenTiles.length === 0 ? (
                   <span className="w-full text-center text-xs font-bold text-slate-400">
@@ -933,7 +1306,6 @@ function PlayPageInner() {
                 )}
               </div>
 
-              {/* Word Bank Tiles */}
               <div className="flex flex-wrap justify-center gap-2.5">
                 {availableTiles.map((tile) => (
                   <button
@@ -971,7 +1343,7 @@ function PlayPageInner() {
             </div>
           )}
 
-          {/* GAME 3: PRONUNCIATION ARENA */}
+          {/* GAME 4: PRONUNCIATION ARENA */}
           {mode === 'pronounce' && currentPron && (
             <div className="space-y-6">
               <div className="rounded-3xl border-2 border-emerald-200 bg-[#F1FDE8]/70 p-6 text-center space-y-3">
@@ -1111,7 +1483,7 @@ function PlayPageInner() {
           )}
         </main>
 
-        {/* DUOLINGO SLIDE-UP BOTTOM FEEDBACK DRAWER (Speed Match & Sentence Build) */}
+        {/* SLIDE-UP BOTTOM FEEDBACK DRAWERS */}
         {mode === 'speed' && currentSpeed && selectedOption !== null && (
           <footer
             className={`sticky bottom-0 border-t-2 px-4 py-5 ${
@@ -1165,6 +1537,47 @@ function PlayPageInner() {
           </footer>
         )}
 
+        {mode === 'listen' && currentListen && listenSelected !== null && (
+          <footer
+            className={`sticky bottom-0 border-t-2 px-4 py-5 ${
+              listenSelected === currentListen.correctAnswerVi
+                ? 'border-[#B8F28B] bg-[#D7FFB8]'
+                : 'border-[#FFC1C1] bg-[#FFDFE0]'
+            }`}
+          >
+            <div className="mx-auto max-w-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div
+                  className={`text-base font-black ${
+                    listenSelected === currentListen.correctAnswerVi
+                      ? 'text-[#3B8702]'
+                      : 'text-[#B91C1C]'
+                  }`}
+                >
+                  {listenSelected === currentListen.correctAnswerVi
+                    ? '🎉 Nghe quá chuẩn bản xứ!'
+                    : '💡 Ý đúng là: ' + currentListen.correctAnswerVi}
+                </div>
+                <div className="text-xs font-bold text-slate-800">
+                  💡 {currentListen.tipVi}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleNextListenQuestion}
+                className={`btn-duo shrink-0 px-7 py-3.5 text-sm uppercase tracking-wide ${
+                  listenSelected === currentListen.correctAnswerVi
+                    ? 'btn-duo-green'
+                    : 'bg-[#FF4B4B] text-white border-2 border-[#FF4B4B] shadow-[0_4px_0_#D93636]'
+                }`}
+              >
+                {listenIdx + 1 >= listenItems.length ? 'Nhận thưởng 🎉' : 'Tiếp tục'}
+              </button>
+            </div>
+          </footer>
+        )}
+
         {mode === 'build' && currentBuild && buildChecked !== 'idle' && (
           <footer
             className={`sticky bottom-0 border-t-2 px-4 py-5 ${
@@ -1209,12 +1622,11 @@ function PlayPageInner() {
     );
   }
 
-  // LOBBY & VICTORY SCREEN inside Unified Duolingo AppShell
+  // LOBBY & VICTORY SCREEN inside AppShell
   return (
     <AppShell profile={profile} authenticated={authenticated}>
       {mode === 'lobby' && (
         <>
-          {/* Flagship Arcade Banner */}
           <section className="rounded-3xl bg-[#58CC02] border-b-4 border-[#46A302] p-6 sm:p-7 text-white">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
               <div className="flex items-center gap-4">
@@ -1223,17 +1635,24 @@ function PlayPageInner() {
                   className="hidden sm:block h-20 w-20 shrink-0 animate-gentle-float"
                 />
                 <div className="space-y-1.5">
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-black uppercase tracking-wider">
-                    <Gamepad2 className="h-3.5 w-3.5" />
-                    Đấu trường Vừa Học Vừa Chơi
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-black uppercase tracking-wider">
+                      <Gamepad2 className="h-3.5 w-3.5" />
+                      Đấu trường 5 Chế độ Chơi &amp; Học
+                    </span>
+                    {boostActive && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#FFC800] px-2.5 py-1 text-[11px] font-black text-amber-950">
+                        ⚡ 2x XP ({boostMins}p)
+                      </span>
+                    )}
                   </div>
                   <h1 className="text-2xl sm:text-3xl font-black leading-tight">
                     Chơi 2 phút — Thắp lửa giữ chuỗi!
                   </h1>
                   <p className="text-xs sm:text-sm font-semibold text-white/90 max-w-xl">
                     {studiedToday
-                      ? `🔥 Hôm nay bạn đã giữ vững chuỗi ${profile.streakDays} ngày! Chơi thêm để gom XP leo Giải đấu & Ngọc 💎.`
-                      : '⏳ Hoàn thành trọn vẹn 1 màn chơi bất kỳ dưới đây để thắp lửa giữ chuỗi hôm nay và mở khóa rương thưởng!'}
+                      ? `🔥 Hôm nay bạn đã giữ vững chuỗi ${profile.streakDays} ngày! Chơi thêm để đua Top Bảng Xếp Hạng & gom Ngọc 💎.`
+                      : '⏳ Hoàn thành trọn vẹn 1 màn chơi bất kỳ để thắp lửa giữ chuỗi hôm nay và mở rương thưởng!'}
                   </p>
                 </div>
               </div>
@@ -1256,6 +1675,68 @@ function PlayPageInner() {
                 </div>
               </div>
             </div>
+          </section>
+
+          {/* AI INFINITE PERSONALIZED QUIZ GENERATOR CARD */}
+          <section className="rounded-3xl border-2 border-rose-200 bg-gradient-to-br from-rose-50 via-amber-50/70 to-white p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#F43F5E] to-[#FF9600] text-white shadow-[0_4px_0_#BE123C]">
+                  <Wand2 className="h-6 w-6 stroke-[2.4]" />
+                </div>
+                <div>
+                  <span className="inline-block rounded-lg bg-rose-100 px-2 py-0.5 text-[10px] font-black uppercase text-rose-700">
+                    ✨ Chế độ AI Vô Tận (Mới!)
+                  </span>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900">
+                    Gemini Tự Tạo Màn Chơi Theo Sở Thích Hoặc Chủ Đề Bất Kỳ
+                  </h2>
+                </div>
+              </div>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                playTapSound();
+                void launchAiCustomQuiz(profile, customQuizTopic);
+              }}
+              className="flex flex-col sm:flex-row gap-2.5"
+            >
+              <input
+                type="text"
+                value={customQuizTopic}
+                onChange={(e) => setCustomQuizTopic(e.target.value)}
+                maxLength={100}
+                placeholder={`Để trống = dùng sở thích của bạn (${
+                  profile.hobbies.slice(0, 2).join(', ') || 'Đời sống'
+                }) hoặc gõ chủ đề bất kỳ...`}
+                className="flex-1 rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-semibold focus:border-[#F43F5E] focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={generatingAiQuiz}
+                className="btn-duo btn-duo-orange px-6 py-3 text-xs uppercase shrink-0"
+              >
+                {generatingAiQuiz ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    AI đang tạo 5 câu...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Tạo &amp; Chơi ngay
+                  </>
+                )}
+              </button>
+            </form>
+
+            {aiQuizError && (
+              <div className="rounded-xl border-2 border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-700">
+                {aiQuizError}
+              </div>
+            )}
           </section>
 
           {/* Voice Persona Accent Bar */}
@@ -1284,9 +1765,9 @@ function PlayPageInner() {
             </div>
           </div>
 
-          {/* 3 Tactile 3D Arcade Mode Cards */}
-          <div className="grid gap-5 md:grid-cols-3">
-            {/* Mode 1 */}
+          {/* 4 Core Arcade Mode Cards */}
+          <div className="grid gap-5 sm:grid-cols-2">
+            {/* Mode 1: Speed Match */}
             <div className="card-duo-elevated p-6 flex flex-col justify-between space-y-5">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -1298,7 +1779,7 @@ function PlayPageInner() {
                   </span>
                 </div>
                 <h2 className="text-lg font-black text-slate-900">
-                  Phản xạ Bản xứ 15s
+                  ⚡ Phản xạ Bản xứ 15s
                 </h2>
                 <p className="text-xs font-medium text-slate-600 leading-relaxed">
                   Đấu tốc độ chọn cách nói chuẩn Tây (tránh dịch từng chữ Vietlish), giữ chuỗi Combo x5 và bảo toàn 3 trái tim ❤️!
@@ -1328,7 +1809,49 @@ function PlayPageInner() {
               </button>
             </div>
 
-            {/* Mode 2 */}
+            {/* Mode 2 (NEW!): Listening Comprehension */}
+            <div className="card-duo-elevated p-6 flex flex-col justify-between space-y-5">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1CB0F6] text-white shadow-[0_4px_0_#1899D6]">
+                    <Headphones className="h-7 w-7 stroke-[2.5]" />
+                  </div>
+                  <span className="rounded-xl bg-[#DDF4FF] border-2 border-[#84D8FF] px-2.5 py-1 text-[11px] font-black text-[#1899D6]">
+                    MỚI · 5 tình huống
+                  </span>
+                </div>
+                <h2 className="text-lg font-black text-slate-900">
+                  🎧 Nghe Hiểu Bản Xứ
+                </h2>
+                <p className="text-xs font-medium text-slate-600 leading-relaxed">
+                  Luyện đôi tai nghe hiểu câu nói thật ở quán cà phê, họp Zoom, loa sân bay &amp; nhà hàng (16 tình huống đời thực)!
+                </p>
+                <div className="flex flex-wrap gap-1.5 text-[11px] font-extrabold">
+                  <span className="rounded-lg bg-sky-50 px-2 py-0.5 text-[#1899D6]">
+                    +70~130 XP
+                  </span>
+                  <span className="rounded-lg bg-cyan-50 px-2 py-0.5 text-cyan-700">
+                    +25 💎
+                  </span>
+                  <span className="rounded-lg bg-orange-50 px-2 py-0.5 text-orange-700">
+                    🔥 Giữ chuỗi
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  playTapSound();
+                  launchListeningChallenge(persona);
+                }}
+                className="btn-duo btn-duo-blue w-full py-3.5 text-xs uppercase tracking-wide"
+              >
+                Luyện nghe ngay
+                <ArrowRight className="h-4 w-4 stroke-[3]" />
+              </button>
+            </div>
+
+            {/* Mode 3: Sentence Build */}
             <div className="card-duo-elevated p-6 flex flex-col justify-between space-y-5">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -1340,10 +1863,10 @@ function PlayPageInner() {
                   </span>
                 </div>
                 <h2 className="text-lg font-black text-slate-900">
-                  Nghe &amp; Ghép câu
+                  🧩 Nghe &amp; Ghép câu
                 </h2>
                 <p className="text-xs font-medium text-slate-600 leading-relaxed">
-                  Nghe giọng bản xứ đọc rồi bấm xếp thẻ từ đúng trật tự — cách luyện cấu trúc giao tiếp nhanh nhớ nhất kiểu Duolingo!
+                  Nghe giọng bản xứ đọc rồi bấm xếp thẻ từ đúng trật tự — cách nhớ cấu trúc giao tiếp siêu nhanh kiểu Duolingo!
                 </p>
                 <div className="flex flex-wrap gap-1.5 text-[11px] font-extrabold">
                   <span className="rounded-lg bg-violet-50 px-2 py-0.5 text-violet-700">
@@ -1370,7 +1893,7 @@ function PlayPageInner() {
               </button>
             </div>
 
-            {/* Mode 3 */}
+            {/* Mode 4: Pronunciation Arena */}
             <div className="card-duo-elevated p-6 flex flex-col justify-between space-y-5">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -1382,7 +1905,7 @@ function PlayPageInner() {
                   </span>
                 </div>
                 <h2 className="text-lg font-black text-slate-900">
-                  Đấu trường Phát âm AI
+                  🎙️ Đấu trường Phát âm AI
                 </h2>
                 <p className="text-xs font-medium text-slate-600 leading-relaxed">
                   Đọc to 3 câu bản xứ thực tế! AI chấm điểm từng từ (0–100) kèm mẹo nối âm. Trung bình ≥ 60 để thắng &amp; nhận thưởng lớn!
@@ -1460,9 +1983,16 @@ function PlayPageInner() {
               </div>
 
               <div>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#DDF4FF] px-3 py-1 text-xs font-black text-[#1899D6]">
-                  {victoryMeta?.gameTitle}
-                </span>
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#DDF4FF] px-3 py-1 text-xs font-black text-[#1899D6]">
+                    {victoryMeta?.gameTitle}
+                  </span>
+                  {boostActive && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-black text-violet-700">
+                      ⚡ Đã nhân đôi 2x XP!
+                    </span>
+                  )}
+                </div>
                 <h2 className="mt-2.5 text-2xl font-black text-slate-900">
                   {victoryReward?.lessonCompleted
                     ? 'Hoàn thành xuất sắc! 🎉'
@@ -1521,7 +2051,6 @@ function PlayPageInner() {
                 </div>
               )}
 
-              {/* INSTANT CLAIMABLE STREAK MILESTONE CHEST RIGHT ON VICTORY SCREEN! */}
               {victoryReward &&
                 victoryReward.newlyClaimableMilestones
                   .filter((d) => !claimedInVictory.includes(d))
@@ -1570,10 +2099,16 @@ function PlayPageInner() {
                   Chơi màn khác
                 </button>
                 <Link
+                  href="/leaderboard"
+                  className="btn-duo btn-duo-blue flex-1 py-3.5 text-xs uppercase"
+                >
+                  Bảng Xếp Hạng
+                </Link>
+                <Link
                   href="/"
                   className="btn-duo btn-duo-green flex-1 py-3.5 text-xs uppercase"
                 >
-                  Về Lộ trình Học →
+                  Về Lộ trình →
                 </Link>
               </div>
             </>
