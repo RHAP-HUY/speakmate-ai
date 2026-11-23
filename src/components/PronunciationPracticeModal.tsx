@@ -77,6 +77,7 @@ function PronunciationPracticeModalInner({
   const [bestScore, setBestScore] = useState<number | null>(null);
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [userAudioUrl, setUserAudioUrl] = useState<string | null>(null);
+  const [canRetryScoring, setCanRetryScoring] = useState<boolean>(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -86,6 +87,7 @@ function PronunciationPracticeModalInner({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const userAudioUrlRef = useRef<string | null>(null);
   const userAudioElRef = useRef<HTMLAudioElement | null>(null);
+  const lastAudioBlobRef = useRef<Blob | null>(null);
 
   const stopMediaResources = useCallback(() => {
     if (rafRef.current !== null) {
@@ -109,7 +111,12 @@ function PronunciationPracticeModalInner({
   }, [stopMediaResources]);
 
   useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', onKeyDown);
     return () => {
+      window.removeEventListener('keydown', onKeyDown);
       stopVoicePlayback();
       stopMediaResources();
       if (userAudioElRef.current) {
@@ -121,7 +128,7 @@ function PronunciationPracticeModalInner({
         userAudioUrlRef.current = null;
       }
     };
-  }, [stopMediaResources]);
+  }, [onClose, stopMediaResources]);
 
   const sentence = target.sentence;
 
@@ -149,8 +156,10 @@ function PronunciationPracticeModalInner({
   }
 
   async function submitAudioForScoring(blob: Blob) {
+    lastAudioBlobRef.current = blob;
     setStatus('scoring');
     setErrorMsg(null);
+    setCanRetryScoring(false);
 
     try {
       const headers: Record<string, string> = {};
@@ -201,6 +210,7 @@ function PronunciationPracticeModalInner({
           : Math.max(prev, assessment.overallScore)
       );
     } catch (err) {
+      setCanRetryScoring(true);
       setErrorMsg(
         err instanceof Error ? err.message : 'Lỗi khi chấm điểm phát âm.'
       );
@@ -313,6 +323,9 @@ function PronunciationPracticeModalInner({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Luyện đọc và chấm điểm phát âm"
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-xs"
       onClick={onClose}
     >
@@ -435,8 +448,21 @@ function PronunciationPracticeModalInner({
         </div>
 
         {errorMsg && (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-700">
-            {errorMsg}
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-700 flex flex-wrap items-center justify-between gap-2">
+            <span>{errorMsg}</span>
+            {canRetryScoring && (
+              <button
+                type="button"
+                onClick={() => {
+                  const blob = lastAudioBlobRef.current;
+                  if (blob) void submitAudioForScoring(blob);
+                }}
+                className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-indigo-700 cursor-pointer shrink-0"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Chấm lại bản vừa ghi
+              </button>
+            )}
           </div>
         )}
 

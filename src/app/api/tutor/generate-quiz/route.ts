@@ -5,6 +5,9 @@ import {
   resolveTutorRequestAuth,
   TutorHttpError,
 } from '@/lib/gemini-client';
+import { checkSlidingWindowRateLimit } from '@/lib/rate-limit';
+import { extractClientIp } from '@/lib/security';
+import { sanitizePromptField } from '@/lib/tutor-prompt';
 import {
   pickShuffledItems,
   SPEED_MATCH_QUESTIONS,
@@ -112,6 +115,19 @@ export function sanitizeGeneratedQuizQuestions(
 
 export async function POST(request: NextRequest) {
   try {
+    const rl = checkSlidingWindowRateLimit({
+      namespace: 'tutor-quiz',
+      key: extractClientIp(request.headers),
+      limit: 20,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Bạn tạo màn chơi AI quá nhanh. Vui lòng đợi vài giây nhé!' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+      );
+    }
+
     const body = (await request.json()) as {
       hobbies?: string[];
       jobField?: string;
@@ -129,12 +145,17 @@ export async function POST(request: NextRequest) {
     );
 
     const hobbiesText =
-      (body.hobbies && body.hobbies.length > 0
-        ? body.hobbies
-        : profile.hobbies
-      ).join(', ') || 'Du lịch, Cà phê, Công nghệ, Phim ảnh';
-    const jobText = body.jobField?.trim() || profile.jobField || 'Nhân viên văn phòng / Sinh viên';
-    const customTopic = body.customTopic?.trim();
+      sanitizePromptField(
+        (body.hobbies && body.hobbies.length > 0
+          ? body.hobbies
+          : profile.hobbies
+        ).join(', '),
+        160
+      ) || 'Du lịch, Cà phê, Công nghệ, Phim ảnh';
+    const jobText =
+      sanitizePromptField(body.jobField || profile.jobField, 80) ||
+      'Nhân viên văn phòng / Sinh viên';
+    const customTopic = sanitizePromptField(body.customTopic, 100);
     const level = body.englishLevel || profile.englishLevel || 'A0-A1';
 
     const prompt = customTopic

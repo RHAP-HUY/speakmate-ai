@@ -1964,6 +1964,21 @@ export function exportLocalProgressBackup(): string {
       ? cachedSession.info.user?.id
       : null;
   const keys = getScopedKeys(accountId);
+  const conversations = readLocalJson<ConversationRecord[]>(
+    keys.conversations,
+    []
+  );
+  const messagesByConversation: Record<string, TutorMessage[]> = {};
+  for (const conv of conversations.slice(0, 60)) {
+    const msgs = readLocalJson<TutorMessage[]>(
+      `${keys.messagesPrefix}${conv.id}`,
+      []
+    );
+    if (msgs.length > 0) {
+      messagesByConversation[conv.id] = msgs;
+    }
+  }
+
   const payload = {
     version: 3,
     exportedAt: new Date().toISOString(),
@@ -1972,26 +1987,43 @@ export function exportLocalProgressBackup(): string {
     ),
     dailyStats: readLocalStatsFor(accountId),
     phrases: readLocalJson<SavedPhrase[]>(keys.phrases, []),
-    conversations: readLocalJson<ConversationRecord[]>(keys.conversations, []),
+    conversations,
+    messagesByConversation,
   };
   return JSON.stringify(payload, null, 2);
 }
 
 export function importLocalProgressBackup(rawJson: string): void {
-  const accountId =
-    cachedSession?.info.provider === 'google'
-      ? cachedSession.info.user?.id
+  const activeGoogleUser =
+    cachedSession?.info.provider === 'google' && cachedSession.info.authenticated
+      ? cachedSession.info.user
       : null;
+  const accountId = activeGoogleUser?.id ?? null;
   const keys = getScopedKeys(accountId);
   const parsed = JSON.parse(rawJson) as {
     profile?: Partial<UserProfile>;
     dailyStats?: Partial<DailyStat>[];
     phrases?: SavedPhrase[];
     conversations?: ConversationRecord[];
+    messagesByConversation?: Record<string, TutorMessage[]>;
   };
 
-  if (parsed.profile) {
-    const prof = normalizeProfile(parsed.profile);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Định dạng tệp sao lưu không hợp lệ.');
+  }
+
+  if (parsed.profile && typeof parsed.profile === 'object') {
+    const prof = normalizeProfile({
+      ...parsed.profile,
+      // Always preserve the signed-in Google account identity when importing
+      ...(activeGoogleUser
+        ? {
+            id: activeGoogleUser.id,
+            email: activeGoogleUser.email,
+            avatarUrl: activeGoogleUser.avatarUrl ?? parsed.profile.avatarUrl,
+          }
+        : {}),
+    });
     writeLocalJson(keys.profile, prof);
     emitDataUpdated(prof);
   }
@@ -2004,10 +2036,21 @@ export function importLocalProgressBackup(rawJson: string): void {
     );
   }
   if (Array.isArray(parsed.phrases)) {
-    writeLocalJson(keys.phrases, parsed.phrases);
+    writeLocalJson(keys.phrases, parsed.phrases.slice(0, 1000));
   }
   if (Array.isArray(parsed.conversations)) {
-    writeLocalJson(keys.conversations, parsed.conversations);
+    writeLocalJson(keys.conversations, parsed.conversations.slice(0, 200));
+  }
+  if (
+    parsed.messagesByConversation &&
+    typeof parsed.messagesByConversation === 'object' &&
+    !Array.isArray(parsed.messagesByConversation)
+  ) {
+    for (const [convId, msgs] of Object.entries(parsed.messagesByConversation)) {
+      if (Array.isArray(msgs)) {
+        writeLocalJson(`${keys.messagesPrefix}${convId}`, msgs.slice(0, 120));
+      }
+    }
   }
 
   if (cachedSession?.info.provider === 'google' && cachedSession.info.authenticated) {

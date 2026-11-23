@@ -392,6 +392,23 @@ function getAccentFlavor(accent: AiPersona['accent']): string {
   }
 }
 
+/**
+ * Sanitizes user-supplied profile/topic strings interpolated into LLM prompts
+ * to prevent prompt-injection control sequences, line breaks, and excessive length.
+ */
+export function sanitizePromptField(
+  raw: string | null | undefined,
+  maxLength = 120
+): string {
+  if (!raw || typeof raw !== 'string') return '';
+  return raw
+    .replace(/[\u0000-\u001F\u007F]+/g, ' ')
+    .replace(/```+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+}
+
 export function buildTutorSystemInstruction(params: {
   profile: Pick<
     UserProfile,
@@ -401,13 +418,18 @@ export function buildTutorSystemInstruction(params: {
   scenario: Scenario;
 }): string {
   const { profile, persona, scenario } = params;
-  const userName = profile.displayName.trim() || 'bạn';
-  const jobInfo = profile.jobField.trim()
-    ? `User's job/field: ${profile.jobField}.`
+  const userName = sanitizePromptField(profile.displayName, 40) || 'bạn';
+  const safeJob = sanitizePromptField(profile.jobField, 80);
+  const safeHobbies = (profile.hobbies ?? [])
+    .map((h) => sanitizePromptField(h, 40))
+    .filter(Boolean)
+    .slice(0, 8);
+  const jobInfo = safeJob
+    ? `User's job/field: ${safeJob}.`
     : 'User has not specified a job yet.';
   const hobbiesInfo =
-    profile.hobbies.length > 0
-      ? `User's hobbies/favorite topics: ${profile.hobbies.join(', ')}.`
+    safeHobbies.length > 0
+      ? `User's hobbies/favorite topics: ${safeHobbies.join(', ')}.`
       : 'User enjoys everyday lifestyle topics.';
 
   return [

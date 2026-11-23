@@ -90,6 +90,7 @@ export async function playNaturalVoice(params: {
           voice: params.voice,
           speed: params.speed,
         }),
+        signal: AbortSignal.timeout(10_000),
       });
 
       if (!response.ok) {

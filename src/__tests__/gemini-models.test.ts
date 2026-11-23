@@ -5,6 +5,7 @@ import {
   getLastHealthyModel,
   getOrderedGeminiModels,
   getThinkingConfigForModel,
+  isTransientOverloadError,
   isUnsupportedOrMissingModelError,
   markModelCooldown,
   markModelHealthy,
@@ -63,5 +64,18 @@ describe('gemini-models speed & health routing', () => {
     expect(
       isUnsupportedOrMissingModelError(new Error('Network socket closed'))
     ).toBe(false);
+  });
+
+  it('detects transient overload errors (503/502/504/high demand) without false positives', () => {
+    expect(
+      isTransientOverloadError(
+        new Error('503 UNAVAILABLE: This model is currently experiencing high demand')
+      )
+    ).toBe(true);
+    expect(isTransientOverloadError(new Error('HTTP 502 Bad Gateway'))).toBe(true);
+    expect(isTransientOverloadError(new Error('504 Gateway Timeout'))).toBe(true);
+    expect(isTransientOverloadError(new Error('read ECONNRESET'))).toBe(true);
+    expect(isTransientOverloadError(new Error('401 Unauthorized API key'))).toBe(false);
+    expect(isTransientOverloadError(new Error('404 NOT_FOUND'))).toBe(false);
   });
 });

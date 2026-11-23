@@ -5,11 +5,14 @@ import {
   resolveTutorRequestAuth,
   TutorHttpError,
 } from '@/lib/gemini-client';
+import { checkSlidingWindowRateLimit } from '@/lib/rate-limit';
 import { AI_PERSONAS } from '@/lib/scenarios';
+import { extractClientIp } from '@/lib/security';
 import {
   buildPronunciationPracticePrompt,
   parsePronunciationPracticeOutput,
   PRONUNCIATION_PRACTICE_SCHEMA,
+  sanitizePromptField,
 } from '@/lib/tutor-prompt';
 import type { EnglishLevel, UserProfile } from '@/types';
 
@@ -27,6 +30,19 @@ interface PronunciationPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    const rl = checkSlidingWindowRateLimit({
+      namespace: 'tutor-pronunciation',
+      key: extractClientIp(request.headers),
+      limit: 40,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Bạn chấm điểm phát âm quá nhanh. Vui lòng thử lại sau giây lát.' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+      );
+    }
+
     const contentType = request.headers.get('content-type') || '';
     if (!contentType.includes('multipart/form-data')) {
       return NextResponse.json(
@@ -47,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = JSON.parse(rawJson) as PronunciationPayload;
-    const targetSentence = payload.targetSentence?.trim() ?? '';
+    const targetSentence = sanitizePromptField(payload.targetSentence, 220);
     if (!targetSentence) {
       return NextResponse.json(
         { error: 'Câu mẫu không được để trống.' },

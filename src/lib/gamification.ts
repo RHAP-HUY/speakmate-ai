@@ -167,7 +167,7 @@ export const DAILY_QUEST_DEFS: DailyQuestDef[] = [
     rewardGems: 20,
     rewardXp: 25,
     icon: '⚡',
-    barColor: 'bg-[#FFC800]',
+    barColor: 'bg-gradient-to-r from-amber-400 to-orange-500',
   },
   {
     id: 'minutes_goal',
@@ -175,7 +175,7 @@ export const DAILY_QUEST_DEFS: DailyQuestDef[] = [
     rewardGems: 25,
     rewardXp: 30,
     icon: '⏱️',
-    barColor: 'bg-[#1CB0F6]',
+    barColor: 'bg-gradient-to-r from-indigo-500 to-cyan-400',
   },
 ];
 

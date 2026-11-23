@@ -2,11 +2,25 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { readGoogleSession } from '@/lib/google-auth';
 import { readOwnerLeaderboardRoster } from '@/lib/google-drive-store';
 import { buildWeeklyLeaderboard } from '@/lib/leaderboard';
+import { checkSlidingWindowRateLimit } from '@/lib/rate-limit';
+import { extractClientIp } from '@/lib/security';
 
 export const maxDuration = 20;
 
 export async function GET(request: NextRequest) {
   try {
+    const rl = checkSlidingWindowRateLimit({
+      namespace: 'leaderboard',
+      key: extractClientIp(request.headers),
+      limit: 60,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Bạn tải Bảng Xếp Hạng quá nhanh. Vui lòng thử lại sau giây lát.' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+      );
+    }
     const session = await readGoogleSession();
     const realUsers = await readOwnerLeaderboardRoster();
 

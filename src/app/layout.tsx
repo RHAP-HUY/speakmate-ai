@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Be_Vietnam_Pro, Geist_Mono } from 'next/font/google';
+import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import './globals.css';
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -42,6 +43,12 @@ export const metadata: Metadata = {
     siteName: 'SpeakMate AI',
     url: 'https://speakmate-ai-nu.vercel.app',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SpeakMate AI — Vừa Học Vừa Chơi, Nói Tiếng Anh Như Người Bản Xứ',
+    description:
+      'Trợ lý AI Nova chấm phát âm từng từ, 5 chế độ game phản xạ, bảng xếp hạng tuần & đồng bộ Google Drive 5TB.',
+  },
 };
 
 export default function RootLayout({
@@ -56,6 +63,7 @@ export default function RootLayout({
     >
       <body className="min-h-full text-slate-900 flex flex-col selection:bg-indigo-100 selection:text-indigo-800">
         {children}
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

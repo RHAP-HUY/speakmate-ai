@@ -29,7 +29,7 @@ export async function GET() {
   return NextResponse.json(
     {
       ok: true,
-      version: '4.0.0-enterprise',
+      version: '5.0.0-enterprise',
       uptimeSeconds: Math.max(0, Math.round((Date.now() - BOOT_TIME_MS) / 1000)),
       storageMode,
       googleAuthConfigured: googleCfg.configured,
@@ -38,6 +38,10 @@ export async function GET() {
       sharedGeminiPoolCount: poolCount,
       serverEncryptionEnabled: isServerEncryptionAvailable(),
       securityHeadersEnabled: true,
+      pwaServiceWorker: true,
+      promptInjectionGuard: true,
+      rateLimitingEnabled: true,
+      openGraphCardEnabled: true,
       primaryModel: process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL,
       lastHealthyModel: getLastHealthyModel(),
       orderedModels: getOrderedGeminiModels(),

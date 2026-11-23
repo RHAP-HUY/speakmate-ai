@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Sparkles, X } from 'lucide-react';
+import { useEffect } from 'react';
 import { GemSvg, NovaCompanion, ShieldFreezeSvg } from '@/components/BrandArt';
 
 export interface CelebrationPayload {
@@ -37,10 +38,22 @@ export function CelebrationModal({
   payload: CelebrationPayload | null;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    if (!payload) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [payload, onClose]);
+
   if (!payload) return null;
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={payload.title}
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-sm p-4"
       onClick={onClose}
     >

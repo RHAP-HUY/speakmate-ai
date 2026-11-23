@@ -5,11 +5,14 @@ import {
   resolveTutorRequestAuth,
   TutorHttpError,
 } from '@/lib/gemini-client';
+import { checkSlidingWindowRateLimit } from '@/lib/rate-limit';
 import { AI_PERSONAS, SCENARIOS } from '@/lib/scenarios';
+import { extractClientIp } from '@/lib/security';
 import {
   buildConversationTurnPrompt,
   buildTutorSystemInstruction,
   parseTutorTurnOutput,
+  sanitizePromptField,
   TUTOR_RESPONSE_SCHEMA,
 } from '@/lib/tutor-prompt';
 import type { TutorMessage, UserProfile } from '@/types';
@@ -30,6 +33,18 @@ interface TurnPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    const rl = checkSlidingWindowRateLimit({
+      namespace: 'tutor-turn',
+      key: extractClientIp(request.headers),
+      limit: 40,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Bạn gửi lượt nói quá nhanh. Hãy nghỉ vài giây rồi tiếp tục nhé!' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+      );
+    }
     let payload: TurnPayload;
     let audioBase64: string | null = null;
     let audioMimeType = 'audio/webm';
@@ -68,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     const baseScenario =
       SCENARIOS.find((s) => s.id === payload.scenarioId) ?? SCENARIOS[0];
-    const cleanCustomTopic = payload.customTopic?.trim().slice(0, 140);
+    const cleanCustomTopic = sanitizePromptField(payload.customTopic, 140);
     const scenario = cleanCustomTopic
       ? {
           ...baseScenario,

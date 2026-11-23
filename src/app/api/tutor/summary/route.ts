@@ -4,7 +4,9 @@ import {
   resolveTutorRequestAuth,
   TutorHttpError,
 } from '@/lib/gemini-client';
+import { checkSlidingWindowRateLimit } from '@/lib/rate-limit';
 import { AI_PERSONAS, SCENARIOS } from '@/lib/scenarios';
+import { extractClientIp } from '@/lib/security';
 import {
   buildConversationReportPrompt,
   buildFallbackConversationReport,
@@ -30,6 +32,19 @@ interface SummaryPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    const rl = checkSlidingWindowRateLimit({
+      namespace: 'tutor-summary',
+      key: extractClientIp(request.headers),
+      limit: 20,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Bạn tạo báo cáo quá nhanh. Vui lòng đợi giây lát.' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+      );
+    }
+
     const payload = (await request.json()) as SummaryPayload;
     const { userId, userPersonalKey, profile } = await resolveTutorRequestAuth(
       request,
