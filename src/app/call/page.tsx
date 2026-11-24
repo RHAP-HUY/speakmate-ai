@@ -773,7 +773,7 @@ function CallStudioInner() {
             >
               {AI_PERSONAS.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.flag} {p.name} ({p.accent})
+                  {p.name} · {p.accent}
                 </option>
               ))}
             </select>
@@ -842,7 +842,7 @@ function CallStudioInner() {
                   }`}
               />
               {userTurns >= MIN_CALL_TURNS_FOR_LESSON
-                ? 'Đã hoàn thành nhiệm vụ bài học — Chuỗi hôm nay đã được giữ! (+60 XP · +15 💎)'
+                ? 'Đã hoàn thành nhiệm vụ bài học — Chuỗi hôm nay đã được giữ (+60 XP · +15 Ngọc)'
                 : `Nhiệm vụ giữ chuỗi: Nói thêm ${MIN_CALL_TURNS_FOR_LESSON - userTurns
                 } lượt nữa để hoàn thành 1 bài học`}
             </span>
@@ -936,7 +936,7 @@ function CallStudioInner() {
 
                 {!isUser && showVietnamese && msg.vietnameseTranslation && (
                   <p className="mt-1.5 border-t border-slate-800 pt-1.5 text-xs text-slate-300">
-                    🇻🇳 {msg.vietnameseTranslation}
+                    {msg.vietnameseTranslation}
                   </p>
                 )}
 
@@ -984,7 +984,7 @@ function CallStudioInner() {
 
                 {msg.coachingTip && (
                   <div className="mt-2 rounded-xl bg-slate-800/80 px-3 py-2 text-xs text-amber-200">
-                    💡 {msg.coachingTip}
+                    Góp ý: {msg.coachingTip}
                   </div>
                 )}
               </div>
@@ -1099,7 +1099,7 @@ function CallStudioInner() {
             {replyHints.length > 0 && (
               <div>
                 <div className="text-[11px] font-semibold text-slate-400 mb-1.5">
-                  💬 Gợi ý cách trả lời (nghe mẫu, đọc thử chấm phát âm hoặc gửi nhanh):
+                  Gợi ý câu trả lời (nghe mẫu, đọc thử chấm âm hoặc gửi nhanh):
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {replyHints.map((hint, idx) => (
@@ -1188,9 +1188,9 @@ function CallStudioInner() {
                       void startRecording();
                     }
                   }}
-                  className={`relative flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold shadow-lg transition disabled:opacity-50 cursor-pointer ${phase === 'recording'
+                  className={`relative flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold shadow-md transition disabled:opacity-50 cursor-pointer ${phase === 'recording'
                     ? 'bg-rose-600 text-white hover:bg-rose-700'
-                    : 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white hover:from-indigo-500 hover:to-cyan-500'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
                 >
                   {phase === 'recording' ? (

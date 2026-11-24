@@ -35,11 +35,11 @@ const LEVELS: { value: EnglishLevel; title: string; desc: string }[] = [
 ];
 
 const ACCENTS: { value: AccentPreference; label: string; flag: string }[] = [
-  { value: 'US', label: 'Mỹ (American)', flag: '🇺🇸' },
-  { value: 'UK', label: 'Anh - Anh (British)', flag: '🇬🇧' },
-  { value: 'AU', label: 'Úc (Australian)', flag: '🇦🇺' },
-  { value: 'CA', label: 'Canada', flag: '🇨🇦' },
-  { value: 'MIXED', label: 'Đa dạng Accent', flag: '🌍' },
+  { value: 'US', label: 'Mỹ (American)', flag: 'US' },
+  { value: 'UK', label: 'Anh (British)', flag: 'UK' },
+  { value: 'AU', label: 'Úc (Australian)', flag: 'AU' },
+  { value: 'CA', label: 'Canada', flag: 'CA' },
+  { value: 'MIXED', label: 'Đa dạng giọng', flag: 'ALL' },
 ];
 
 export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) {
@@ -143,23 +143,25 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
         <div className="flex flex-wrap gap-2">
           {(
             [
-              { val: 'vi', label: '🇻🇳 Tiếng Việt' },
-              { val: 'en', label: '🇺🇸 English' },
-              { val: 'ja', label: '🇯🇵 日本語' },
-              { val: 'ko', label: '🇰🇷 한국어' },
-              { val: 'zh', label: '🇨🇳 中文' },
+              { val: 'vi', code: 'VI', label: 'Tiếng Việt' },
+              { val: 'en', code: 'EN', label: 'English' },
+              { val: 'ja', code: 'JA', label: '日本語' },
+              { val: 'ko', code: 'KO', label: '한국어' },
+              { val: 'zh', code: 'ZH', label: '中文' },
             ] as const
           ).map((lang) => (
             <button
               key={lang.val}
               type="button"
               onClick={() => setNativeLanguage(lang.val)}
-              className={`rounded-xl border px-3 py-2 text-xs font-bold transition cursor-pointer ${nativeLanguage === lang.val
-                  ? 'border-indigo-600 bg-indigo-50 text-indigo-800'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                }`}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition cursor-pointer ${
+                nativeLanguage === lang.val
+                  ? 'border-zinc-900 bg-zinc-900 text-white'
+                  : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+              }`}
             >
-              {lang.label}
+              <span className="font-mono text-[10px] opacity-70">{lang.code}</span>
+              <span>{lang.label}</span>
             </button>
           ))}
         </div>
@@ -336,7 +338,9 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                       : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                 >
-                  <span>{acc.flag}</span>
+                  <span className="font-mono text-[10px] font-semibold rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-600">
+                    {acc.flag}
+                  </span>
                   <span className="truncate">{acc.label}</span>
                 </button>
               );
@@ -408,7 +412,7 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
       <button
         type="submit"
         disabled={saving}
-        className="btn-duo btn-duo-primary w-full px-6 py-3.5 text-sm uppercase tracking-wide"
+        className="btn-duo btn-duo-primary w-full px-6 py-3 text-sm"
       >
         {saving ? (
           <>
@@ -417,9 +421,9 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
           </>
         ) : (
           <>
-            <Sparkles className="h-4 w-4" />
+            <Check className="h-4 w-4" />
             {mode === 'onboarding'
-              ? 'Hoàn tất & Bắt đầu nói tiếng Anh'
+              ? 'Hoàn tất & Bắt đầu luyện tập'
               : 'Lưu thay đổi hồ sơ'}
           </>
         )}

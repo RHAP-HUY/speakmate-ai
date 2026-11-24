@@ -213,7 +213,7 @@ export function PronunciationBadge({
               isDark ? 'text-slate-300' : 'text-slate-600'
             }`}
           >
-            🎯 {assessment.summaryVi}
+            {assessment.summaryVi}
           </p>
         </div>
       )}

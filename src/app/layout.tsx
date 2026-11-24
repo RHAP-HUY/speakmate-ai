@@ -15,39 +15,39 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: '#4F46E5',
+  themeColor: '#18181B',
   width: 'device-width',
   initialScale: 1,
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://speakmate-ai-nu.vercel.app'),
-  title: 'SpeakMate AI — Vừa Học Vừa Chơi, Nói Tiếng Anh Như Người Bản Xứ',
+  title: 'SpeakMate — Luyện phản xạ nói tiếng Anh thực tế mỗi ngày',
   description:
-    'Học giao tiếp tiếng Anh tương tác Vừa Học Vừa Chơi cùng trợ lý AI Nova chấm phát âm từng từ, bảng xếp hạng tuần, lịch giữ chuỗi nhận quà và đồng bộ Google Drive 5TB.',
-  applicationName: 'SpeakMate AI',
+    'Nền tảng luyện giao tiếp tiếng Anh thực chiến: phản xạ ngữ cảnh, hội thoại trực tiếp chấm phát âm từng âm tiết, sổ mẫu câu SRS và đồng bộ Google Drive 5TB.',
+  applicationName: 'SpeakMate',
   alternates: {
     canonical: '/',
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'SpeakMate AI',
+    title: 'SpeakMate',
   },
   openGraph: {
-    title: 'SpeakMate AI — Vừa Học Vừa Chơi, Nói Tiếng Anh Như Người Bản Xứ',
+    title: 'SpeakMate — Luyện phản xạ nói tiếng Anh thực tế mỗi ngày',
     description:
-      'Lộ trình trò chơi phản xạ 2 phút, gọi thoại gia sư AI chấm phát âm từng từ, Bảng Xếp Hạng tuần & Rương Thưởng Chuỗi đồng bộ Google Drive 5TB.',
+      'Lộ trình luyện phản xạ 2 phút, hội thoại trực tiếp chấm phát âm IPA từng từ, lịch giữ chuỗi và đồng bộ tự động trên Google Drive 5TB.',
     type: 'website',
     locale: 'vi_VN',
-    siteName: 'SpeakMate AI',
+    siteName: 'SpeakMate',
     url: 'https://speakmate-ai-nu.vercel.app',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SpeakMate AI — Vừa Học Vừa Chơi, Nói Tiếng Anh Như Người Bản Xứ',
+    title: 'SpeakMate — Luyện phản xạ nói tiếng Anh thực tế mỗi ngày',
     description:
-      'Trợ lý AI Nova chấm phát âm từng từ, 5 chế độ game phản xạ, bảng xếp hạng tuần & đồng bộ Google Drive 5TB.',
+      'Luyện nghe hiểu, phản xạ câu bản xứ, hội thoại chấm phát âm từng từ và đồng bộ Google Drive 5TB.',
   },
 };
 
@@ -61,7 +61,7 @@ export default function RootLayout({
       lang="vi"
       className={`${beVietnamPro.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full text-slate-900 flex flex-col selection:bg-indigo-100 selection:text-indigo-800">
+      <body className="min-h-full text-zinc-900 flex flex-col selection:bg-blue-100 selection:text-blue-900">
         {children}
         <ServiceWorkerRegister />
       </body>

@@ -2,14 +2,14 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'SpeakMate AI — Vừa Học Vừa Chơi Tiếng Anh',
+    name: 'SpeakMate — Luyện phản xạ nói tiếng Anh',
     short_name: 'SpeakMate',
     description:
-      'Ứng dụng học nói tiếng Anh kiểu Vừa Học Vừa Chơi cùng trợ lý giọng nói AI Nova, chấm phát âm từng từ, lịch giữ chuỗi nhận quà và đồng bộ Google Drive 5TB.',
+      'Nền tảng luyện giao tiếp tiếng Anh thực tế: phản xạ ngữ cảnh, hội thoại chấm phát âm từng âm tiết, sổ mẫu câu và đồng bộ Google Drive 5TB.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#F4F6FB',
-    theme_color: '#4F46E5',
+    background_color: '#FAF9F6',
+    theme_color: '#18181B',
     orientation: 'portrait-primary',
     lang: 'vi',
     icons: [

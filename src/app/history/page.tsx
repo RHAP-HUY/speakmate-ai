@@ -157,9 +157,9 @@ export default function HistoryPage() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
-        <NovaCompanion mood="fire" className="h-18 w-18 animate-gentle-float" />
-        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FAF9F6]">
+        <NovaCompanion mood="fire" className="h-12 w-12" />
+        <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
       </div>
     );
   }
@@ -175,89 +175,82 @@ export default function HistoryPage() {
 
   return (
     <AppShell profile={profile} authenticated={authenticated}>
-      {/* Hero Banner */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-500 via-rose-500 to-amber-500 border-b-4 border-rose-900/35 p-6 text-white shadow-lg shadow-orange-950/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
-        <div className="relative flex items-center gap-4">
-          <NovaCompanion
-            mood="fire"
-            className="hidden sm:block h-18 w-18 shrink-0 animate-gentle-float drop-shadow-[0_10px_18px_rgba(124,45,18,0.35)]"
-          />
-          <div>
-            <div className="text-[11px] font-black uppercase tracking-widest text-white/85">
-              THÀNH TÍCH &amp; PHẦN THƯỞNG
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black leading-tight mt-0.5">
-              Lịch Chuỗi, Rương Quà &amp; Báo Cáo
-            </h1>
-            <p className="text-xs sm:text-sm font-semibold text-white/90 mt-1">
-              Theo dõi ngày học giữ chuỗi, mở rương mốc ngày, đổi Khiên bằng Ngọc và xem lại các buổi gọi AI.
-            </p>
+      {/* Clean Editorial Header */}
+      <section className="card-duo-elevated p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="font-mono text-[11px] font-semibold tracking-wider text-amber-700">
+            TIẾN ĐỘ &amp; KỶ LUẬT HỌC TẬP
           </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950 mt-0.5">
+            Lịch chuỗi, phần thưởng &amp; nhật ký hội thoại
+          </h1>
+          <p className="text-xs sm:text-sm text-zinc-600 mt-1">
+            Theo dõi chuỗi ngày học liên tiếp, nhận phần thưởng cột mốc và xem lại báo cáo phân tích từng buổi gọi.
+          </p>
         </div>
 
         <Link
           href="/play"
-          className="btn-duo btn-duo-white shrink-0 px-5 py-3 text-xs uppercase text-[#D97706]"
+          className="btn-duo btn-duo-primary shrink-0 px-5 py-2.5 text-xs"
         >
           <Gamepad2 className="h-4 w-4" />
-          Chơi 1 bài giữ chuỗi
+          Học 1 bài giữ chuỗi
         </Link>
       </section>
 
       {/* Summary KPIs */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-        <div className="card-duo-elevated p-4 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase text-orange-600">
-            <StreakFlameSvg active={profile.streakDays > 0} className="h-5 w-5" />
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 tabular-nums">
+        <div className="card-duo p-4 space-y-1">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+            <StreakFlameSvg active={profile.streakDays > 0} className="h-4 w-4" />
             Chuỗi hiện tại
           </div>
-          <div className="text-2xl font-black text-[#FF9600]">
+          <div className="text-2xl font-bold text-zinc-950">
             {profile.streakDays} ngày
           </div>
-          <div className="text-[11px] font-bold text-slate-500">
+          <div className="text-[11px] text-zinc-500">
             Kỷ lục: {Math.max(profile.streakDays, profile.longestStreak)} ngày
           </div>
         </div>
 
-        <div className="card-duo-elevated p-4 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase text-[#6D28D9]">
-            <Trophy className="h-4 w-4 text-[#8B5CF6]" />
+        <div className="card-duo p-4 space-y-1">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+            <Trophy className="h-4 w-4 text-amber-600" />
             Cấp độ &amp; XP
           </div>
-          <div className="text-2xl font-black text-slate-900">
-            Lv.{levelInfo.level}
+          <div className="text-2xl font-bold text-zinc-950">
+            Cấp {levelInfo.level}
           </div>
-          <div className="text-[11px] font-bold text-slate-500">
-            {profile.xp} XP · {profile.totalLessonsCompleted} bài xong
+          <div className="text-[11px] text-zinc-500">
+            {profile.xp} XP · {profile.totalLessonsCompleted} bài hoàn thành
           </div>
         </div>
 
-        <div className="card-duo-elevated p-4 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase text-[#1899D6]">
+        <div className="card-duo p-4 space-y-1">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
             <GemSvg className="h-4 w-4" />
             Ngọc &amp; Khiên
           </div>
-          <div className="text-2xl font-black text-[#1899D6]">
-            {profile.gems} 💎
+          <div className="text-2xl font-bold text-zinc-950">
+            {profile.gems} Ngọc
           </div>
-          <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+          <div className="text-[11px] text-zinc-500 flex items-center gap-1">
             <ShieldFreezeSvg className="h-3.5 w-3.5" />
             {profile.streakFreezes} Khiên bảo vệ
           </div>
         </div>
 
-        <div className="card-duo-elevated p-4 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase text-slate-500">
-            <Clock className="h-4 w-4 text-emerald-500" />
-            Tổng luyện tập
+        <div className="card-duo p-4 space-y-1">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+            <Clock className="h-4 w-4 text-emerald-600" />
+            Tổng thời lượng
           </div>
-          <div className="text-2xl font-black text-slate-900">
+          <div className="text-2xl font-bold text-zinc-950">
             {totalMinutesAll} phút
           </div>
-          <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+          <div className="text-[11px] text-zinc-500 flex items-center gap-1">
             <MessageSquare className="h-3 w-3" />
-            {conversations.length} cuộc gọi AI
+            {conversations.length} buổi hội thoại
           </div>
         </div>
       </div>
@@ -348,18 +341,18 @@ export default function HistoryPage() {
         </h2>
 
         {conversations.length === 0 ? (
-          <div className="card-duo border-dashed p-10 text-center space-y-3">
-            <p className="text-sm font-black text-slate-800">
-              Chưa có lịch sử cuộc gọi AI nào
+          <div className="card-duo p-10 text-center space-y-3">
+            <p className="text-sm font-bold text-zinc-900">
+              Chưa có nhật ký cuộc gọi nào
             </p>
-            <p className="text-xs font-medium text-slate-500">
-              Hoàn thành 1 cuộc gọi 3 lượt với Gia sư AI để nhận báo cáo đánh giá 4 kỹ năng &amp; giữ chuỗi 🔥!
+            <p className="text-xs text-zinc-500">
+              Hoàn thành 1 buổi hội thoại từ 3 lượt nói trở lên để nhận báo cáo đánh giá 4 kỹ năng và giữ chuỗi.
             </p>
             <Link
               href="/call"
-              className="btn-duo btn-duo-blue px-5 py-2.5 text-xs uppercase"
+              className="btn-duo btn-duo-primary px-5 py-2.5 text-xs"
             >
-              Gọi Gia sư AI ngay
+              Bắt đầu hội thoại
             </Link>
           </div>
         ) : (
@@ -491,21 +484,21 @@ export default function HistoryPage() {
 
                                 {m.vietnameseTranslation && (
                                   <p
-                                    className={`mt-1 text-xs font-medium ${
+                                    className={`mt-1 text-xs ${
                                       m.role === 'user'
                                         ? 'text-white/90'
-                                        : 'text-slate-500'
+                                        : 'text-zinc-500'
                                     }`}
                                   >
-                                    🇻🇳 {m.vietnameseTranslation}
+                                    {m.vietnameseTranslation}
                                   </p>
                                 )}
 
                                 {m.naturalRewrite && (
-                                  <div className="mt-2 rounded-xl bg-black/15 px-2.5 py-1.5 text-xs text-white flex items-center gap-1.5">
+                                  <div className="mt-2 rounded-lg bg-black/15 px-2.5 py-1.5 text-xs text-white flex items-center gap-1.5">
                                     <Sparkles className="h-3.5 w-3.5 shrink-0" />
                                     <span>
-                                      Tự nhiên hơn:{' '}
+                                      Diễn đạt tự nhiên hơn:{' '}
                                       <strong>{m.naturalRewrite}</strong>
                                     </span>
                                   </div>
@@ -513,7 +506,7 @@ export default function HistoryPage() {
 
                                 {m.coachingTip && (
                                   <p className="mt-1.5 text-xs opacity-90">
-                                    💡 {m.coachingTip}
+                                    Góp ý: {m.coachingTip}
                                   </p>
                                 )}
                               </div>

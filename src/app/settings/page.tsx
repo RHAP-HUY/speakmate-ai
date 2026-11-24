@@ -276,7 +276,7 @@ export default function SettingsPage() {
                 setSyncingDrive(false);
                 setBackupNotice(
                   res.ok
-                    ? '✅ Đã đồng bộ toàn bộ hồ sơ, lịch chuỗi, XP & lịch sử lên Google Drive 5TB!'
+                    ? 'Đã đồng bộ toàn bộ hồ sơ, lịch chuỗi, XP và nhật ký hội thoại lên Google Drive 5TB.'
                     : `Lỗi đồng bộ Drive: ${res.error}`
                 );
               }}

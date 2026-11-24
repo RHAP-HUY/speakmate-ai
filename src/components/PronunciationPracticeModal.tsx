@@ -7,7 +7,6 @@ import {
   Mic,
   MicOff,
   RotateCcw,
-  Sparkles,
   Volume2,
   X,
 } from 'lucide-react';
@@ -336,53 +335,52 @@ function PronunciationPracticeModalInner({
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">
-              <Sparkles className="h-3 w-3" />
-              Luyện đọc & Chấm điểm Phát âm ({persona.accent})
+            <div className="font-mono text-[11px] font-semibold text-blue-700">
+              CHẤM ĐIỂM PHÁT ÂM · GIỌNG {persona.accent}
             </div>
-            <h2 className="mt-1.5 text-lg font-bold text-slate-900">
-              Đọc theo giọng bản xứ
+            <h2 className="mt-1 text-lg font-bold tracking-tight text-zinc-950">
+              Luyện đọc theo giọng bản xứ
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Target Sentence Box */}
-        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 space-y-2">
-          <p className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
+        <div className="rounded-xl border border-zinc-200 bg-[#FAF9F6] p-4 space-y-2">
+          <p className="text-base sm:text-lg font-bold text-zinc-950 leading-snug">
             “{sentence}”
           </p>
           {target.phonetic && (
-            <p className="text-xs font-medium text-cyan-700">
+            <p className="font-mono text-xs text-blue-700">
               /{target.phonetic}/
             </p>
           )}
           {target.vietnamese && (
-            <p className="text-xs text-slate-600">🇻🇳 {target.vietnamese}</p>
+            <p className="text-xs text-zinc-600">{target.vietnamese}</p>
           )}
 
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <button
               type="button"
               onClick={() => playSample(0.88)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-indigo-200 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 cursor-pointer"
             >
-              <Volume2 className="h-3.5 w-3.5" />
+              <Volume2 className="h-3.5 w-3.5 text-blue-700" />
               Nghe mẫu ({persona.name})
             </button>
             <button
               type="button"
               onClick={() => playSample(0.72)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 cursor-pointer"
             >
-              🐢 Nghe chậm 0.72x
+              Nghe chậm 0.72x
             </button>
             {userAudioUrl && (
               <button
@@ -409,10 +407,10 @@ function PronunciationPracticeModalInner({
                 void startPracticeRecording();
               }
             }}
-            className={`inline-flex items-center gap-2.5 rounded-2xl px-6 py-3.5 text-sm font-bold text-white shadow-lg transition disabled:opacity-60 cursor-pointer ${
+            className={`inline-flex items-center gap-2.5 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition disabled:opacity-60 cursor-pointer ${
               status === 'recording'
                 ? 'bg-rose-600 hover:bg-rose-700'
-                : 'bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700'
+                : 'bg-zinc-900 hover:bg-zinc-800'
             }`}
           >
             {status === 'scoring' ? (
@@ -497,8 +495,8 @@ function PronunciationPracticeModalInner({
                 </div>
               </div>
               {latencyMs !== null && (
-                <span className="rounded-full bg-white border border-slate-200 px-2 py-0.5 text-[10px] font-mono text-slate-500">
-                  ⚡ {(latencyMs / 1000).toFixed(1)}s
+                <span className="rounded-full bg-white border border-zinc-200 px-2 py-0.5 text-[10px] font-mono text-zinc-500 tabular-nums">
+                  {(latencyMs / 1000).toFixed(1)}s
                 </span>
               )}
             </div>
@@ -560,7 +558,7 @@ function PronunciationPracticeModalInner({
             {wordsToFix.length > 0 && (
               <div className="rounded-xl bg-white border border-amber-200/80 p-3 space-y-1.5">
                 <div className="text-[11px] font-bold text-amber-800">
-                  🔎 Từ cần chú ý để phát âm chuẩn hơn:
+                  Các âm cần lưu ý:
                 </div>
                 {wordsToFix.slice(0, 6).map((w, idx) => (
                   <div
@@ -575,7 +573,7 @@ function PronunciationPracticeModalInner({
                       {w.word}
                     </span>
                     {w.ipa && (
-                      <span className="font-mono text-[11px] text-cyan-700">
+                      <span className="font-mono text-[11px] text-blue-700">
                         /{w.ipa.replace(/^\/|\/$/g, '')}/
                       </span>
                     )}
@@ -588,11 +586,11 @@ function PronunciationPracticeModalInner({
             {/* Summary & linking tip */}
             <div className="space-y-2 text-xs">
               <p className="text-slate-700 leading-relaxed">
-                💬 <strong>Nhận xét:</strong> {result.summaryVi}
+                <strong>Nhận xét:</strong> {result.summaryVi}
               </p>
               {result.linkingTipVi && (
-                <div className="rounded-xl bg-cyan-50 border border-cyan-200 px-3 py-2 text-cyan-900">
-                  🔗 <strong>Mẹo nối âm & ngữ điệu:</strong> {result.linkingTipVi}
+                <div className="rounded-xl bg-blue-50/70 border border-blue-200 px-3 py-2 text-blue-950">
+                  <strong>Nối âm &amp; ngữ điệu:</strong> {result.linkingTipVi}
                 </div>
               )}
             </div>

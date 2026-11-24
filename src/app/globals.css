@@ -1,304 +1,233 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f6fb;
-  --foreground: #0f172a;
-  --brand-indigo: #4f46e5;
-  --brand-violet: #7c3aed;
-  --brand-cyan: #06b6d4;
-  --brand-emerald: #10b981;
-  --brand-coral: #f97316;
-  --brand-gold: #f59e0b;
-  --brand-rose: #f43f5e;
-  --card-border: #e2e8f0;
+  --background: #faf9f6;
+  --foreground: #18181b;
+  --surface: #ffffff;
+  --surface-subtle: #f4f3ee;
+  --border-hairline: rgba(24, 24, 27, 0.08);
+  --border-strong: rgba(24, 24, 27, 0.14);
+  --brand-ink: #18181b;
+  --brand-blue: #1d4ed8;
+  --brand-emerald: #047857;
+  --brand-amber: #d97706;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-be-vietnam), system-ui, sans-serif;
+  --font-sans: var(--font-be-vietnam), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
 }
 
 body {
-  background-color: #f4f6fb;
-  background-image:
-    radial-gradient(ellipse 80% 45% at 50% -10%, rgba(99, 102, 241, 0.11), transparent),
-    radial-gradient(ellipse 50% 35% at 95% 8%, rgba(6, 182, 212, 0.08), transparent),
-    radial-gradient(ellipse 45% 35% at 5% 20%, rgba(168, 85, 247, 0.06), transparent);
-  background-attachment: fixed;
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-be-vietnam), system-ui, -apple-system, sans-serif;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 .bg-mesh-light {
-  background-color: #f4f6fb;
-  background-image:
-    radial-gradient(ellipse 75% 45% at 20% 0%, rgba(99, 102, 241, 0.1), transparent),
-    radial-gradient(ellipse 60% 45% at 85% 5%, rgba(6, 182, 212, 0.09), transparent);
+  background-color: var(--background);
 }
 
-/* Porcelain Glass Elevated Surfaces (Apple / Linear / Arc Craftsmanship) */
+/* Tabular numerals for scores, timers, XP, streaks, and rankings */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Editorial Surfaces — Linear / Stripe / Brilliant 1px Hairline Ring + Ambient Occlusion */
 .card-duo {
-  background-color: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(12px);
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  border-radius: 1.5rem;
+  background-color: #ffffff;
+  border-radius: 1rem;
   box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.03),
-    0 10px 28px -10px rgba(15, 23, 42, 0.07),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    0 0 0 1px rgba(24, 24, 27, 0.08),
+    0 1px 2px rgba(24, 24, 27, 0.03),
+    0 6px 16px -8px rgba(24, 24, 27, 0.05);
 }
 
 .card-duo-elevated {
-  background-color: rgba(255, 255, 255, 0.97);
-  backdrop-filter: blur(14px);
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
-  border-radius: 1.625rem;
+  background-color: #ffffff;
+  border-radius: 1rem;
   box-shadow:
-    0 2px 4px rgba(15, 23, 42, 0.03),
-    0 14px 34px -12px rgba(79, 70, 229, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 1);
-  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    border-color 200ms ease;
+    0 0 0 1px rgba(24, 24, 27, 0.08),
+    0 2px 4px rgba(24, 24, 27, 0.03),
+    0 12px 28px -12px rgba(24, 24, 27, 0.07);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .card-duo-elevated:hover {
-  border-color: rgba(165, 180, 252, 0.7);
   box-shadow:
-    0 4px 8px rgba(15, 23, 42, 0.04),
-    0 20px 40px -14px rgba(79, 70, 229, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 1);
+    0 0 0 1px rgba(24, 24, 27, 0.14),
+    0 4px 10px rgba(24, 24, 27, 0.04),
+    0 16px 32px -12px rgba(24, 24, 27, 0.09);
 }
 
-/* Luxury Luminous 3D Buttons (Rich Gradient Depth + Soft Glow) */
+/* Tactile Enterprise Buttons — Crisp 1px Stroke, Sentence Case, Subtle Specular Top Edge */
 .btn-duo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-weight: 800;
-  letter-spacing: 0.015em;
-  border-radius: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: none !important;
+  border-radius: 0.75rem;
   position: relative;
-  transition: transform 130ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 130ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    filter 150ms ease;
+  transition:
+    background-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 100ms ease,
+    color 140ms ease;
   cursor: pointer;
   user-select: none;
 }
 
 .btn-duo:disabled {
-  opacity: 0.5;
+  opacity: 0.48;
   cursor: not-allowed;
   transform: none !important;
-  filter: grayscale(0.2);
 }
 
-/* Signature Aurora Indigo-Violet Primary Button */
+/* Primary Editorial Obsidian Ink Button */
 .btn-duo-primary {
-  background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+  background-color: #18181b;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
-    0 4px 0 #3730a3,
-    0 12px 24px -8px rgba(79, 70, 229, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    0 0 0 1px #18181b,
+    0 1px 2px rgba(24, 24, 27, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 .btn-duo-primary:hover:not(:disabled) {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
-  box-shadow:
-    0 5px 0 #3730a3,
-    0 16px 28px -8px rgba(79, 70, 229, 0.58),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background-color: #27272a;
 }
 .btn-duo-primary:active:not(:disabled) {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #3730a3;
+  transform: translateY(1px);
+  background-color: #09090b;
 }
 
-/* Refined Jewel Emerald-Teal 3D Button */
+/* Semantic Forest Emerald Button */
 .btn-duo-green {
-  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  background-color: #047857;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
-    0 4px 0 #047857,
-    0 12px 24px -8px rgba(16, 185, 129, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    0 0 0 1px #065f46,
+    0 1px 2px rgba(4, 120, 87, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .btn-duo-green:hover:not(:disabled) {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
-  box-shadow:
-    0 5px 0 #047857,
-    0 16px 28px -8px rgba(16, 185, 129, 0.52),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background-color: #059669;
 }
 .btn-duo-green:active:not(:disabled) {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #047857;
+  transform: translateY(1px);
 }
 
-/* Luminous Cobalt-Cyan 3D Button */
+/* Royal Cobalt Interactive Button (Speak.com / Stripe Accent) */
 .btn-duo-blue {
-  background: linear-gradient(180deg, #0ea5e9 0%, #2563eb 100%);
+  background-color: #1d4ed8;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
-    0 4px 0 #1d4ed8,
-    0 12px 24px -8px rgba(37, 99, 235, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    0 0 0 1px #1e40af,
+    0 1px 2px rgba(29, 78, 216, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 .btn-duo-blue:hover:not(:disabled) {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
-  box-shadow:
-    0 5px 0 #1d4ed8,
-    0 16px 28px -8px rgba(37, 99, 235, 0.54),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background-color: #2563eb;
 }
 .btn-duo-blue:active:not(:disabled) {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #1d4ed8;
+  transform: translateY(1px);
 }
 
-/* Sunset Coral-Amber 3D Button */
+/* Warm Amber-Terracotta Reward Button */
 .btn-duo-orange {
-  background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%);
+  background-color: #d97706;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.24);
   box-shadow:
-    0 4px 0 #c2410c,
-    0 12px 24px -8px rgba(234, 88, 12, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    0 0 0 1px #b45309,
+    0 1px 2px rgba(180, 83, 9, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 .btn-duo-orange:hover:not(:disabled) {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
-  box-shadow:
-    0 5px 0 #c2410c,
-    0 16px 28px -8px rgba(234, 88, 12, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background-color: #b45309;
 }
 .btn-duo-orange:active:not(:disabled) {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #c2410c;
+  transform: translateY(1px);
 }
 
-/* Royal Amethyst 3D Button */
+/* Slate-Ink Accent Button (Replaces Neon Purple) */
 .btn-duo-purple {
-  background: linear-gradient(180deg, #a855f7 0%, #7c3aed 100%);
+  background-color: #1e293b;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
-    0 4px 0 #5b21b6,
-    0 12px 24px -8px rgba(124, 58, 237, 0.46),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    0 0 0 1px #0f172a,
+    0 1px 2px rgba(15, 23, 42, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 .btn-duo-purple:hover:not(:disabled) {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
+  background-color: #334155;
 }
 .btn-duo-purple:active:not(:disabled) {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #5b21b6;
+  transform: translateY(1px);
 }
 
-/* Porcelain Silk Secondary Button */
+/* Crisp Secondary Hairline Button */
 .btn-duo-white {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  color: #1e293b;
-  border: 1.5px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #18181b;
   box-shadow:
-    0 3px 0 #cbd5e1,
-    0 6px 14px -4px rgba(15, 23, 42, 0.06);
+    0 0 0 1px rgba(24, 24, 27, 0.13),
+    0 1px 2px rgba(24, 24, 27, 0.04);
 }
 .btn-duo-white:hover:not(:disabled) {
-  background: #ffffff;
-  border-color: #a5b4fc;
-  color: #4338ca;
-  transform: translateY(-1px);
+  background-color: #f8f7f4;
+  box-shadow:
+    0 0 0 1px rgba(24, 24, 27, 0.22),
+    0 1px 3px rgba(24, 24, 27, 0.06);
 }
 .btn-duo-white:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #cbd5e1;
+  transform: translateY(1px);
+  background-color: #f1f0ec;
 }
 
-/* Obsidian Dark Button */
+/* Dark Studio Button */
 .btn-duo-dark {
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  background-color: #18181b;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
-    0 4px 0 #020617,
-    0 10px 22px -8px rgba(15, 23, 42, 0.45);
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.3);
 }
 .btn-duo-dark:hover:not(:disabled) {
-  filter: brightness(1.12);
-  transform: translateY(-1px);
+  background-color: #27272a;
 }
 .btn-duo-dark:active:not(:disabled) {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #020617;
+  transform: translateY(1px);
 }
 
-/* Jewel-like 3D Circular Path Node */
-.path-node-3d {
-  position: relative;
-  transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    filter 160ms ease;
-}
-.path-node-3d:hover {
-  transform: translateY(-2px) scale(1.04);
-  filter: brightness(1.04);
-}
-.path-node-3d:active {
-  transform: translateY(4px) scale(0.98);
-}
-
-/* Glossy highlight stripe inside progress bars */
+/* Clean Progress Fill */
 .progress-gloss {
   position: relative;
   overflow: hidden;
 }
-.progress-gloss::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 6px;
-  right: 6px;
-  height: 34%;
-  border-radius: 9999px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.45),
-    rgba(255, 255, 255, 0.2)
-  );
-  pointer-events: none;
-}
 
-/* Cinematic Aurora Studio Hero Card */
+/* Dark Editorial Studio Panel (Auth Showcase & Voice Call) */
 .aurora-studio-card {
-  background:
-    radial-gradient(circle at 18% 18%, rgba(56, 189, 248, 0.35), transparent 46%),
-    radial-gradient(circle at 85% 22%, rgba(168, 85, 247, 0.38), transparent 48%),
-    radial-gradient(circle at 70% 90%, rgba(244, 63, 94, 0.24), transparent 45%),
-    linear-gradient(145deg, #0b1120 0%, #17153b 52%, #0f172a 100%);
+  background-color: #121316;
+  background-image: linear-gradient(180deg, #18191e 0%, #101114 100%);
 }
 
+/* Subtle Functional Transitions (Respects Reduced Motion) */
 @keyframes voicePulse {
   0%, 100% {
     transform: scale(1);
-    opacity: 0.65;
+    opacity: 0.55;
   }
   50% {
-    transform: scale(1.16);
-    opacity: 0.18;
+    transform: scale(1.12);
+    opacity: 0.15;
   }
 }
 
@@ -306,58 +235,26 @@ body {
   animation: voicePulse 1.8s ease-in-out infinite;
 }
 
-@keyframes gentleFloat {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
+/* Calm at rest — replaces gratuitous infinite floating */
 .animate-gentle-float {
-  animation: gentleFloat 3.1s ease-in-out infinite;
-}
-
-@keyframes orbHalo {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.36);
-  }
-  60% {
-    box-shadow: 0 0 0 14px rgba(99, 102, 241, 0);
-  }
+  transition: transform 200ms ease;
 }
 
 .animate-orb-halo {
-  animation: orbHalo 2.2s ease-out infinite;
-}
-
-@keyframes chestWiggle {
-  0%, 72%, 100% {
-    transform: rotate(0deg) scale(1);
-  }
-  78% {
-    transform: rotate(-7deg) scale(1.06);
-  }
-  84% {
-    transform: rotate(7deg) scale(1.06);
-  }
-  90% {
-    transform: rotate(-4deg) scale(1.03);
-  }
-  95% {
-    transform: rotate(4deg) scale(1.03);
-  }
+  box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.14);
 }
 
 .animate-chest-wiggle {
-  animation: chestWiggle 2.4s ease-in-out infinite;
+  transition: transform 180ms ease;
+}
+.animate-chest-wiggle:hover {
+  transform: scale(1.04);
 }
 
 @keyframes popIn {
   0% {
     opacity: 0;
-    transform: scale(0.9) translateY(10px);
+    transform: scale(0.97) translateY(4px);
   }
   100% {
     opacity: 1;
@@ -366,7 +263,7 @@ body {
 }
 
 .animate-pop-in {
-  animation: popIn 240ms cubic-bezier(0.2, 0.9, 0.25, 1) forwards;
+  animation: popIn 160ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 @keyframes confettiDrop {
@@ -378,12 +275,20 @@ body {
     opacity: 1;
   }
   100% {
-    transform: translateY(95vh) rotate(540deg);
+    transform: translateY(95vh) rotate(420deg);
     opacity: 0;
   }
 }
 
 .confetti-piece {
-  animation: confettiDrop var(--fall-dur, 2.2s) cubic-bezier(0.2, 0.7, 0.4, 1)
+  animation: confettiDrop var(--fall-dur, 2s) cubic-bezier(0.2, 0.7, 0.4, 1)
     var(--fall-delay, 0s) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-voice-pulse,
+  .animate-pop-in,
+  .confetti-piece {
+    animation: none !important;
+  }
 }

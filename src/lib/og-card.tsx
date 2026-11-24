@@ -8,289 +8,271 @@ export function renderSpeakMateOgCard() {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '64px 72px',
-        background:
-          'linear-gradient(135deg, #0B1120 0%, #17153B 48%, #0F172A 100%)',
-        color: '#F8FAFC',
+        padding: '68px 76px',
+        backgroundColor: '#FAF9F6',
+        color: '#18181B',
         fontFamily: 'sans-serif',
         position: 'relative',
-        overflow: 'hidden',
       }}
     >
-      {/* Ambient Aurora glow blobs */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-140px',
-          left: '-80px',
-          width: '480px',
-          height: '480px',
-          borderRadius: '9999px',
-          background:
-            'radial-gradient(circle, rgba(99,102,241,0.34) 0%, rgba(99,102,241,0) 70%)',
-          display: 'flex',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '-180px',
-          right: '60px',
-          width: '540px',
-          height: '540px',
-          borderRadius: '9999px',
-          background:
-            'radial-gradient(circle, rgba(6,182,212,0.28) 0%, rgba(6,182,212,0) 70%)',
-          display: 'flex',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '80px',
-          right: '-100px',
-          width: '360px',
-          height: '360px',
-          borderRadius: '9999px',
-          background:
-            'radial-gradient(circle, rgba(168,85,247,0.26) 0%, rgba(168,85,247,0) 70%)',
-          display: 'flex',
-        }}
-      />
-
-      {/* Left copy block */}
+      {/* Left Editorial Column */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
-          maxWidth: '720px',
+          maxWidth: '680px',
         }}
       >
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            alignSelf: 'flex-start',
-            padding: '10px 20px',
-            borderRadius: '9999px',
-            background: 'rgba(99, 102, 241, 0.2)',
-            border: '1px solid rgba(165, 180, 252, 0.35)',
-            fontSize: '20px',
-            fontWeight: 700,
-            color: '#C7D2FE',
-            letterSpacing: '0.04em',
-            marginBottom: '26px',
+            gap: '12px',
+            marginBottom: '28px',
           }}
         >
-          <span>AURORA VOICE STUDIO</span>
-          <span style={{ color: '#22D3EE' }}>•</span>
-          <span>AI COACH NOVA</span>
+          <div
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
+              backgroundColor: '#18181B',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3px',
+            }}
+          >
+            <div
+              style={{
+                width: '3px',
+                height: '12px',
+                borderRadius: '2px',
+                backgroundColor: 'rgba(255,255,255,0.7)',
+                display: 'flex',
+              }}
+            />
+            <div
+              style={{
+                width: '3px',
+                height: '22px',
+                borderRadius: '2px',
+                backgroundColor: '#FFFFFF',
+                display: 'flex',
+              }}
+            />
+            <div
+              style={{
+                width: '3px',
+                height: '28px',
+                borderRadius: '2px',
+                backgroundColor: '#60A5FA',
+                display: 'flex',
+              }}
+            />
+            <div
+              style={{
+                width: '3px',
+                height: '18px',
+                borderRadius: '2px',
+                backgroundColor: '#FFFFFF',
+                display: 'flex',
+              }}
+            />
+          </div>
+          <span
+            style={{
+              fontSize: '24px',
+              fontWeight: 700,
+              letterSpacing: '-0.02em',
+              color: '#18181B',
+            }}
+          >
+            SpeakMate
+          </span>
         </div>
 
         <div
           style={{
             display: 'flex',
-            fontSize: '74px',
-            fontWeight: 900,
-            letterSpacing: '-0.03em',
-            lineHeight: 1.05,
-            color: '#FFFFFF',
-            marginBottom: '18px',
+            fontSize: '64px',
+            fontWeight: 800,
+            letterSpacing: '-0.035em',
+            lineHeight: 1.08,
+            color: '#18181B',
+            marginBottom: '22px',
           }}
         >
-          SpeakMate AI
+          Real-world English speaking practice, crafted for daily fluency.
         </div>
 
         <div
           style={{
             display: 'flex',
-            fontSize: '30px',
-            fontWeight: 500,
-            lineHeight: 1.38,
-            color: '#CBD5E1',
+            fontSize: '26px',
+            fontWeight: 400,
+            lineHeight: 1.42,
+            color: '#52525B',
             marginBottom: '36px',
           }}
         >
-          Play-to-Learn English Speaking Studio with real-time AI voice coaching,
-          word-level pronunciation scoring, and 5TB cloud sync.
+          Interactive listening, native phrasing drills, syllable-level IPA
+          feedback, and seamless Google Drive sync.
         </div>
 
         <div
           style={{
             display: 'flex',
             flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: '14px',
+            gap: '12px',
           }}
         >
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              padding: '12px 22px',
-              borderRadius: '16px',
-              background: 'rgba(15, 23, 42, 0.72)',
-              border: '1px solid rgba(99, 102, 241, 0.45)',
-              color: '#E0E7FF',
-              fontSize: '20px',
-              fontWeight: 700,
+              padding: '10px 18px',
+              borderRadius: '10px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E4E4E7',
+              color: '#18181B',
+              fontSize: '18px',
+              fontWeight: 600,
             }}
           >
-            5 Play-to-Learn Modes
+            US · UK · AU · CA Voices
           </div>
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              padding: '12px 22px',
-              borderRadius: '16px',
-              background: 'rgba(15, 23, 42, 0.72)',
-              border: '1px solid rgba(34, 211, 238, 0.45)',
-              color: '#CFFAFE',
-              fontSize: '20px',
-              fontWeight: 700,
+              padding: '10px 18px',
+              borderRadius: '10px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E4E4E7',
+              color: '#1D4ED8',
+              fontSize: '18px',
+              fontWeight: 600,
             }}
           >
-            AI Pronunciation Coach
+            Word-Level IPA Scoring
           </div>
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              padding: '12px 22px',
-              borderRadius: '16px',
-              background: 'rgba(15, 23, 42, 0.72)',
-              border: '1px solid rgba(251, 191, 36, 0.45)',
-              color: '#FEF3C7',
-              fontSize: '20px',
-              fontWeight: 700,
+              padding: '10px 18px',
+              borderRadius: '10px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E4E4E7',
+              color: '#047857',
+              fontSize: '18px',
+              fontWeight: 600,
             }}
           >
-            Streaks & Weekly Leagues
+            5TB Cloud Backup
           </div>
         </div>
       </div>
 
-      {/* Right luminous Nova AI Orb emblem */}
+      {/* Right Realistic Studio Card Preview */}
       <div
         style={{
+          width: '340px',
+          borderRadius: '20px',
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #E4E4E7',
+          boxShadow: '0 20px 48px rgba(24, 24, 27, 0.08)',
+          padding: '28px',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '320px',
-          height: '320px',
-          borderRadius: '9999px',
-          background:
-            'radial-gradient(circle at 35% 30%, rgba(129,140,248,0.28), rgba(15,23,42,0.55) 72%)',
-          border: '2px solid rgba(165, 180, 252, 0.3)',
-          boxShadow: '0 24px 80px rgba(79, 70, 229, 0.42)',
-          position: 'relative',
+          flexDirection: 'column',
+          gap: '18px',
         }}
       >
         <div
           style={{
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            width: '220px',
-            height: '220px',
-            borderRadius: '9999px',
-            background:
-              'linear-gradient(145deg, #4F46E5 0%, #7C3AED 50%, #06B6D4 100%)',
-            boxShadow: '0 16px 48px rgba(6, 182, 212, 0.35)',
-            border: '3px solid rgba(255,255,255,0.35)',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid #F4F4F5',
+            paddingBottom: '14px',
           }}
         >
-          {/* Animated soundwave bars emblem */}
-          <div
+          <span
             style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: '12px',
-              height: '92px',
+              fontSize: '15px',
+              fontWeight: 700,
+              color: '#18181B',
             }}
           >
-            <div
-              style={{
-                width: '16px',
-                height: '42px',
-                borderRadius: '9999px',
-                background: 'rgba(255,255,255,0.82)',
-                display: 'flex',
-              }}
-            />
-            <div
-              style={{
-                width: '18px',
-                height: '82px',
-                borderRadius: '9999px',
-                background: '#FFFFFF',
-                display: 'flex',
-              }}
-            />
-            <div
-              style={{
-                width: '18px',
-                height: '62px',
-                borderRadius: '9999px',
-                background: '#A5F3FC',
-                display: 'flex',
-              }}
-            />
-            <div
-              style={{
-                width: '16px',
-                height: '92px',
-                borderRadius: '9999px',
-                background: '#FFFFFF',
-                display: 'flex',
-              }}
-            />
-            <div
-              style={{
-                width: '16px',
-                height: '48px',
-                borderRadius: '9999px',
-                background: 'rgba(255,255,255,0.82)',
-                display: 'flex',
-              }}
-            />
-          </div>
-          <div
+            Pronunciation Score
+          </span>
+          <span
             style={{
-              display: 'flex',
-              marginTop: '14px',
-              fontSize: '18px',
-              fontWeight: 800,
-              letterSpacing: '0.14em',
-              color: '#E0F2FE',
+              fontSize: '15px',
+              fontWeight: 700,
+              color: '#047857',
+              backgroundColor: '#ECFDF5',
+              padding: '4px 10px',
+              borderRadius: '9999px',
             }}
           >
-            NOVA AI
-          </div>
+            94 / 100
+          </span>
         </div>
-      </div>
 
-      {/* Footer URL strip */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '28px',
-          left: '72px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          fontSize: '18px',
-          color: '#94A3B8',
-          fontWeight: 600,
-        }}
-      >
-        <span>speakmate-ai-nu.vercel.app</span>
-        <span style={{ color: '#475569' }}>•</span>
-        <span>Enterprise 5.0</span>
+        <div
+          style={{
+            display: 'flex',
+            fontSize: '22px',
+            fontWeight: 700,
+            lineHeight: 1.35,
+            color: '#18181B',
+          }}
+        >
+          &ldquo;Could I get an iced oat latte, please?&rdquo;
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            backgroundColor: '#FAF9F6',
+            border: '1px solid #E4E4E7',
+            borderRadius: '12px',
+            padding: '14px',
+          }}
+        >
+          <span
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              color: '#1D4ED8',
+            }}
+          >
+            CONNECTED SPEECH
+          </span>
+          <span
+            style={{
+              fontSize: '15px',
+              color: '#52525B',
+              lineHeight: 1.4,
+            }}
+          >
+            Smooth linking on &ldquo;Could I&rdquo; (/kʊd aɪ/) and crisp final /t/.
+          </span>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '14px',
+            color: '#71717A',
+            paddingTop: '4px',
+          }}
+        >
+          <span>speakmate-ai-nu.vercel.app</span>
+          <span>Studio 5.0</span>
+        </div>
       </div>
     </div>
   );

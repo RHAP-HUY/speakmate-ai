@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { renderSpeakMateOgCard } from '@/lib/og-card';
 
-export const alt = 'SpeakMate AI — Aurora Voice Studio & AI Companion Nova';
+export const alt = 'SpeakMate — Luyện phản xạ nói tiếng Anh thực tế mỗi ngày';
 export const size = {
   width: 1200,
   height: 630,

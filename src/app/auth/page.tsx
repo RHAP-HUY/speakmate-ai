@@ -235,32 +235,22 @@ function AuthPageInner() {
   return (
     <div className="min-h-screen bg-mesh-light flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-4xl grid gap-6 lg:grid-cols-12 items-stretch">
-        {/* Left Aurora Studio Showcase with Glowing Nova */}
-        <div className="lg:col-span-5 aurora-studio-card rounded-3xl border border-white/15 p-7 text-white flex flex-col justify-between shadow-2xl shadow-indigo-950/25">
-          <div className="space-y-5">
-            <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md shadow-xs">
-                <NovaCompanion
-                  mood="happy"
-                  className="h-10 w-10 transition-transform group-hover:scale-105"
-                />
-              </div>
-              <div>
-                <div className="text-xl font-black tracking-tight leading-none bg-gradient-to-r from-white via-indigo-100 to-cyan-200 bg-clip-text text-transparent">
-                  SpeakMate AI
-                </div>
-                <div className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-200/90 mt-0.5">
-                  Aurora Voice Studio
-                </div>
-              </div>
+        {/* Left Editorial Studio Showcase */}
+        <div className="lg:col-span-5 aurora-studio-card rounded-2xl border border-zinc-800 p-7 text-white flex flex-col justify-between shadow-xl">
+          <div className="space-y-6">
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <NovaCompanion mood="happy" className="h-9 w-9" />
+              <span className="text-lg font-bold tracking-tight text-white">
+                SpeakMate
+              </span>
             </Link>
 
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black leading-tight">
-                Đăng nhập Google · Lưu trọn đời trên Drive 5TB
+              <h1 className="text-2xl font-bold tracking-tight leading-snug">
+                Đăng nhập để đồng bộ lộ trình học trên Google Drive 5TB.
               </h1>
-              <p className="mt-2.5 text-sm font-medium text-indigo-100/90 leading-relaxed">
-                Chọn <strong>Ngôn ngữ &amp; Sở thích</strong> trong 30 giây cùng Nova AI. Mọi chuỗi ngày học, rương quà, XP &amp; sổ từ vựng tự động đồng bộ đa thiết bị!
+              <p className="mt-2.5 text-sm text-zinc-400 leading-relaxed">
+                Thiết lập giọng đọc bản xứ và chủ đề quan tâm trong 30 giây. Toàn bộ chuỗi ngày học, điểm kinh nghiệm và sổ mẫu câu tự động khôi phục khi bạn đổi thiết bị.
               </p>
             </div>
 
@@ -268,32 +258,34 @@ function AuthPageInner() {
               {[
                 {
                   icon: Gamepad2,
-                  title: 'Mặc định Vừa Học Vừa Chơi',
-                  desc: 'Lộ trình game phản xạ 2 phút + gọi thoại AI chấm từng từ.',
+                  title: 'Lộ trình phản xạ 2 phút/bài',
+                  desc: 'Nghe hiểu, ghép cấu trúc câu và hội thoại trực tiếp chấm âm từng từ.',
                 },
                 {
                   icon: Flame,
-                  title: 'Lịch Chuỗi & Rương Phần Thưởng',
-                  desc: 'Giữ chuỗi 1, 3, 7, 14, 30 ngày nhận XP, Ngọc 💎 & Khiên 🧊.',
+                  title: 'Lịch giữ chuỗi thực chất',
+                  desc: 'Theo dõi cột mốc 1–100 ngày, nhận Khiên bảo vệ và danh hiệu.',
                 },
                 {
                   icon: HardDrive,
-                  title: 'Đồng bộ Google Drive 5TB',
-                  desc: 'Đổi máy tính hay điện thoại chỉ cần đăng nhập Google là khôi phục 100%.',
+                  title: 'Lưu trữ Google Drive 5TB',
+                  desc: 'Hoạt động cả khi ngoại tuyến, tự hợp nhất dữ liệu khi có mạng.',
                 },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
                   <div
                     key={item.title}
-                    className="flex items-start gap-3 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-3"
+                    className="flex items-start gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-3.5"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/80 to-cyan-400/80">
-                      <Icon className="h-4 w-4 stroke-[2.5]" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-zinc-200">
+                      <Icon className="h-4 w-4 stroke-[1.9]" />
                     </div>
                     <div>
-                      <div className="text-xs font-black">{item.title}</div>
-                      <div className="text-[11px] font-medium text-indigo-100/85 mt-0.5 leading-snug">
+                      <div className="text-xs font-semibold text-white">
+                        {item.title}
+                      </div>
+                      <div className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
                         {item.desc}
                       </div>
                     </div>
@@ -303,9 +295,9 @@ function AuthPageInner() {
             </div>
           </div>
 
-          <div className="mt-6 flex items-center gap-2 text-[11px] font-bold text-cyan-200/90">
+          <div className="mt-6 flex items-center gap-2 text-[11px] text-zinc-400">
             <Smartphone className="h-4 w-4 shrink-0" />
-            <span>Đồng bộ mượt giữa iPhone, Android, Windows &amp; macOS</span>
+            <span>Tương thích đồng bộ trên iOS, Android, Windows và macOS</span>
           </div>
         </div>
 

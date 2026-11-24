@@ -176,31 +176,30 @@ export default function PhrasesPage() {
 
   return (
     <AppShell profile={profile} authenticated={authenticated}>
-      {/* Banner */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 border-b-4 border-indigo-900/35 p-6 text-white shadow-lg shadow-indigo-950/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
-        <div className="relative">
-          <div className="text-[11px] font-black uppercase tracking-widest text-white/85">
-            SỔ TAY &amp; FLASHCARD BẢN XỨ
+      {/* Editorial Header */}
+      <section className="card-duo-elevated p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="font-mono text-[11px] font-semibold tracking-wider text-blue-700">
+            SỔ MẪU CÂU &amp; ÔN TẬP NGẮT QUÃNG (SRS)
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black mt-0.5">
-            Kho Cụm Câu Giao Tiếp Tự Nhiên
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950 mt-0.5">
+            Kho cụm câu giao tiếp bản xứ
           </h1>
-          <p className="text-xs sm:text-sm font-semibold text-white/90 mt-1">
-            Lưu câu hay từ cuộc gọi AI, nghe giọng bản xứ &amp; luyện chấm phát âm từng câu.
+          <p className="text-xs sm:text-sm text-zinc-600 mt-1">
+            Lưu lại mẫu câu thực tế từ các buổi hội thoại, nghe chuẩn âm và luyện đọc chấm điểm từng câu.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-2xl bg-white/15 border-2 border-white/25 px-3 py-2 shrink-0">
-          <span className="text-xs font-extrabold">Giọng:</span>
+        <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-[#FAF9F6] px-3 py-2 shrink-0">
+          <span className="text-xs font-medium text-zinc-500">Giọng đọc:</span>
           <select
             value={voiceAccent}
             onChange={(e) => setVoiceAccent(e.target.value)}
-            className="bg-transparent text-xs font-black text-white focus:outline-none cursor-pointer [&>option]:text-slate-900"
+            className="bg-transparent text-xs font-semibold text-zinc-900 focus:outline-none cursor-pointer"
           >
             {AI_PERSONAS.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.flag} {p.name} ({p.accent})
+                {p.name} · {p.accent}
               </option>
             ))}
           </select>
@@ -519,10 +518,10 @@ export default function PhrasesPage() {
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {[
-              { id: 'all', label: 'Tất cả' },
-              { id: 'daily', label: '☕ Đời sống' },
-              { id: 'business', label: '💼 Công việc' },
-              { id: 'travel', label: '✈️ Du lịch' },
+              { id: 'all', label: 'Tất cả chủ đề' },
+              { id: 'daily', label: 'Đời sống' },
+              { id: 'business', label: 'Công sở' },
+              { id: 'travel', label: 'Du lịch' },
             ].map((cat) => (
               <button
                 key={cat.id}

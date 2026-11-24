@@ -1,4 +1,4 @@
-const CACHE_NAME = 'speakmate-aurora-v5';
+const CACHE_NAME = 'speakmate-editorial-v6';
 const PRECACHE_URLS = ['/', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (event) => {
