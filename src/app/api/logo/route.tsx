@@ -4,9 +4,10 @@ import type { NextRequest } from 'next/server';
 export async function GET(request: NextRequest) {
   const rawSize = Number(request.nextUrl.searchParams.get('size') || '192');
   const dim = rawSize === 120 || rawSize === 512 ? rawSize : 192;
-  const radius = Math.round(dim * 0.22);
-  const fontSize = Math.round(dim * 0.54);
-  const dotSize = Math.round(dim * 0.6);
+  const radius = Math.round(dim * 0.23);
+  const bubbleW = Math.round(dim * 0.54);
+  const bubbleH = Math.round(dim * 0.45);
+  const barW = Math.max(8, Math.round(dim * 0.068));
 
   return new ImageResponse(
     (
@@ -17,23 +18,46 @@ export async function GET(request: NextRequest) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#14532D',
+          backgroundColor: '#111827',
           borderRadius: radius,
-          fontFamily: 'Georgia, serif',
         }}
       >
         <div
           style={{
+            width: bubbleW,
+            height: bubbleH,
+            borderRadius: Math.round(dim * 0.12),
+            backgroundColor: '#FFFFFF',
             display: 'flex',
-            alignItems: 'baseline',
-            color: '#FBF9F5',
-            fontSize,
-            fontWeight: 700,
-            letterSpacing: '-0.04em',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: Math.max(6, Math.round(dim * 0.055)),
           }}
         >
-          <span>S</span>
-          <span style={{ color: '#EA580C', fontSize: dotSize }}>.</span>
+          <div
+            style={{
+              width: barW,
+              height: Math.round(dim * 0.15),
+              borderRadius: barW,
+              backgroundColor: '#E5483F',
+            }}
+          />
+          <div
+            style={{
+              width: barW,
+              height: Math.round(dim * 0.25),
+              borderRadius: barW,
+              backgroundColor: '#111827',
+            }}
+          />
+          <div
+            style={{
+              width: barW,
+              height: Math.round(dim * 0.12),
+              borderRadius: barW,
+              backgroundColor: '#E5483F',
+            }}
+          />
         </div>
       </div>
     ),

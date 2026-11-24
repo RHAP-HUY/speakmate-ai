@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { NovaCompanion } from '@/components/BrandArt';
 
 export const metadata: Metadata = {
   title: 'Điều khoản Sử dụng — SpeakMate',
@@ -10,20 +11,18 @@ export const metadata: Metadata = {
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-[#FBF9F5] text-[#1C1917] flex flex-col">
-      <header className="border-b border-[#E7E2D8] bg-[#FBF9F5]">
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col">
+      <header className="border-b border-gray-100 bg-white">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-baseline gap-0.5">
-            <span className="font-serif-display text-2xl font-bold text-[#1C1917]">
+          <Link href="/" className="flex items-center gap-2.5">
+            <NovaCompanion className="h-8 w-8" />
+            <span className="font-display text-lg font-bold text-gray-900">
               SpeakMate
-            </span>
-            <span className="font-serif-display text-2xl font-bold text-[#C2410C]">
-              .
             </span>
           </Link>
           <Link
             href="/"
-            className="text-xs font-medium text-[#57534E] hover:text-[#1C1917]"
+            className="text-xs font-semibold text-gray-500 hover:text-gray-900"
           >
             ← Quay lại trang chủ
           </Link>
@@ -31,21 +30,21 @@ export default function TermsOfServicePage() {
       </header>
 
       <main className="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-6 py-12 sm:py-16 space-y-8">
-        <div className="space-y-2 border-b border-[#E7E2D8] pb-6">
-          <p className="font-serif-display italic text-sm text-[#C2410C]">
+        <div className="space-y-2 border-b border-gray-200 pb-6">
+          <p className="text-xs font-semibold text-gray-400">
             Cập nhật hiệu lực: Tháng 11/2026
           </p>
-          <h1 className="font-serif-display text-3xl sm:text-4xl font-semibold text-[#1C1917]">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-gray-900">
             Điều khoản Sử dụng Dịch vụ
           </h1>
-          <p className="text-sm text-[#57534E] leading-relaxed">
+          <p className="text-sm text-gray-500 leading-relaxed">
             Các quy định cơ bản nhằm đảm bảo môi trường học tập văn minh, an toàn và ổn định cho mọi học viên trên SpeakMate.
           </p>
         </div>
 
-        <article className="space-y-6 text-sm text-[#44403C] leading-relaxed">
+        <article className="space-y-6 text-sm text-gray-600 leading-relaxed">
           <section className="space-y-2">
-            <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
+            <h2 className="font-display text-lg font-bold text-gray-900">
               1. Mục đích của nền tảng
             </h2>
             <p>
@@ -54,7 +53,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
+            <h2 className="font-display text-lg font-bold text-gray-900">
               2. Quy tắc sử dụng hợp lý
             </h2>
             <ul className="list-disc pl-5 space-y-1.5">
@@ -71,7 +70,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
+            <h2 className="font-display text-lg font-bold text-gray-900">
               3. Quyền sở hữu nội dung cá nhân
             </h2>
             <p>
@@ -81,14 +80,14 @@ export default function TermsOfServicePage() {
         </article>
       </main>
 
-      <footer className="border-t border-[#E7E2D8] py-6 text-center text-xs text-[#78716C]">
+      <footer className="border-t border-gray-100 py-6 text-center text-xs text-gray-500">
         <div className="mx-auto max-w-3xl px-4 flex flex-wrap items-center justify-between gap-2">
           <span>© {new Date().getFullYear()} SpeakMate.</span>
           <div className="flex items-center gap-4">
-            <Link href="/privacy" className="hover:text-[#1C1917] underline">
+            <Link href="/privacy" className="hover:text-gray-900 underline">
               Chính sách quyền riêng tư
             </Link>
-            <Link href="/" className="hover:text-[#1C1917] underline">
+            <Link href="/" className="hover:text-gray-900 underline">
               Trang chủ
             </Link>
           </div>

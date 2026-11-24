@@ -118,8 +118,8 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-[#1C1917] mb-1">
-          Tên gọi trong buổi hội thoại <span className="text-[#C2410C]">*</span>
+        <label className="block text-sm font-semibold text-gray-900 mb-1.5">
+          Tên gọi trong buổi hội thoại <span className="text-[#E5483F]">*</span>
         </label>
         <input
           type="text"
@@ -127,12 +127,12 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder="Ví dụ: Minh, Thảo, Alex..."
           maxLength={40}
-          className="w-full rounded-xl border border-[#D6CFC2] bg-white px-4 py-2.5 text-sm text-[#1C1917] focus:border-[#14532D] focus:outline-none"
+          className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-gray-900 focus:bg-white focus:outline-none"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[#1C1917] mb-2">
+        <label className="block text-sm font-semibold text-gray-900 mb-2">
           Ngôn ngữ phụ đề &amp; giải thích
         </label>
         <div className="flex flex-wrap gap-2">
@@ -149,10 +149,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
               key={lang.val}
               type="button"
               onClick={() => setNativeLanguage(lang.val)}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer ${
                 nativeLanguage === lang.val
-                  ? 'border-[#14532D] bg-[#14532D] text-white'
-                  : 'border-[#D6CFC2] bg-white text-[#57534E] hover:border-[#1C1917]'
+                  ? 'border-gray-900 bg-gray-900 text-white'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'
               }`}
             >
               <span className="font-mono text-[10px] opacity-75">{lang.code}</span>
@@ -163,7 +163,7 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[#1C1917] mb-2">
+        <label className="block text-sm font-semibold text-gray-900 mb-2">
           Trình độ tiếng Anh hiện tại
         </label>
         <div className="grid gap-3 sm:grid-cols-3">
@@ -185,21 +185,21 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                     );
                   }
                 }}
-                className={`rounded-xl border p-3.5 text-left transition cursor-pointer ${
+                className={`rounded-2xl border p-3.5 text-left transition cursor-pointer ${
                   selected
-                    ? 'border-[#14532D] bg-[#14532D]/[0.04]'
-                    : 'border-[#E7E2D8] bg-white hover:border-[#D6CFC2]'
+                    ? 'border-gray-900 bg-gray-50 ring-1 ring-gray-900'
+                    : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold text-[#1C1917]">
+                  <span className="text-sm font-bold text-gray-900">
                     {lvl.title}
                   </span>
                   {selected && (
-                    <Check className="h-4 w-4 shrink-0 text-[#14532D]" />
+                    <Check className="h-4 w-4 shrink-0 text-emerald-600" />
                   )}
                 </div>
-                <p className="text-xs leading-relaxed text-[#57534E]">
+                <p className="text-xs leading-relaxed text-gray-500">
                   {lvl.desc}
                 </p>
               </button>
@@ -209,7 +209,7 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[#1C1917] mb-1.5">
+        <label className="block text-sm font-semibold text-gray-900 mb-1.5">
           Công việc / Lĩnh vực chuyên môn
         </label>
         <div className="flex flex-wrap gap-2 mb-2.5">
@@ -222,8 +222,8 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                 onClick={() => setJobField(active ? '' : job)}
                 className={`rounded-full border px-3 py-1 text-xs font-medium transition cursor-pointer ${
                   active
-                    ? 'border-[#1C1917] bg-[#1C1917] text-white'
-                    : 'border-[#E7E2D8] bg-[#FBF9F5] text-[#57534E] hover:border-[#D6CFC2]'
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
                 }`}
               >
                 {job}
@@ -237,12 +237,12 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
           onChange={(e) => setJobField(e.target.value)}
           placeholder="Hoặc nhập lĩnh vực công việc của bạn..."
           maxLength={80}
-          className="w-full rounded-xl border border-[#D6CFC2] bg-white px-4 py-2.5 text-sm text-[#1C1917] focus:border-[#14532D] focus:outline-none"
+          className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-gray-900 focus:bg-white focus:outline-none"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[#1C1917] mb-1.5">
+        <label className="block text-sm font-semibold text-gray-900 mb-1.5">
           Sở thích &amp; Chủ đề thường trò chuyện
         </label>
         <div className="flex flex-wrap gap-2 mb-3">
@@ -253,10 +253,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                 key={hobby}
                 type="button"
                 onClick={() => toggleHobby(hobby)}
-                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition cursor-pointer ${
                   selected
-                    ? 'border-[#14532D] bg-[#14532D] text-white'
-                    : 'border-[#E7E2D8] bg-[#FBF9F5] text-[#57534E] hover:border-[#D6CFC2]'
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
                 }`}
               >
                 {selected && <Check className="h-3 w-3" />}
@@ -269,7 +269,7 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
             .map((custom) => (
               <span
                 key={custom}
-                className="inline-flex items-center gap-1 rounded-full bg-[#14532D] px-3 py-1 text-xs font-medium text-white"
+                className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white"
               >
                 {custom}
                 <button
@@ -295,12 +295,12 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
               }
             }}
             placeholder="Thêm sở thích khác..."
-            className="flex-1 rounded-xl border border-[#D6CFC2] bg-white px-3.5 py-2 text-sm focus:border-[#14532D] focus:outline-none"
+            className="flex-1 rounded-xl border border-gray-300 bg-gray-50 px-3.5 py-2 text-sm focus:border-gray-900 focus:bg-white focus:outline-none"
           />
           <button
             type="button"
             onClick={addCustomHobby}
-            className="btn-duo btn-duo-white px-3.5 py-2 text-xs"
+            className="btn-duo btn-duo-white px-4 py-2 text-xs"
           >
             <Plus className="h-4 w-4" />
             Thêm
@@ -310,7 +310,7 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
 
       <div className="grid gap-5 sm:grid-cols-2 tabular-nums">
         <div>
-          <label className="block text-sm font-medium text-[#1C1917] mb-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">
             Giọng đọc mặc định
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -323,11 +323,15 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                   onClick={() => setPreferredAccent(acc.value)}
                   className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition cursor-pointer ${
                     selected
-                      ? 'border-[#14532D] bg-[#14532D]/[0.05] text-[#14532D] font-semibold'
-                      : 'border-[#E7E2D8] bg-white text-[#57534E] hover:border-[#D6CFC2]'
+                      ? 'border-gray-900 bg-gray-900 text-white font-semibold'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                   }`}
                 >
-                  <span className="font-mono text-[10px] rounded bg-[#F3EFE6] px-1.5 py-0.5 text-[#57534E]">
+                  <span
+                    className={`font-mono text-[10px] rounded px-1.5 py-0.5 ${
+                      selected ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-500'
+                    }`}
+                  >
                     {acc.code}
                   </span>
                   <span className="truncate">{acc.label}</span>
@@ -339,7 +343,7 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#1C1917] mb-2">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
               Tốc độ giọng đọc
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -352,10 +356,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                   key={s.val}
                   type="button"
                   onClick={() => setPreferredSpeed(s.val)}
-                  className={`rounded-xl border px-2.5 py-2 text-xs font-medium transition cursor-pointer ${
+                  className={`rounded-xl border px-2.5 py-2 text-xs font-semibold transition cursor-pointer ${
                     Math.abs(preferredSpeed - s.val) < 0.04
-                      ? 'border-[#14532D] bg-[#14532D]/[0.05] text-[#14532D] font-semibold'
-                      : 'border-[#E7E2D8] bg-white text-[#57534E]'
+                      ? 'border-gray-900 bg-gray-900 text-white'
+                      : 'border-gray-200 bg-white text-gray-600'
                   }`}
                 >
                   {s.label}
@@ -365,7 +369,7 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#1C1917] mb-2">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
               Mục tiêu luyện tập mỗi ngày
             </label>
             <div className="grid grid-cols-4 gap-2">
@@ -374,10 +378,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                   key={mins}
                   type="button"
                   onClick={() => setDailyGoalMinutes(mins)}
-                  className={`rounded-xl border px-2 py-2 text-xs font-medium transition cursor-pointer ${
+                  className={`rounded-xl border px-2 py-2 text-xs font-semibold transition cursor-pointer ${
                     dailyGoalMinutes === mins
-                      ? 'border-[#14532D] bg-[#14532D]/[0.05] text-[#14532D] font-semibold'
-                      : 'border-[#E7E2D8] bg-white text-[#57534E]'
+                      ? 'border-gray-900 bg-gray-900 text-white'
+                      : 'border-gray-200 bg-white text-gray-600'
                   }`}
                 >
                   {mins} phút
@@ -395,7 +399,7 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
       )}
 
       {savedNotice && (
-        <div className="rounded-xl border border-[#14532D]/25 bg-[#14532D]/[0.05] px-4 py-3 text-sm text-[#14532D]">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           Đã lưu thay đổi hồ sơ học tập của bạn.
         </div>
       )}

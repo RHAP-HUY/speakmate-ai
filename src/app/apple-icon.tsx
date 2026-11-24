@@ -17,24 +17,25 @@ export default function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#14532D',
+          backgroundColor: '#111827',
           borderRadius: 40,
-          position: 'relative',
-          fontFamily: 'Georgia, serif',
         }}
       >
         <div
           style={{
+            width: 96,
+            height: 82,
+            borderRadius: 22,
+            backgroundColor: '#FFFFFF',
             display: 'flex',
-            alignItems: 'baseline',
-            color: '#FBF9F5',
-            fontSize: 98,
-            fontWeight: 700,
-            letterSpacing: '-0.04em',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
           }}
         >
-          <span>S</span>
-          <span style={{ color: '#EA580C', fontSize: 108 }}>.</span>
+          <div style={{ width: 12, height: 26, borderRadius: 6, backgroundColor: '#E5483F' }} />
+          <div style={{ width: 12, height: 46, borderRadius: 6, backgroundColor: '#111827' }} />
+          <div style={{ width: 12, height: 20, borderRadius: 6, backgroundColor: '#E5483F' }} />
         </div>
       </div>
     ),

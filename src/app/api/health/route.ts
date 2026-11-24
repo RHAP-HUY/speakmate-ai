@@ -29,7 +29,7 @@ export async function GET() {
   return NextResponse.json(
     {
       ok: true,
-      version: '8.0.0-professional',
+      version: '9.0.0-luminous-craft',
       uptimeSeconds: Math.max(0, Math.round((Date.now() - BOOT_TIME_MS) / 1000)),
       storageMode,
       googleAuthConfigured: googleCfg.configured,

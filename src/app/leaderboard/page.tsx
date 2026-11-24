@@ -15,7 +15,6 @@ import { AppShell } from '@/components/AppShell';
 import {
   GemSvg,
   LeagueTrophySvg,
-  NovaCompanion,
   StreakFlameSvg,
 } from '@/components/BrandArt';
 import {
@@ -109,9 +108,8 @@ export default function LeaderboardPage() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FBF9F5]">
-        <NovaCompanion mood="proud" className="h-11 w-11" />
-        <Loader2 className="h-5 w-5 animate-spin text-[#78716C]" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
       </div>
     );
   }
@@ -124,22 +122,20 @@ export default function LeaderboardPage() {
 
   return (
     <AppShell profile={profile} authenticated={authenticated}>
-      {/* Open Editorial League Header */}
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-5 border-b border-[#E7E2D8] pb-6">
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#E7E2D8] bg-white">
-            <LeagueTrophySvg tier={league.tier} className="h-10 w-10" />
-          </div>
+      {/* Header */}
+      <section className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="flex items-center gap-4">
+          <LeagueTrophySvg tier={league.tier} className="h-14 w-14" />
           <div>
-            <p className="text-xs font-medium text-[#78716C]">
-              Xếp hạng học viên tuần này · {board?.weekLabel || 'Đang diễn ra'}
+            <p className="text-xs font-medium text-gray-500">
+              Bảng xếp hạng tuần · {board?.weekLabel || 'Đang diễn ra'}
             </p>
-            <h1 className="font-serif-display text-3xl sm:text-4xl font-semibold tracking-tight text-[#1C1917] mt-1">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mt-0.5">
               {league.nameVi}
             </h1>
-            <p className="text-sm text-[#57534E] mt-1 tabular-nums">
+            <p className="text-sm text-gray-500 mt-0.5 tabular-nums">
               {board?.currentUserRank
-                ? `Vị trí hiện tại của bạn: #${board.currentUserRank} · Nhóm 3 học viên dẫn đầu thăng hạng vào tuần sau.`
+                ? `Hạng hiện tại: #${board.currentUserRank} · Nhóm Top 3 thăng hạng tuần sau.`
                 : 'Hoàn thành bài thực hành để ghi tên trên bảng tổng kết tuần.'}
             </p>
           </div>
@@ -147,9 +143,9 @@ export default function LeaderboardPage() {
 
         <div className="flex flex-wrap items-center gap-2.5 tabular-nums">
           {boostActive ? (
-            <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#FDBA74] bg-[#FFF7ED] px-3.5 py-2.5 text-xs font-semibold text-[#9A3412]">
-              <Zap className="h-4 w-4 text-[#C2410C]" />
-              Đang nhân đôi XP ({boostMins}p)
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-800">
+              <Zap className="h-3.5 w-3.5 text-amber-600" />
+              Đang bật 2x XP ({boostMins}p)
             </span>
           ) : (
             <button
@@ -158,36 +154,36 @@ export default function LeaderboardPage() {
               onClick={() => void handleBuyXpBoost()}
               className="btn-duo btn-duo-white px-4 py-2.5 text-xs"
             >
-              <Zap className="h-3.5 w-3.5 text-[#C2410C]" />
+              <Zap className="h-3.5 w-3.5 text-amber-500" />
               {buyingBoost ? 'Đang kích hoạt...' : 'Bật 2x XP (50 Ngọc)'}
             </button>
           )}
           <Link
             href="/play"
             onClick={() => playTapSound()}
-            className="btn-duo btn-duo-green px-4 py-2.5 text-xs"
+            className="btn-duo btn-duo-coral px-5 py-2.5 text-xs"
           >
-            Luyện bài mới
+            Luyện bài tích XP
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </section>
 
       {boostErr && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">
           {boostErr}
         </div>
       )}
 
-      {/* 5-Tier League Progression Strip */}
-      <section className="rounded-2xl border border-[#E7E2D8] bg-white p-5 space-y-3.5 tabular-nums">
+      {/* 5-Tier League Progression */}
+      <section className="rounded-3xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-xs space-y-4 tabular-nums">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-serif-display text-lg font-semibold text-[#1C1917]">
-            Lộ trình 5 bậc giải đấu
+          <h2 className="font-display text-base font-bold text-gray-900">
+            5 bậc giải đấu SpeakMate
           </h2>
-          <span className="text-xs font-medium text-[#57534E]">
+          <span className="text-xs font-medium text-gray-500">
             {league.nextXp
-              ? `Còn ${Math.max(0, league.nextXp - profile.xp)} XP để lên bậc tiếp theo`
+              ? `Còn ${Math.max(0, league.nextXp - profile.xp)} XP lên bậc tiếp theo`
               : 'Đã đạt bậc cao nhất'}
           </span>
         </div>
@@ -199,19 +195,19 @@ export default function LeaderboardPage() {
             return (
               <div
                 key={t.tier}
-                className={`flex flex-col items-center rounded-xl border p-3.5 text-center transition ${
+                className={`flex flex-col items-center rounded-2xl border p-3.5 text-center transition ${
                   isCurrent
-                    ? 'border-[#14532D] bg-[#F3EFE6]/70 ring-1 ring-[#14532D]'
+                    ? 'border-gray-900 bg-gray-50 ring-1 ring-gray-900'
                     : unlocked
-                      ? 'border-[#E7E2D8] bg-white'
-                      : 'border-[#E7E2D8] bg-[#FBF9F5] opacity-55'
+                      ? 'border-gray-200 bg-white'
+                      : 'border-gray-100 bg-gray-50/70 opacity-55'
                 }`}
               >
-                <LeagueTrophySvg tier={t.tier} className="h-8 w-8" />
-                <div className="mt-1.5 text-xs font-semibold text-[#1C1917] leading-tight">
+                <LeagueTrophySvg tier={t.tier} className="h-9 w-9" />
+                <div className="mt-2 text-xs font-bold text-gray-900 leading-tight">
                   {t.nameVi.replace('Giải ', '')}
                 </div>
-                <div className="font-mono text-[10px] text-[#78716C] mt-0.5">
+                <div className="font-mono text-[10px] text-gray-400 mt-0.5">
                   {t.minXp}+ XP
                 </div>
               </div>
@@ -220,53 +216,53 @@ export default function LeaderboardPage() {
         </div>
       </section>
 
-      {/* Top 3 Podium Showcase */}
+      {/* Top 3 Podium */}
       {top3.length >= 3 && (
-        <section className="grid grid-cols-3 gap-3 items-end tabular-nums">
+        <section className="grid grid-cols-3 gap-3 sm:gap-4 items-end tabular-nums">
           {[
-            { entry: top3[1], rank: 2, cardStyle: 'border-[#E7E2D8] bg-white' },
+            { entry: top3[1], rank: 2, cardStyle: 'border-gray-200/80 bg-white' },
             {
               entry: top3[0],
               rank: 1,
-              cardStyle: 'border-[#FDBA74] bg-[#FFF7ED]/70',
+              cardStyle: 'border-amber-300 bg-amber-50/50 shadow-sm',
             },
-            { entry: top3[2], rank: 3, cardStyle: 'border-[#E7E2D8] bg-white' },
+            { entry: top3[2], rank: 3, cardStyle: 'border-gray-200/80 bg-white' },
           ].map(({ entry, rank, cardStyle }) => (
             <div
               key={entry.id}
-              className={`rounded-2xl border p-4 sm:p-5 text-center space-y-2 ${cardStyle}`}
+              className={`rounded-3xl border p-4 sm:p-5 text-center space-y-2 ${cardStyle}`}
             >
               <div className="flex items-center justify-center">
                 {rank === 1 ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#FFEDD5] px-2.5 py-0.5 font-mono text-xs font-semibold text-[#9A3412]">
-                    <Crown className="h-3.5 w-3.5 text-[#C2410C]" />
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 font-mono text-xs font-bold text-amber-800">
+                    <Crown className="h-3.5 w-3.5 text-amber-600" />
                     #1
                   </span>
                 ) : (
-                  <span className="inline-flex rounded-full bg-[#F3EFE6] px-2.5 py-0.5 font-mono text-xs font-semibold text-[#57534E]">
+                  <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 font-mono text-xs font-bold text-gray-600">
                     #{rank}
                   </span>
                 )}
               </div>
               <div
-                className={`mx-auto flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-white ${
+                className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold text-white ${
                   entry.isCurrentUser
-                    ? 'bg-[#14532D]'
+                    ? 'bg-[#E5483F]'
                     : rank === 1
-                      ? 'bg-[#C2410C]'
-                      : 'bg-[#1C1917]'
+                      ? 'bg-amber-500'
+                      : 'bg-gray-900'
                 }`}
               >
                 {entry.displayName.slice(0, 1).toUpperCase()}
               </div>
-              <div className="text-xs sm:text-sm font-semibold text-[#1C1917] truncate">
+              <div className="text-xs sm:text-sm font-bold text-gray-900 truncate">
                 {entry.displayName}
                 {entry.isCurrentUser ? ' (Bạn)' : ''}
               </div>
-              <div className="font-serif-display text-base font-semibold text-[#1C1917]">
+              <div className="font-display text-base font-bold text-gray-900">
                 {entry.xp} XP
               </div>
-              <div className="inline-flex items-center justify-center gap-1 text-[11px] text-[#78716C]">
+              <div className="inline-flex items-center justify-center gap-1 text-[11px] text-gray-500">
                 <StreakFlameSvg active={entry.streakDays > 0} className="h-3.5 w-3.5" />
                 {entry.streakDays} ngày
               </div>
@@ -275,20 +271,20 @@ export default function LeaderboardPage() {
         </section>
       )}
 
-      {/* Full League Standings Sheet */}
-      <section className="rounded-2xl border border-[#E7E2D8] bg-white overflow-hidden tabular-nums">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E7E2D8] px-5 py-4">
-          <div className="flex items-center gap-2 font-serif-display text-lg font-semibold text-[#1C1917]">
-            <Users className="h-4 w-4 text-[#78716C]" />
-            Bảng điểm chi tiết trong tuần
+      {/* Standings Sheet */}
+      <section className="rounded-3xl border border-gray-200/80 bg-white shadow-xs overflow-hidden tabular-nums">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-6 py-4">
+          <div className="flex items-center gap-2 font-display text-base font-bold text-gray-900">
+            <Users className="h-4 w-4 text-gray-400" />
+            Bảng điểm chi tiết tuần này
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-[#57534E]">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
             <GemSvg className="h-4 w-4" />
-            Ngọc hiện có: <strong className="text-[#1C1917]">{profile.gems}</strong>
+            Ngọc hiện có: <strong className="text-gray-900">{profile.gems}</strong>
           </div>
         </div>
 
-        <div className="divide-y divide-[#EFECE4]">
+        <div className="divide-y divide-gray-100">
           {entries.map((entry, idx) => {
             const rank = idx + 1;
             const inPromoZone = rank <= 3;
@@ -296,22 +292,22 @@ export default function LeaderboardPage() {
             return (
               <div key={entry.id}>
                 <div
-                  className={`flex items-center justify-between gap-3 px-5 py-3.5 transition ${
+                  className={`flex items-center justify-between gap-3 px-6 py-3.5 transition ${
                     entry.isCurrentUser
-                      ? 'bg-[#ECFDF5]/65'
-                      : 'bg-white hover:bg-[#FBF9F5]'
+                      ? 'bg-rose-50/50'
+                      : 'bg-white hover:bg-gray-50'
                   }`}
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <span
-                      className={`font-mono flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-semibold ${
+                      className={`font-mono flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
                         rank === 1
-                          ? 'bg-[#FFEDD5] text-[#9A3412]'
+                          ? 'bg-amber-100 text-amber-800'
                           : rank === 2
-                            ? 'bg-[#F3EFE6] text-[#1C1917]'
+                            ? 'bg-gray-200 text-gray-800'
                             : rank === 3
-                              ? 'bg-[#FEF3C7] text-[#92400E]'
-                              : 'text-[#78716C]'
+                              ? 'bg-orange-100 text-orange-800'
+                              : 'text-gray-400'
                       }`}
                     >
                       {rank}
@@ -319,7 +315,7 @@ export default function LeaderboardPage() {
 
                     <div
                       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
-                        entry.isCurrentUser ? 'bg-[#14532D]' : 'bg-[#1C1917]'
+                        entry.isCurrentUser ? 'bg-[#E5483F]' : 'bg-gray-900'
                       }`}
                     >
                       {entry.displayName.slice(0, 1).toUpperCase()}
@@ -327,16 +323,16 @@ export default function LeaderboardPage() {
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[#1C1917] truncate">
+                        <span className="text-sm font-bold text-gray-900 truncate">
                           {entry.displayName}
                         </span>
                         {entry.isCurrentUser && (
-                          <span className="rounded-full bg-[#14532D] px-2 py-0.5 text-[10px] font-semibold text-white">
+                          <span className="rounded-full bg-[#E5483F] px-2 py-0.5 text-[10px] font-bold text-white">
                             Bạn
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-[#78716C]">
+                      <div className="text-[11px] text-gray-500">
                         Trình độ {entry.englishLevel}
                         {!entry.isBot && !entry.isCurrentUser && ' · Học viên thực'}
                       </div>
@@ -344,23 +340,23 @@ export default function LeaderboardPage() {
                   </div>
 
                   <div className="flex items-center gap-4 shrink-0">
-                    <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-[#57534E]">
+                    <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-gray-500">
                       <StreakFlameSvg
                         active={entry.streakDays > 0}
                         className="h-3.5 w-3.5"
                       />
                       {entry.streakDays}d
                     </span>
-                    <span className="min-w-20 text-right font-serif-display text-base font-semibold text-[#1C1917]">
+                    <span className="min-w-20 text-right font-display text-base font-bold text-gray-900">
                       {entry.xp} XP
                     </span>
                   </div>
                 </div>
 
                 {inPromoZone && rank === 3 && entries.length > 3 && (
-                  <div className="flex items-center justify-center gap-2 bg-[#ECFDF5] border-y border-[#A7F3D0] py-1.5 text-[11px] font-semibold text-[#14532D]">
+                  <div className="flex items-center justify-center gap-2 bg-emerald-50 border-y border-emerald-200 py-1.5 text-[11px] font-bold text-emerald-700">
                     <ArrowUp className="h-3.5 w-3.5" />
-                    Nhóm 3 học viên dẫn đầu thăng hạng tuần này
+                    Nhóm Top 3 thăng hạng tuần này
                   </div>
                 )}
               </div>
@@ -368,20 +364,6 @@ export default function LeaderboardPage() {
           })}
         </div>
       </section>
-
-      {/* Bottom Note */}
-      <div className="rounded-2xl border border-[#E7E2D8] bg-[#F3EFE6]/75 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="text-xs text-[#57534E]">
-          Mỗi bài thực hành hoàn thành cộng từ <strong className="text-[#1C1917]">+65 đến +130 XP</strong> (nhân đôi khi đang bật chế độ 2x XP).
-        </div>
-        <Link
-          href="/play"
-          className="btn-duo btn-duo-primary shrink-0 px-5 py-2.5 text-xs"
-        >
-          Thực hành tích lũy XP
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
 
       <CelebrationModal
         payload={celebration}

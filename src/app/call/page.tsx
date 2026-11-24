@@ -718,40 +718,40 @@ function CallStudioInner() {
       : null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#1C1917] text-[#FBF9F5]">
+    <div className="min-h-screen flex flex-col bg-[#0F1115] text-white">
       {/* Top Call Bar */}
-      <header className="sticky top-0 z-20 border-b border-[#36302B] bg-[#24201D]/95 backdrop-blur-md px-4 py-3">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#151820]/95 backdrop-blur-md px-4 py-3">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             <div className="relative shrink-0">
               <TutorAvatar
                 personaId={persona.id}
-                className="h-11 w-11 ring-1 ring-[#443C36]"
+                className="h-12 w-12 ring-2 ring-white/15"
               />
               {(phase === 'speaking' || phase === 'recording') && (
-                <span className="absolute -inset-1 rounded-full border-2 border-[#FDBA74]/80 animate-voice-pulse" />
+                <span className="absolute -inset-1 rounded-full border-2 border-[#E5483F] animate-voice-pulse" />
               )}
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-serif-display text-base font-semibold text-[#FBF9F5]">
+                <h1 className="font-display text-sm sm:text-base font-bold text-white">
                   {persona.name} · {scenario.titleVi}
                 </h1>
-                <span className="rounded-full bg-[#1C1917] border border-[#36302B] px-2.5 py-0.5 font-mono text-[11px] text-[#FDE68A] tabular-nums">
+                <span className="rounded-full bg-white/10 px-2.5 py-0.5 font-mono text-[11px] text-white/90 tabular-nums">
                   {formatTimer(elapsedSeconds)}
                 </span>
                 {lastTurnMeta && (
                   <span
                     title={`Model: ${lastTurnMeta.modelUsed}`}
-                    className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#1C1917] border border-[#36302B] px-2 py-0.5 font-mono text-[10px] text-[#A7F3D0] tabular-nums"
+                    className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-400/25 px-2 py-0.5 font-mono text-[10px] text-emerald-300 tabular-nums"
                   >
                     <Zap className="h-2.5 w-2.5" />
                     {(lastTurnMeta.latencyMs / 1000).toFixed(1)}s
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#A8A29E]">
-                {phase === 'initializing' && 'Đang mở phòng hội thoại...'}
+              <p className="text-xs text-gray-400">
+                {phase === 'initializing' && 'Đang kết nối phòng hội thoại...'}
                 {phase === 'idle' &&
                   (micMode === 'handsfree'
                     ? 'Sẵn sàng — Hãy nói tự nhiên hoặc bấm Micro'
@@ -760,7 +760,7 @@ function CallStudioInner() {
                 {phase === 'thinking' &&
                   `${persona.name} đang nghe âm vị & chuẩn bị câu phản hồi...`}
                 {phase === 'speaking' &&
-                  `${persona.name} đang trao đổi (${persona.accentLabel})...`}
+                  `${persona.name} đang trò chuyện (${persona.accentLabel})...`}
                 {phase === 'ended' && 'Buổi hội thoại đã hoàn tất'}
               </p>
             </div>
@@ -772,26 +772,26 @@ function CallStudioInner() {
               value={persona.id}
               onChange={(e) => handleChangePersona(e.target.value)}
               aria-label="Đổi người hướng dẫn"
-              className="rounded-xl border border-[#36302B] bg-[#1C1917] px-2.5 py-1.5 text-xs font-medium text-[#E7E2D8] focus:outline-none"
+              className="rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-medium text-gray-100 focus:outline-none"
             >
               {AI_PERSONAS.map((p) => (
-                <option key={p.id} value={p.id}>
+                <option key={p.id} value={p.id} className="bg-[#151820] text-white">
                   {p.name} · {p.accent}
                 </option>
               ))}
             </select>
 
             {/* Speed selector */}
-            <div className="flex items-center rounded-xl border border-[#36302B] bg-[#1C1917] p-0.5 tabular-nums">
+            <div className="flex items-center rounded-full border border-white/15 bg-white/8 p-0.5 tabular-nums">
               {[0.75, 0.85, 1.0, 1.1].map((spd) => (
                 <button
                   key={spd}
                   type="button"
                   onClick={() => setSpeed(spd)}
-                  className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
                     Math.abs(speed - spd) < 0.03
-                      ? 'bg-[#14532D] text-white'
-                      : 'text-[#A8A29E] hover:text-white'
+                      ? 'bg-white text-gray-900'
+                      : 'text-gray-300 hover:text-white'
                   }`}
                 >
                   {spd}x
@@ -803,16 +803,16 @@ function CallStudioInner() {
             <button
               type="button"
               onClick={() => setShowVietnamese((v) => !v)}
-              className="inline-flex items-center gap-1 rounded-xl border border-[#36302B] bg-[#1C1917] px-2.5 py-1.5 text-xs font-medium text-[#E7E2D8] hover:bg-[#2E2925] cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/15 cursor-pointer"
             >
               {showVietnamese ? (
                 <>
-                  <Eye className="h-3.5 w-3.5 text-[#FDBA74]" />
+                  <Eye className="h-3.5 w-3.5 text-emerald-400" />
                   <span className="hidden sm:inline">Song ngữ</span>
                 </>
               ) : (
                 <>
-                  <EyeOff className="h-3.5 w-3.5 text-[#78716C]" />
+                  <EyeOff className="h-3.5 w-3.5 text-gray-400" />
                   <span className="hidden sm:inline">Ẩn dịch</span>
                 </>
               )}
@@ -822,7 +822,7 @@ function CallStudioInner() {
               type="button"
               onClick={() => void handleEndCall()}
               disabled={phase === 'ended'}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800 disabled:opacity-50 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#E5483F] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#cf3a31] disabled:opacity-50 transition cursor-pointer"
             >
               <PhoneOff className="h-3.5 w-3.5" />
               Kết thúc
@@ -830,13 +830,13 @@ function CallStudioInner() {
           </div>
         </div>
 
-        {/* Strict Lesson Quest Progress Bar for Keeping Streak */}
+        {/* Lesson Quest Progress Bar */}
         <div className="mx-auto mt-2.5 max-w-5xl">
           <div
-            className={`flex items-center justify-between gap-3 rounded-xl px-3.5 py-1.5 text-[11px] font-medium border ${
+            className={`flex items-center justify-between gap-3 rounded-full px-4 py-1.5 text-[11px] font-medium border ${
               userTurns >= MIN_CALL_TURNS_FOR_LESSON
-                ? 'border-[#166534] bg-[#14532D]/45 text-[#D1FAE5]'
-                : 'border-[#36302B] bg-[#1C1917]/80 text-[#D6D0C4]'
+                ? 'border-emerald-500/35 bg-emerald-500/15 text-emerald-200'
+                : 'border-white/10 bg-white/[0.04] text-gray-300'
             }`}
           >
             <span className="inline-flex items-center gap-1.5">
@@ -851,12 +851,12 @@ function CallStudioInner() {
                   } lượt nói nữa cùng ${persona.name}`}
             </span>
             <div className="flex items-center gap-2 shrink-0 tabular-nums">
-              <div className="hidden sm:block h-1.5 w-24 overflow-hidden rounded-full bg-[#36302B]">
+              <div className="hidden sm:block h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
                     userTurns >= MIN_CALL_TURNS_FOR_LESSON
-                      ? 'bg-[#34D399]'
-                      : 'bg-[#C2410C]'
+                      ? 'bg-emerald-400'
+                      : 'bg-[#E5483F]'
                   }`}
                   style={{
                     width: `${Math.min(
@@ -877,13 +877,13 @@ function CallStudioInner() {
       {/* Main Conversation Stream */}
       <main className="mx-auto flex-1 w-full max-w-4xl px-4 py-6 space-y-5 overflow-y-auto">
         {messages.length === 0 && phase === 'initializing' && (
-          <div className="flex flex-col items-center justify-center py-20 text-center space-y-3.5">
+          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
             <TutorAvatar
               personaId={persona.id}
-              className="h-20 w-20 ring-2 ring-[#443C36]"
+              className="h-24 w-24 ring-4 ring-white/10 shadow-xl"
             />
-            <Loader2 className="h-5 w-5 animate-spin text-[#FDBA74]" />
-            <p className="font-serif-display text-lg font-medium text-[#FBF9F5]">
+            <Loader2 className="h-5 w-5 animate-spin text-[#E5483F]" />
+            <p className="font-display text-lg font-semibold text-white">
               {persona.name} đang chuẩn bị tình huống cho {profile?.displayName || 'bạn'}...
             </p>
           </div>
@@ -895,32 +895,22 @@ function CallStudioInner() {
             msg.naturalRewrite &&
             savedKeys.has(msg.naturalRewrite.toLowerCase());
           const isSavedAi = savedKeys.has(msg.englishText.toLowerCase());
-          const isLatestUserTurn =
-            isUser &&
-            msgIdx >= messages.length - 2;
+          const isLatestUserTurn = isUser && msgIdx >= messages.length - 2;
 
           return (
             <div
               key={msg.id}
-              className={`flex flex-col ${
-                isUser ? 'items-end' : 'items-start'
-              }`}
+              className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
             >
               <div
                 className={`max-w-[92%] sm:max-w-[82%] rounded-2xl px-4 py-3.5 ${
                   isUser
-                    ? 'bg-[#14532D] text-[#FBF9F5]'
-                    : 'bg-[#26221E] border border-[#38312C] text-[#FBF9F5]'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-[#181B22] border border-white/10 text-white'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <p
-                    className={
-                      isUser
-                        ? 'text-sm sm:text-base font-medium leading-relaxed'
-                        : 'font-serif-display text-base sm:text-[18px] leading-relaxed'
-                    }
-                  >
+                  <p className="text-sm sm:text-base font-medium leading-relaxed">
                     {msg.englishText}
                   </p>
                   {!isUser && (
@@ -929,7 +919,7 @@ function CallStudioInner() {
                         type="button"
                         onClick={() => void speakAiSentence(msg.englishText)}
                         title="Nghe lại"
-                        className="rounded-lg bg-[#1C1917] border border-[#38312C] p-1.5 text-[#FDE68A] hover:bg-[#322C27] cursor-pointer"
+                        className="rounded-full bg-white/10 p-1.5 text-white hover:bg-white/20 cursor-pointer"
                       >
                         <Volume2 className="h-4 w-4" />
                       </button>
@@ -939,7 +929,7 @@ function CallStudioInner() {
                           void speakAiSentence(msg.englishText, 0.72)
                         }
                         title="Nghe chậm 0.72x"
-                        className="rounded-lg bg-[#1C1917] border border-[#38312C] px-2 py-1 text-[11px] font-medium text-[#E7E2D8] hover:bg-[#322C27] cursor-pointer"
+                        className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-gray-200 hover:bg-white/20 cursor-pointer"
                       >
                         Chậm
                       </button>
@@ -948,7 +938,7 @@ function CallStudioInner() {
                 </div>
 
                 {!isUser && showVietnamese && msg.vietnameseTranslation && (
-                  <p className="mt-2 border-t border-[#38312C] pt-2 text-xs text-[#A8A29E] leading-relaxed">
+                  <p className="mt-2 border-t border-white/10 pt-2 text-xs text-gray-400 leading-relaxed">
                     {msg.vietnameseTranslation}
                   </p>
                 )}
@@ -963,7 +953,7 @@ function CallStudioInner() {
                           vietnamese: msg.vietnameseTranslation,
                         })
                       }
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-[#FDBA74] hover:text-[#FED7AA] cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 hover:text-amber-200 cursor-pointer"
                     >
                       <Mic className="h-3 w-3" />
                       Đọc nhại &amp; chấm âm
@@ -977,11 +967,11 @@ function CallStudioInner() {
                             msg.vietnameseTranslation || ''
                           )
                         }
-                        className="inline-flex items-center gap-1 text-[11px] text-[#A8A29E] hover:text-[#FBF9F5] cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-white cursor-pointer"
                       >
                         {isSavedAi ? (
                           <>
-                            <Check className="h-3 w-3 text-[#34D399]" />
+                            <Check className="h-3 w-3 text-emerald-400" />
                             Đã lưu câu
                           </>
                         ) : (
@@ -996,13 +986,12 @@ function CallStudioInner() {
                 )}
 
                 {msg.coachingTip && (
-                  <div className="mt-2.5 rounded-xl bg-[#1C1917] border border-[#38312C] px-3 py-2 text-xs text-[#FDE68A]">
+                  <div className="mt-2.5 rounded-xl bg-black/25 px-3 py-2 text-xs text-amber-200">
                     Góp ý diễn đạt: {msg.coachingTip}
                   </div>
                 )}
               </div>
 
-              {/* Automatic Per-Turn Pronunciation Score */}
               {isUser && msg.pronunciation && (
                 <PronunciationBadge
                   assessment={msg.pronunciation}
@@ -1011,11 +1000,10 @@ function CallStudioInner() {
                 />
               )}
 
-              {/* Native phrasing upgrade card for user turns */}
               {isUser && msg.naturalRewrite && (
-                <div className="mt-1.5 max-w-[92%] sm:max-w-[82%] rounded-2xl border border-[#166534] bg-[#14532D]/35 px-4 py-3 text-xs">
+                <div className="mt-1.5 max-w-[92%] sm:max-w-[82%] rounded-2xl border border-emerald-500/30 bg-emerald-950/45 px-4 py-3 text-xs">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                    <span className="font-semibold text-[#A7F3D0]">
+                    <span className="font-semibold text-emerald-300">
                       Cách người bản xứ diễn đạt tự nhiên hơn:
                     </span>
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -1024,7 +1012,7 @@ function CallStudioInner() {
                         onClick={() =>
                           void speakAiSentence(msg.naturalRewrite || '')
                         }
-                        className="inline-flex items-center gap-1 rounded-lg bg-[#1C1917]/80 border border-[#38312C] px-2 py-0.5 text-[11px] font-medium text-[#E7E2D8] hover:bg-[#2E2925] cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-medium text-white hover:bg-white/20 cursor-pointer"
                       >
                         <Volume2 className="h-3 w-3" />
                         Nghe mẫu
@@ -1037,7 +1025,7 @@ function CallStudioInner() {
                             vietnamese: `Nâng cấp từ: "${msg.englishText}"`,
                           })
                         }
-                        className="inline-flex items-center gap-1 rounded-lg bg-[#1C1917]/80 border border-[#38312C] px-2 py-0.5 text-[11px] font-medium text-[#FDBA74] hover:bg-[#2E2925] cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-medium text-amber-300 hover:bg-white/20 cursor-pointer"
                       >
                         <Mic className="h-3 w-3" />
                         Đọc thử
@@ -1050,7 +1038,7 @@ function CallStudioInner() {
                             msg.englishText
                           )
                         }
-                        className="inline-flex items-center gap-1 rounded-lg bg-[#1C1917]/80 border border-[#38312C] px-2 py-0.5 text-[11px] font-medium text-[#A7F3D0] hover:bg-[#2E2925] cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300 hover:bg-white/20 cursor-pointer"
                       >
                         {isSavedRewrite ? (
                           <Check className="h-3 w-3" />
@@ -1061,8 +1049,8 @@ function CallStudioInner() {
                       </button>
                     </div>
                   </div>
-                  <p className="font-serif-display text-base font-medium text-[#FBF9F5]">
-                    “{msg.naturalRewrite}”
+                  <p className="text-sm sm:text-base font-semibold text-white">
+                    &ldquo;{msg.naturalRewrite}&rdquo;
                   </p>
                 </div>
               )}
@@ -1071,8 +1059,8 @@ function CallStudioInner() {
         })}
 
         {phase === 'thinking' && (
-          <div className="flex items-center gap-2 text-xs text-[#FDBA74] pl-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
+          <div className="flex items-center gap-2 text-xs text-gray-300 pl-2">
+            <Loader2 className="h-4 w-4 animate-spin text-[#E5483F]" />
             <span>
               {persona.name} đang phân tích phát âm và chuẩn bị câu trả lời...
             </span>
@@ -1091,7 +1079,7 @@ function CallStudioInner() {
                     void sendTurn(retryPayload);
                   }
                 }}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] px-3 py-1.5 text-[11px] font-semibold text-white transition cursor-pointer shrink-0"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#E5483F] hover:bg-[#cf3a31] px-3.5 py-1.5 text-[11px] font-semibold text-white transition cursor-pointer shrink-0"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Thử lại lượt vừa rồi
@@ -1103,44 +1091,43 @@ function CallStudioInner() {
         <div ref={messagesEndRef} />
       </main>
 
-      {/* Bottom Smart Reply Hints + Mic Dock */}
+      {/* Bottom Reply Hints + Mic Dock */}
       {phase !== 'ended' && (
-        <footer className="sticky bottom-0 z-20 border-t border-[#36302B] bg-[#24201D]/95 backdrop-blur-md px-4 py-3.5">
+        <footer className="sticky bottom-0 z-20 border-t border-white/10 bg-[#151820]/95 backdrop-blur-md px-4 py-3.5">
           <div className="mx-auto max-w-4xl space-y-3">
-            {/* 3 Reply Hints for A0-A1 support */}
             {replyHints.length > 0 && (
               <div>
-                <div className="text-[11px] font-medium text-[#A8A29E] mb-1.5">
+                <div className="text-[11px] font-medium text-gray-400 mb-1.5">
                   Gợi ý câu trả lời (nghe mẫu, đọc thử chấm âm hoặc gửi nhanh):
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {replyHints.map((hint, idx) => (
                     <div
                       key={`${idx}-${hint.en}`}
-                      className="flex flex-col justify-between rounded-xl border border-[#38312C] bg-[#1C1917] p-2.5"
+                      className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-3"
                     >
                       <div>
-                        <div className="font-serif-display text-sm font-medium text-[#FBF9F5]">
+                        <div className="text-xs sm:text-sm font-semibold text-white">
                           {hint.en}
                         </div>
                         {hint.phonetic && (
-                          <div className="font-mono text-[11px] text-[#FDE68A]/85 mt-0.5">
+                          <div className="font-mono text-[11px] text-amber-300/90 mt-0.5">
                             /{hint.phonetic}/
                           </div>
                         )}
                         {showVietnamese && (
-                          <div className="text-[11px] text-[#A8A29E] mt-0.5">
+                          <div className="text-[11px] text-gray-400 mt-0.5">
                             {hint.vi}
                           </div>
                         )}
                       </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => void speakAiSentence(hint.en, 0.8)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-[#26221E] border border-[#38312C] px-2 py-1 text-[11px] font-medium text-[#E7E2D8] hover:bg-[#322C27] cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-white/20 cursor-pointer"
                         >
-                          <Volume2 className="h-3 w-3 text-[#FDBA74]" />
+                          <Volume2 className="h-3 w-3" />
                           Nghe
                         </button>
                         <button
@@ -1152,7 +1139,7 @@ function CallStudioInner() {
                               phonetic: hint.phonetic,
                             })
                           }
-                          className="inline-flex items-center gap-1 rounded-lg bg-[#26221E] border border-[#38312C] px-2 py-1 text-[11px] font-medium text-[#A7F3D0] hover:bg-[#322C27] cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300 hover:bg-white/20 cursor-pointer"
                         >
                           <Mic className="h-3 w-3" />
                           Đọc thử
@@ -1161,7 +1148,7 @@ function CallStudioInner() {
                           type="button"
                           disabled={phase === 'thinking'}
                           onClick={() => void handleSendText(hint.en)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-[#14532D] px-2 py-1 text-[11px] font-semibold text-white hover:bg-[#166534] disabled:opacity-50 cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-gray-900 hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
                         >
                           Dùng câu
                         </button>
@@ -1172,25 +1159,22 @@ function CallStudioInner() {
               </div>
             )}
 
-            {/* Mic + Text Input Controls */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="flex items-center gap-2">
-                {/* Mode Toggle */}
                 <button
                   type="button"
                   onClick={() =>
                     setMicMode((m) => (m === 'tap' ? 'handsfree' : 'tap'))
                   }
-                  className={`rounded-xl border px-3 py-2.5 text-xs font-medium transition cursor-pointer ${
+                  className={`rounded-full border px-3.5 py-2.5 text-xs font-semibold transition cursor-pointer ${
                     micMode === 'handsfree'
-                      ? 'border-[#FDBA74]/60 bg-[#C2410C]/20 text-[#FED7AA]'
-                      : 'border-[#38312C] bg-[#1C1917] text-[#D6D0C4]'
+                      ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300'
+                      : 'border-white/15 bg-white/8 text-gray-300'
                   }`}
                 >
                   {micMode === 'handsfree' ? 'Rảnh tay (Tự động)' : 'Chạm để nói'}
                 </button>
 
-                {/* Primary Mic Button */}
                 <button
                   type="button"
                   disabled={phase === 'thinking' || phase === 'initializing'}
@@ -1201,10 +1185,10 @@ function CallStudioInner() {
                       void startRecording();
                     }
                   }}
-                  className={`relative flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold shadow-sm transition disabled:opacity-50 cursor-pointer ${
+                  className={`relative flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold shadow-md transition disabled:opacity-50 cursor-pointer ${
                     phase === 'recording'
                       ? 'bg-rose-600 text-white hover:bg-rose-700'
-                      : 'bg-[#C2410C] text-white hover:bg-[#9A3412]'
+                      : 'bg-[#E5483F] text-white hover:bg-[#cf3a31]'
                   }`}
                 >
                   {phase === 'recording' ? (
@@ -1225,7 +1209,6 @@ function CallStudioInner() {
                 </button>
               </div>
 
-              {/* Optional Text Fallback Input */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -1238,13 +1221,13 @@ function CallStudioInner() {
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   placeholder="Hoặc gõ tiếng Anh / Việt nếu đang ở nơi ồn..."
-                  className="flex-1 rounded-xl border border-[#38312C] bg-[#1C1917] px-3.5 py-2.5 text-sm text-[#FBF9F5] placeholder-[#78716C] focus:border-[#FDBA74] focus:outline-none"
+                  className="flex-1 rounded-full border border-white/15 bg-white/8 px-4 py-2.5 text-sm text-white placeholder-gray-400 focus:border-white/40 focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={!textInput.trim() || phase === 'thinking'}
                   aria-label="Gửi tin nhắn"
-                  className="rounded-xl bg-[#14532D] p-2.5 text-white hover:bg-[#166534] disabled:opacity-40 cursor-pointer"
+                  className="rounded-full bg-white p-2.5 text-gray-900 hover:bg-gray-200 disabled:opacity-40 cursor-pointer"
                 >
                   <Send className="h-4 w-4" />
                 </button>
@@ -1254,7 +1237,6 @@ function CallStudioInner() {
         </footer>
       )}
 
-      {/* Sentence Pronunciation Practice Modal */}
       <PronunciationPracticeModal
         target={practiceTarget}
         persona={persona}
@@ -1262,61 +1244,59 @@ function CallStudioInner() {
         onClose={() => setPracticeTarget(null)}
       />
 
-      {/* Post-Call Evaluation Report Modal */}
       {phase === 'ended' && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-xs">
-          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl border border-[#38312C] bg-[#24201D] p-5 sm:p-6 shadow-2xl space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#38312C] pb-4">
-              <div className="flex items-center gap-3">
+          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl border border-white/10 bg-[#151820] p-5 sm:p-6 shadow-2xl space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3.5">
                 <TutorAvatar
                   personaId={persona.id}
-                  className="h-12 w-12 shrink-0 ring-1 ring-[#443C36]"
+                  className="h-13 w-13 shrink-0 ring-2 ring-white/15"
                 />
                 <div>
-                  <h2 className="font-serif-display text-xl sm:text-2xl font-semibold text-[#FBF9F5]">
+                  <h2 className="font-display text-xl font-bold text-white">
                     Nhận xét sau buổi hội thoại
                   </h2>
-                  <p className="text-xs text-[#A8A29E]">
+                  <p className="text-xs text-gray-400">
                     {scenario.titleVi} · cùng {persona.name} ({persona.accent})
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 text-xs tabular-nums">
-                <div className="rounded-xl bg-[#1C1917] border border-[#38312C] px-3 py-1.5 text-center">
-                  <div className="font-semibold text-[#FDE68A]">
+                <div className="rounded-xl bg-white/8 px-3 py-1.5 text-center">
+                  <div className="font-bold text-white">
                     {formatTimer(elapsedSeconds)}
                   </div>
-                  <div className="text-[10px] text-[#A8A29E]">Thời lượng</div>
+                  <div className="text-[10px] text-gray-400">Thời lượng</div>
                 </div>
-                <div className="rounded-xl bg-[#1C1917] border border-[#38312C] px-3 py-1.5 text-center">
-                  <div className="font-semibold text-[#A7F3D0]">
+                <div className="rounded-xl bg-white/8 px-3 py-1.5 text-center">
+                  <div className="font-bold text-emerald-400">
                     {userTurns} lượt
                   </div>
-                  <div className="text-[10px] text-[#A8A29E]">Bạn đã nói</div>
+                  <div className="text-[10px] text-gray-400">Bạn đã nói</div>
                 </div>
                 {avgPronunciation !== null && (
-                  <div className="rounded-xl bg-[#1C1917] border border-[#38312C] px-3 py-1.5 text-center">
-                    <div className="font-semibold text-[#FDBA74]">
+                  <div className="rounded-xl bg-white/8 px-3 py-1.5 text-center">
+                    <div className="font-bold text-amber-300">
                       {avgPronunciation}/100
                     </div>
-                    <div className="text-[10px] text-[#A8A29E]">TB Phát âm</div>
+                    <div className="text-[10px] text-gray-400">TB Phát âm</div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Strict Streak & XP Reward Banner */}
             {callReward && (
               <div
-                className={`rounded-2xl border p-3.5 text-xs space-y-2 ${
+                className={`rounded-2xl border p-4 text-xs space-y-2 ${
                   callReward.lessonCompleted
-                    ? 'border-[#166534] bg-[#14532D]/40 text-[#ECFDF5]'
-                    : 'border-[#9A3412]/60 bg-[#431407]/50 text-[#FED7AA]'
+                    ? 'border-emerald-500/35 bg-emerald-500/15 text-emerald-100'
+                    : 'border-amber-500/35 bg-amber-500/15 text-amber-100'
                 }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-semibold flex items-center gap-1.5">
+                  <span className="font-bold flex items-center gap-1.5">
                     <StreakFlameSvg
                       active={callReward.lessonCompleted}
                       className="h-4 w-4 shrink-0"
@@ -1325,12 +1305,12 @@ function CallStudioInner() {
                       ? `Hoàn thành buổi học — Đã giữ chuỗi ${callReward.streakDays} ngày liên tiếp`
                       : `Chưa đủ ${MIN_CALL_TURNS_FOR_LESSON} lượt nói (${userTurns}/${MIN_CALL_TURNS_FOR_LESSON}) nên chưa tính giữ chuỗi hôm nay.`}
                   </span>
-                  <div className="flex items-center gap-1.5 font-semibold tabular-nums">
-                    <span className="rounded-lg bg-[#1C1917] border border-[#38312C] px-2 py-0.5 text-[#FDE68A]">
+                  <div className="flex items-center gap-1.5 font-bold tabular-nums">
+                    <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-amber-200">
                       +{callReward.xpEarned} XP
                     </span>
                     {callReward.gemsEarned > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-lg bg-[#1C1917] border border-[#38312C] px-2 py-0.5 text-[#A7F3D0]">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-emerald-200">
                         +{callReward.gemsEarned}
                         <GemSvg className="h-3 w-3" />
                       </span>
@@ -1340,7 +1320,7 @@ function CallStudioInner() {
                 {callReward.newlyClaimableMilestones.length > 0 && (
                   <Link
                     href="/history#rewards"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#C2410C] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-[#9A3412]"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#E5483F] px-3.5 py-1.5 text-[11px] font-bold text-white hover:bg-[#cf3a31]"
                   >
                     <Award className="h-3.5 w-3.5" />
                     Nhận phần thưởng mốc {callReward.newlyClaimableMilestones[0]} ngày
@@ -1351,12 +1331,12 @@ function CallStudioInner() {
 
             {reportLoading ? (
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
-                <Loader2 className="h-7 w-7 animate-spin text-[#FDBA74]" />
+                <Loader2 className="h-7 w-7 animate-spin text-[#E5483F]" />
                 <div className="space-y-1">
-                  <p className="font-serif-display text-base font-medium text-[#FBF9F5]">
+                  <p className="font-display text-base font-semibold text-white">
                     Đang tổng hợp nhận xét chi tiết cho buổi hội thoại...
                   </p>
-                  <p className="text-xs text-[#A8A29E]">
+                  <p className="text-xs text-gray-400">
                     Phân tích phát âm, độ trôi chảy, ngữ pháp và gợi ý cụm từ cho bạn
                   </p>
                 </div>
@@ -1375,7 +1355,7 @@ function CallStudioInner() {
                           elapsedSeconds
                         )
                       }
-                      className="inline-flex items-center gap-1 rounded-lg bg-[#C2410C] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#9A3412] cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-full bg-[#E5483F] px-3 py-1 text-[11px] font-semibold text-white hover:bg-[#cf3a31] cursor-pointer"
                     >
                       <RotateCcw className="h-3 w-3" />
                       Thử lại
@@ -1397,26 +1377,26 @@ function CallStudioInner() {
               </>
             )}
 
-            <div className="flex flex-col gap-2.5 sm:flex-row border-t border-[#38312C] pt-4">
+            <div className="flex flex-col gap-2.5 sm:flex-row border-t border-white/10 pt-4">
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#38312C] bg-[#1C1917] px-4 py-2.5 text-xs font-semibold text-[#FBF9F5] hover:bg-[#2E2925] cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 bg-white/8 px-4 py-2.5 text-xs font-semibold text-white hover:bg-white/15 cursor-pointer"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                Hội thoại lại tình huống này
+                Hội thoại lại
               </button>
               <Link
                 href="/history"
-                className="flex-1 text-center rounded-xl border border-[#38312C] bg-[#1C1917] px-4 py-2.5 text-xs font-semibold text-[#FBF9F5] hover:bg-[#2E2925]"
+                className="flex-1 text-center rounded-full border border-white/15 bg-white/8 px-4 py-2.5 text-xs font-semibold text-white hover:bg-white/15"
               >
-                Xem tiến độ &amp; sổ nhận xét
+                Xem nhật ký
               </Link>
               <Link
                 href="/"
-                className="flex-1 text-center rounded-xl bg-[#14532D] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#166534]"
+                className="flex-1 text-center rounded-full bg-[#E5483F] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#cf3a31]"
               >
-                Về giáo trình học
+                Về lộ trình học
               </Link>
             </div>
           </div>
@@ -1430,8 +1410,8 @@ export default function CallPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#1C1917] text-[#FBF9F5]">
-          <Loader2 className="h-6 w-6 animate-spin text-[#FDBA74]" />
+        <div className="min-h-screen flex items-center justify-center bg-[#0F1115] text-white">
+          <Loader2 className="h-6 w-6 animate-spin text-[#E5483F]" />
         </div>
       }
     >

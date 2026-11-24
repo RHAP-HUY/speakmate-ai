@@ -1,4 +1,4 @@
-const CACHE_NAME = 'speakmate-press-v8';
+const CACHE_NAME = 'speakmate-luminous-v9';
 const PRECACHE_URLS = ['/', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (event) => {

@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
+import { TutorAvatar } from '@/components/BrandArt';
 import { CallReportView } from '@/components/CallReportView';
 import {
   PronunciationBadge,
@@ -145,8 +146,8 @@ export default function HistoryPage() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FBF9F5]">
-        <Loader2 className="h-5 w-5 animate-spin text-[#78716C]" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
       </div>
     );
   }
@@ -162,63 +163,63 @@ export default function HistoryPage() {
 
   return (
     <AppShell profile={profile} authenticated={authenticated}>
-      {/* Open Editorial Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-[#E7E2D8]">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-1">
-          <p className="font-serif-display italic text-sm text-[#C2410C]">
-            Nhật ký rèn luyện &amp; Thành tựu
-          </p>
-          <h1 className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917]">
-            Lịch chuỗi ngày học, phần thưởng &amp; lưu trữ hội thoại
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+            Nhật ký học tập &amp; Phần thưởng
           </h1>
+          <p className="text-sm text-gray-500">
+            Theo dõi lịch chuỗi ngày học, mở mốc quà tặng và xem lại báo cáo phân tích từng buổi hội thoại.
+          </p>
         </div>
 
         <Link
           href="/play"
-          className="btn-duo btn-duo-primary shrink-0 px-5 py-2.5 text-xs"
+          className="btn-duo btn-duo-coral shrink-0 px-5 py-2.5 text-sm"
         >
           Thực hành bài hôm nay →
         </Link>
       </div>
 
-      {/* Editorial Metrics Ledger (Divided by Hairlines, Not 4 Separate Boxes) */}
-      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-6 py-2 border-b border-[#E7E2D8] pb-6 tabular-nums">
-        <div>
-          <dt className="text-xs text-[#78716C]">Chuỗi ngày hiện tại</dt>
-          <dd className="font-serif-display text-3xl font-semibold text-[#1C1917] mt-1">
+      {/* Crisp Metrics Strip */}
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 tabular-nums">
+        <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs">
+          <dt className="text-xs font-medium text-gray-500">Chuỗi ngày hiện tại</dt>
+          <dd className="font-display text-3xl font-bold text-[#E5483F] mt-1">
             {profile.streakDays} ngày
           </dd>
-          <div className="text-[11px] text-[#78716C] mt-0.5">
+          <div className="text-[11px] text-gray-400 mt-1">
             Kỷ lục: {Math.max(profile.streakDays, profile.longestStreak)} ngày
           </div>
         </div>
 
-        <div>
-          <dt className="text-xs text-[#78716C]">Cấp độ &amp; Kinh nghiệm</dt>
-          <dd className="font-serif-display text-3xl font-semibold text-[#1C1917] mt-1">
+        <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs">
+          <dt className="text-xs font-medium text-gray-500">Cấp độ &amp; Kinh nghiệm</dt>
+          <dd className="font-display text-3xl font-bold text-gray-900 mt-1">
             Cấp {levelInfo.level}
           </dd>
-          <div className="text-[11px] text-[#78716C] mt-0.5">
-            {profile.xp} XP · {profile.totalLessonsCompleted} bài hoàn thành
+          <div className="text-[11px] text-gray-400 mt-1">
+            {profile.xp} XP · {profile.totalLessonsCompleted} bài xong
           </div>
         </div>
 
-        <div>
-          <dt className="text-xs text-[#78716C]">Điểm thưởng &amp; Khiên</dt>
-          <dd className="font-serif-display text-3xl font-semibold text-[#1C1917] mt-1">
+        <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs">
+          <dt className="text-xs font-medium text-gray-500">Ngọc &amp; Khiên chuỗi</dt>
+          <dd className="font-display text-3xl font-bold text-emerald-600 mt-1">
             {profile.gems}
           </dd>
-          <div className="text-[11px] text-[#78716C] mt-0.5">
+          <div className="text-[11px] text-gray-400 mt-1">
             {profile.streakFreezes} Khiên bảo vệ chuỗi
           </div>
         </div>
 
-        <div>
-          <dt className="text-xs text-[#78716C]">Tổng thời lượng nói</dt>
-          <dd className="font-serif-display text-3xl font-semibold text-[#1C1917] mt-1">
+        <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs">
+          <dt className="text-xs font-medium text-gray-500">Tổng thời lượng nói</dt>
+          <dd className="font-display text-3xl font-bold text-gray-900 mt-1">
             {totalMinutesAll} phút
           </dd>
-          <div className="text-[11px] text-[#78716C] mt-0.5">
+          <div className="text-[11px] text-gray-400 mt-1">
             {conversations.length} buổi hội thoại đã lưu
           </div>
         </div>
@@ -256,23 +257,23 @@ export default function HistoryPage() {
       </div>
 
       {/* 7-day Practice Bar Chart */}
-      <section className="card-duo p-5 sm:p-6 space-y-4 tabular-nums">
+      <section className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-xs space-y-4 tabular-nums">
         <div className="flex items-baseline justify-between">
-          <h2 className="font-serif-display text-lg font-semibold text-[#1C1917]">
-            Thời lượng 7 ngày gần nhất
+          <h2 className="font-display text-lg font-bold text-gray-900">
+            Thời lượng thực hành 7 ngày gần nhất
           </h2>
-          <span className="text-xs text-[#78716C]">
+          <span className="text-xs font-medium text-gray-500">
             Mục tiêu: {goalMinutes} phút/ngày
           </span>
         </div>
 
-        <div className="grid grid-cols-7 gap-3 items-end h-32 pt-2">
+        <div className="grid grid-cols-7 gap-3 items-end h-36 pt-2">
           {days.map((d) => {
             const st = statByDate.get(d.date);
             const mins = Math.round((st?.secondsPracticed ?? 0) / 60);
             const heightPct = Math.min(
               100,
-              Math.max(6, Math.round((mins / Math.max(1, goalMinutes)) * 100))
+              Math.max(8, Math.round((mins / Math.max(1, goalMinutes)) * 100))
             );
             const metGoal = mins >= goalMinutes;
 
@@ -281,22 +282,22 @@ export default function HistoryPage() {
                 key={d.date}
                 className="flex flex-col items-center justify-end h-full gap-1.5"
               >
-                <span className="text-[11px] font-medium text-[#57534E]">
+                <span className="text-[11px] font-semibold text-gray-600">
                   {mins}p
                 </span>
-                <div className="w-full max-w-10 flex-1 flex items-end bg-[#F3EFE6] rounded-md overflow-hidden">
+                <div className="w-full max-w-10 flex-1 flex items-end bg-gray-100 rounded-xl overflow-hidden">
                   <div
-                    className={`w-full rounded-md transition-all ${
+                    className={`w-full rounded-xl transition-all ${
                       metGoal
-                        ? 'bg-[#14532D]'
+                        ? 'bg-emerald-500'
                         : mins > 0
-                          ? 'bg-[#C2410C]'
-                          : 'bg-[#E7E2D8]'
+                          ? 'bg-[#E5483F]'
+                          : 'bg-gray-200'
                     }`}
                     style={{ height: `${heightPct}%` }}
                   />
                 </div>
-                <span className="text-[11px] text-[#78716C]">
+                <span className="text-[11px] font-medium text-gray-500">
                   {d.shortLabel}
                 </span>
               </div>
@@ -305,29 +306,29 @@ export default function HistoryPage() {
         </div>
       </section>
 
-      {/* Conversation List & Reports */}
+      {/* Conversation Archive & Reports */}
       <section className="space-y-4">
-        <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
-          Lưu trữ các buổi hội thoại &amp; Báo cáo đánh giá
+        <h2 className="font-display text-xl font-bold text-gray-900">
+          Lịch sử hội thoại &amp; Báo cáo đánh giá
         </h2>
 
         {conversations.length === 0 ? (
-          <div className="rounded-2xl border border-[#E7E2D8] bg-[#F3EFE6]/50 p-10 text-center space-y-3">
-            <p className="font-serif-display text-lg font-semibold text-[#1C1917]">
+          <div className="rounded-3xl border border-gray-200/80 bg-white p-10 text-center shadow-xs space-y-3">
+            <p className="font-display text-lg font-bold text-gray-900">
               Chưa có buổi hội thoại nào được ghi nhận
             </p>
-            <p className="text-xs text-[#57534E]">
-              Hoàn thành một cuộc trò chuyện từ 3 lượt nói trở lên để nhận bản phân tích 4 kỹ năng.
+            <p className="text-sm text-gray-500">
+              Hoàn thành một cuộc trò chuyện từ 3 lượt nói trở lên để nhận bản phân tích 4 kỹ năng chi tiết.
             </p>
             <Link
               href="/call"
-              className="btn-duo btn-duo-primary px-5 py-2.5 text-xs"
+              className="btn-duo btn-duo-coral px-6 py-2.5 text-sm"
             >
               Mở phòng hội thoại
             </Link>
           </div>
         ) : (
-          <div className="card-duo overflow-hidden divide-y divide-[#E7E2D8]">
+          <div className="rounded-3xl border border-gray-200/80 bg-white shadow-xs overflow-hidden divide-y divide-gray-100">
             {conversations.map((conv) => {
               const isOpen = expandedId === conv.id;
               const msgs = detailCache[conv.id] ?? [];
@@ -336,56 +337,68 @@ export default function HistoryPage() {
                 parsedReport && parsedReport.overallScore > 0
                   ? getScoreTone(parsedReport.overallScore)
                   : null;
+              const matchedPersona =
+                AI_PERSONAS.find(
+                  (p) =>
+                    p.name.toLowerCase() === (conv.aiPersona || '').toLowerCase() ||
+                    p.accent === conv.accent
+                ) ?? AI_PERSONAS[0];
 
               return (
                 <div key={conv.id}>
                   <button
                     type="button"
                     onClick={() => void toggleConversation(conv)}
-                    className="flex w-full items-center justify-between p-4 sm:px-5 text-left hover:bg-[#FBF9F5] transition cursor-pointer"
+                    className="flex w-full items-center justify-between gap-4 p-4 sm:px-6 text-left hover:bg-gray-50 transition cursor-pointer"
                   >
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-[#1C1917]">
-                          {conv.scenarioTitle}
-                        </span>
-                        <span className="rounded-full bg-[#F3EFE6] px-2.5 py-0.5 text-[11px] font-medium text-[#57534E]">
-                          {conv.aiPersona} · {conv.accent}
-                        </span>
-                        {parsedReport && scoreTone && (
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold tabular-nums ${scoreTone.pillLight}`}
-                          >
-                            <Award className="h-3 w-3" />
-                            {parsedReport.overallScore}/100 ·{' '}
-                            {parsedReport.cefrEstimate}
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <TutorAvatar
+                        personaId={matchedPersona.id}
+                        className="h-11 w-11 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-bold text-gray-900 truncate">
+                            {conv.scenarioTitle}
                           </span>
-                        )}
-                      </div>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-[#78716C] tabular-nums">
-                        <span>
-                          {new Date(conv.startedAt).toLocaleString('vi-VN')}
-                        </span>
-                        <span>·</span>
-                        <span>
-                          {Math.max(1, Math.round(conv.durationSeconds / 60))} phút
-                        </span>
-                        <span>·</span>
-                        <span>{conv.messageCount} lượt trao đổi</span>
+                          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-600">
+                            {conv.aiPersona} · {conv.accent}
+                          </span>
+                          {parsedReport && scoreTone && (
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold tabular-nums ${scoreTone.pillLight}`}
+                            >
+                              <Award className="h-3 w-3" />
+                              {parsedReport.overallScore}/100 ·{' '}
+                              {parsedReport.cefrEstimate}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2.5 text-xs text-gray-500 tabular-nums">
+                          <span>
+                            {new Date(conv.startedAt).toLocaleString('vi-VN')}
+                          </span>
+                          <span>·</span>
+                          <span>
+                            {Math.max(1, Math.round(conv.durationSeconds / 60))} phút
+                          </span>
+                          <span>·</span>
+                          <span>{conv.messageCount} lượt trao đổi</span>
+                        </div>
                       </div>
                     </div>
                     {isOpen ? (
-                      <ChevronUp className="h-4 w-4 text-[#78716C]" />
+                      <ChevronUp className="h-4 w-4 text-gray-400 shrink-0" />
                     ) : (
-                      <ChevronDown className="h-4 w-4 text-[#78716C]" />
+                      <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
                     )}
                   </button>
 
                   {isOpen && (
-                    <div className="border-t border-[#E7E2D8] bg-[#FBF9F5] p-4 sm:p-5 space-y-5">
+                    <div className="border-t border-gray-100 bg-[#F6F7F9] p-4 sm:p-6 space-y-5">
                       {parsedReport && (
                         <div className="space-y-2">
-                          <div className="text-xs font-semibold text-[#14532D]">
+                          <div className="text-xs font-bold text-gray-900">
                             Báo cáo tổng kết buổi hội thoại
                           </div>
                           <CallReportView
@@ -405,17 +418,17 @@ export default function HistoryPage() {
                       )}
 
                       <div className="space-y-3">
-                        <div className="text-xs font-semibold text-[#57534E]">
+                        <div className="text-xs font-bold text-gray-700">
                           Bản ghi chi tiết lời thoại
                         </div>
 
                         {loadingDetail === conv.id ? (
-                          <div className="flex items-center gap-2 text-xs text-[#78716C]">
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Đang tải nội dung...
                           </div>
                         ) : msgs.length === 0 ? (
-                          <p className="text-xs text-[#78716C]">
+                          <p className="text-xs text-gray-500">
                             Chưa có bản ghi chi tiết cho buổi này.
                           </p>
                         ) : (
@@ -427,14 +440,14 @@ export default function HistoryPage() {
                               }`}
                             >
                               <div
-                                className={`w-full sm:max-w-[85%] rounded-xl p-3.5 text-sm ${
+                                className={`w-full sm:max-w-[85%] rounded-2xl p-3.5 text-sm ${
                                   m.role === 'user'
-                                    ? 'bg-[#14532D] text-white'
-                                    : 'bg-white border border-[#E7E2D8] text-[#1C1917]'
+                                    ? 'bg-gray-900 text-white'
+                                    : 'bg-white border border-gray-200 text-gray-900'
                                 }`}
                               >
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className="font-serif-display text-[15px] leading-relaxed">
+                                  <p className="text-sm sm:text-[15px] font-medium leading-relaxed">
                                     {m.englishText}
                                   </p>
                                   <button
@@ -448,7 +461,7 @@ export default function HistoryPage() {
                                     className={`shrink-0 rounded-full p-1.5 cursor-pointer ${
                                       m.role === 'user'
                                         ? 'bg-white/15 text-white hover:bg-white/25'
-                                        : 'bg-[#F3EFE6] text-[#1C1917] hover:bg-[#E7E2D8]'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                                   >
                                     <Volume2 className="h-3.5 w-3.5" />
@@ -459,8 +472,8 @@ export default function HistoryPage() {
                                   <p
                                     className={`mt-1 text-xs ${
                                       m.role === 'user'
-                                        ? 'text-white/85'
-                                        : 'text-[#57534E]'
+                                        ? 'text-white/80'
+                                        : 'text-gray-500'
                                     }`}
                                   >
                                     {m.vietnameseTranslation}
@@ -468,7 +481,7 @@ export default function HistoryPage() {
                                 )}
 
                                 {m.naturalRewrite && (
-                                  <div className="mt-2 rounded-lg bg-black/15 px-3 py-1.5 text-xs text-white">
+                                  <div className="mt-2 rounded-xl bg-white/10 px-3 py-1.5 text-xs text-white">
                                     Cách diễn đạt tự nhiên hơn:{' '}
                                     <strong>{m.naturalRewrite}</strong>
                                   </div>

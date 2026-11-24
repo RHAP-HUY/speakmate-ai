@@ -55,7 +55,7 @@ const MASTERY_LABELS: Record<0 | 1 | 2 | 3, { label: string; color: string }> =
   {
     0: {
       label: 'Mới lưu',
-      color: 'bg-[#F3EFE6] text-[#57534E] border-[#E7E2D8]',
+      color: 'bg-gray-100 text-gray-600 border-gray-200',
     },
     1: {
       label: 'Đang ôn',
@@ -63,11 +63,11 @@ const MASTERY_LABELS: Record<0 | 1 | 2 | 3, { label: string; color: string }> =
     },
     2: {
       label: 'Khá quen',
-      color: 'bg-[#14532D]/[0.06] text-[#14532D] border-[#14532D]/20',
+      color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     },
     3: {
       label: 'Đã thuộc',
-      color: 'bg-[#14532D] text-white border-[#14532D]',
+      color: 'bg-emerald-600 text-white border-emerald-600',
     },
   };
 
@@ -198,7 +198,6 @@ export default function PhrasesPage() {
     [currentCard, flashcardDeck.length, phrases.length, reviewedInSession, sessionRewarded]
   );
 
-  // Keyboard shortcuts inside Flashcard SRS mode (Space to flip, R to replay audio, 1-4 to grade)
   useEffect(() => {
     if (tab !== 'flashcards' || !currentCard || practiceTarget) return;
 
@@ -317,8 +316,8 @@ export default function PhrasesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FBF9F5]">
-        <Loader2 className="h-5 w-5 animate-spin text-[#78716C]" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
       </div>
     );
   }
@@ -335,28 +334,25 @@ export default function PhrasesPage() {
 
   return (
     <AppShell profile={profile} authenticated={authenticated}>
-      {/* Open Editorial Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-[#E7E2D8]">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-1">
-          <p className="font-serif-display italic text-sm text-[#C2410C]">
-            Sổ tay ngôn ngữ &amp; Lặp lại ngắt quãng (SRS)
-          </p>
-          <h1 className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917]">
-            Kho mẫu câu giao tiếp tự nhiên
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+            Sổ mẫu câu &amp; Ôn tập ngắt quãng
           </h1>
-          <p className="text-xs sm:text-sm text-[#57534E]">
-            Lưu cụm từ đắt giá từ buổi hội thoại, ôn theo đường cong trí nhớ SM-2 và xuất bảng từ sang Anki / Excel.
+          <p className="text-sm text-gray-500">
+            Lưu cụm từ bản xứ từ các buổi hội thoại, ôn theo đường cong trí nhớ SM-2 và xuất sang Anki / Excel.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 rounded-full border border-gray-200 bg-white pl-1.5 pr-4 py-1 shadow-xs shrink-0">
           <TutorAvatar personaId={activePersona.id} className="h-9 w-9" />
           <div className="text-xs">
-            <span className="block text-[11px] text-[#78716C]">Giọng đọc mẫu</span>
+            <span className="block text-[10px] text-gray-400">Giọng đọc mẫu</span>
             <select
               value={voiceAccent}
               onChange={(e) => setVoiceAccent(e.target.value)}
-              className="bg-transparent font-semibold text-[#1C1917] focus:outline-none cursor-pointer"
+              className="bg-transparent font-semibold text-gray-900 focus:outline-none cursor-pointer"
             >
               {AI_PERSONAS.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -368,45 +364,45 @@ export default function PhrasesPage() {
         </div>
       </div>
 
-      {/* SRS Ledger Summary Strip */}
+      {/* SRS Summary Strip */}
       {phrases.length > 0 && (
-        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-2xl border border-[#E7E2D8] bg-[#F3EFE6]/65 px-5 py-4 tabular-nums">
-          <div>
-            <dt className="text-[11px] text-[#78716C]">Tổng số mẫu câu</dt>
-            <dd className="font-serif-display text-2xl font-semibold text-[#1C1917] mt-0.5">
+        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 tabular-nums">
+          <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-xs">
+            <dt className="text-xs text-gray-500">Tổng số mẫu câu</dt>
+            <dd className="font-display text-2xl font-bold text-gray-900 mt-1">
               {summary.total}
             </dd>
           </div>
-          <div>
-            <dt className="text-[11px] text-[#78716C]">Đến hạn ôn hôm nay</dt>
-            <dd className="font-serif-display text-2xl font-semibold text-[#C2410C] mt-0.5">
+          <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-xs">
+            <dt className="text-xs text-gray-500">Đến hạn ôn hôm nay</dt>
+            <dd className="font-display text-2xl font-bold text-[#E5483F] mt-1">
               {summary.dueCount}
             </dd>
           </div>
-          <div>
-            <dt className="text-[11px] text-[#78716C]">Đang ghi nhớ</dt>
-            <dd className="font-serif-display text-2xl font-semibold text-[#1C1917] mt-0.5">
+          <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-xs">
+            <dt className="text-xs text-gray-500">Đang ghi nhớ</dt>
+            <dd className="font-display text-2xl font-bold text-amber-600 mt-1">
               {summary.learningCount}
             </dd>
           </div>
-          <div>
-            <dt className="text-[11px] text-[#78716C]">Đã thành thạo</dt>
-            <dd className="font-serif-display text-2xl font-semibold text-[#14532D] mt-0.5">
+          <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-xs">
+            <dt className="text-xs text-gray-500">Đã thành thạo</dt>
+            <dd className="font-display text-2xl font-bold text-emerald-600 mt-1">
               {summary.masteredCount}
             </dd>
           </div>
         </dl>
       )}
 
-      {/* Clean Underline Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E7E2D8]">
-        <div className="flex flex-wrap items-center gap-6">
+      {/* Pill Tabs + Export */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           {[
             { id: 'notebook', label: `Sổ của bạn (${phrases.length})` },
             {
               id: 'flashcards',
-              label: `Ôn tập ngắt quãng${
-                summary.dueCount > 0 ? ` (${summary.dueCount} đến hạn)` : ''
+              label: `Ôn thẻ SRS${
+                summary.dueCount > 0 ? ` (${summary.dueCount})` : ''
               }`,
             },
             {
@@ -427,16 +423,13 @@ export default function PhrasesPage() {
                     setFlipped(false);
                   }
                 }}
-                className={`relative pb-3 text-sm transition cursor-pointer ${
+                className={`rounded-full px-4 py-2 text-xs sm:text-sm font-semibold transition cursor-pointer ${
                   active
-                    ? 'font-semibold text-[#14532D]'
-                    : 'font-medium text-[#78716C] hover:text-[#1C1917]'
+                    ? 'bg-gray-900 text-white shadow-xs'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900'
                 }`}
               >
                 {t.label}
-                {active && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#14532D]" />
-                )}
               </button>
             );
           })}
@@ -446,9 +439,9 @@ export default function PhrasesPage() {
           <button
             type="button"
             onClick={handleExportTsv}
-            className="mb-2 inline-flex items-center gap-1.5 rounded-lg border border-[#D6CFC2] bg-white px-3 py-1.5 text-xs font-medium text-[#1C1917] hover:bg-[#F3EFE6] transition cursor-pointer"
+            className="btn-duo btn-duo-white px-4 py-2 text-xs"
           >
-            <Download className="h-3.5 w-3.5 text-[#14532D]" />
+            <Download className="h-3.5 w-3.5 text-emerald-600" />
             Xuất TSV (Anki / Excel)
           </button>
         )}
@@ -459,42 +452,42 @@ export default function PhrasesPage() {
         <div className="space-y-5">
           <form
             onSubmit={handleAddCustom}
-            className="flex flex-col gap-2.5 sm:flex-row"
+            className="rounded-2xl border border-gray-200/80 bg-white p-3 shadow-xs flex flex-col gap-2.5 sm:flex-row"
           >
             <input
               type="text"
               value={newEn}
               onChange={(e) => setNewEn(e.target.value)}
               placeholder="Cụm câu tiếng Anh (ví dụ: Let's catch up soon!)"
-              className="flex-1 rounded-xl border border-[#D6CFC2] bg-white px-4 py-2.5 text-sm focus:border-[#14532D] focus:outline-none"
+              className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:border-gray-900 focus:bg-white focus:outline-none"
             />
             <input
               type="text"
               value={newVi}
               onChange={(e) => setNewVi(e.target.value)}
               placeholder="Nghĩa tiếng Việt tương ứng"
-              className="flex-1 rounded-xl border border-[#D6CFC2] bg-white px-4 py-2.5 text-sm focus:border-[#14532D] focus:outline-none"
+              className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:border-gray-900 focus:bg-white focus:outline-none"
             />
             <button
               type="submit"
               disabled={adding || !newEn.trim() || !newVi.trim()}
-              className="btn-duo btn-duo-primary px-5 py-2.5 text-sm shrink-0"
+              className="btn-duo btn-duo-coral px-5 py-2.5 text-sm shrink-0"
             >
               <Plus className="h-4 w-4" />
-              Lưu câu mới
+              Lưu câu
             </button>
           </form>
 
           {phrases.length > 0 && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="relative flex-1 max-w-md">
-                <Search className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-[#78716C]" />
+                <Search className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-gray-400" />
                 <input
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Tìm nhanh mẫu câu hoặc nghĩa tiếng Việt..."
-                  className="w-full rounded-xl border border-[#E7E2D8] bg-white py-2 pl-9 pr-3.5 text-xs text-[#1C1917] focus:border-[#14532D] focus:outline-none"
+                  className="w-full rounded-full border border-gray-200 bg-white py-2 pl-9 pr-4 text-xs text-gray-900 focus:border-gray-900 focus:outline-none"
                 />
               </div>
 
@@ -514,10 +507,10 @@ export default function PhrasesPage() {
                       playTapSound();
                       setNotebookFilter(f.id);
                     }}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition cursor-pointer ${
                       notebookFilter === f.id
-                        ? 'border-[#14532D] bg-[#14532D] text-white'
-                        : 'border-[#E7E2D8] bg-white text-[#57534E] hover:border-[#A8A29E]'
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                     }`}
                   >
                     {f.label}
@@ -528,23 +521,23 @@ export default function PhrasesPage() {
           )}
 
           {phrases.length === 0 ? (
-            <div className="rounded-2xl border border-[#E7E2D8] bg-[#F3EFE6]/50 p-10 text-center space-y-3">
-              <p className="font-serif-display text-lg font-semibold text-[#1C1917]">
+            <div className="rounded-3xl border border-gray-200/80 bg-white p-10 text-center shadow-xs space-y-3">
+              <p className="font-display text-lg font-bold text-gray-900">
                 Sổ mẫu câu của bạn đang trống
               </p>
-              <p className="text-xs text-[#57534E]">
-                Bạn có thể lưu câu mới khi đang hội thoại hoặc chọn từ Tuyển tập mẫu câu bản xứ.
+              <p className="text-sm text-gray-500">
+                Lưu câu hay khi đang hội thoại hoặc chọn ngay từ Tuyển tập mẫu câu bản xứ.
               </p>
               <button
                 type="button"
                 onClick={() => setTab('starter')}
-                className="btn-duo btn-duo-primary px-5 py-2.5 text-xs"
+                className="btn-duo btn-duo-coral px-5 py-2.5 text-xs"
               >
                 Xem tuyển tập mẫu câu
               </button>
             </div>
           ) : filteredNotebook.length === 0 ? (
-            <div className="rounded-2xl border border-[#E7E2D8] bg-white p-8 text-center text-xs text-[#57534E]">
+            <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-xs text-gray-500">
               Không tìm thấy mẫu câu nào khớp với bộ lọc hiện tại.
             </div>
           ) : (
@@ -559,47 +552,47 @@ export default function PhrasesPage() {
                   >
                     <div>
                       <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-serif-display text-lg font-semibold text-[#1C1917] leading-snug">
+                        <h3 className="font-display text-lg font-bold text-gray-900 leading-snug">
                           {item.englishPhrase}
                         </h3>
                         <button
                           type="button"
                           onClick={() => speakText(item.englishPhrase, 0.88)}
-                          className="shrink-0 rounded-full border border-[#D6CFC2] bg-[#FBF9F5] p-2 text-[#1C1917] hover:bg-[#F3EFE6] cursor-pointer"
+                          className="shrink-0 rounded-full border border-gray-200 bg-gray-50 p-2 text-gray-800 hover:bg-gray-900 hover:text-white transition cursor-pointer"
                           title="Nghe phát âm"
                         >
                           <Volume2 className="h-4 w-4" />
                         </button>
                       </div>
                       {item.phonetic && (
-                        <p className="font-mono text-xs text-[#78716C] mt-1">
+                        <p className="font-mono text-xs text-gray-400 mt-1">
                           /{item.phonetic}/
                         </p>
                       )}
-                      <p className="mt-2 text-sm text-[#57534E]">
+                      <p className="mt-2 text-sm text-gray-600">
                         {item.vietnameseMeaning}
                       </p>
                       {item.exampleSentence && (
-                        <p className="mt-2.5 border-l-2 border-[#D6CFC2] pl-3 font-serif-display italic text-xs text-[#57534E]">
+                        <p className="mt-2.5 border-l-2 border-gray-200 pl-3 text-xs text-gray-500">
                           &ldquo;{item.exampleSentence}&rdquo;
                         </p>
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[#E7E2D8]">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100">
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => void handleCycleMastery(item)}
-                          className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium cursor-pointer ${badge.color}`}
+                          className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold cursor-pointer ${badge.color}`}
                         >
                           {badge.label}
                         </button>
                         <span
                           className={`inline-flex items-center gap-1 text-[11px] ${
                             dueNow
-                              ? 'font-medium text-[#C2410C]'
-                              : 'text-[#78716C]'
+                              ? 'font-semibold text-[#E5483F]'
+                              : 'text-gray-400'
                           }`}
                         >
                           <Clock className="h-3 w-3" />
@@ -617,7 +610,7 @@ export default function PhrasesPage() {
                               phonetic: item.phonetic,
                             })
                           }
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#14532D] hover:underline cursor-pointer"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline cursor-pointer"
                         >
                           <Mic className="h-3.5 w-3.5" />
                           Chấm âm
@@ -625,7 +618,7 @@ export default function PhrasesPage() {
                         <button
                           type="button"
                           onClick={() => speakText(item.englishPhrase, 0.72)}
-                          className="text-xs text-[#78716C] hover:text-[#1C1917] cursor-pointer"
+                          className="text-xs font-medium text-gray-500 hover:text-gray-900 cursor-pointer"
                         >
                           Chậm
                         </button>
@@ -633,7 +626,7 @@ export default function PhrasesPage() {
                           type="button"
                           onClick={() => void handleDelete(item.id)}
                           title="Xóa"
-                          className="text-[#A8A29E] hover:text-rose-700 cursor-pointer"
+                          className="text-gray-400 hover:text-rose-600 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -651,30 +644,30 @@ export default function PhrasesPage() {
       {tab === 'flashcards' && (
         <div className="mx-auto max-w-xl">
           {phrases.length === 0 ? (
-            <div className="rounded-2xl border border-[#E7E2D8] bg-[#F3EFE6]/50 p-8 text-center space-y-3">
-              <p className="text-sm font-medium text-[#57534E]">
+            <div className="rounded-3xl border border-gray-200 bg-white p-10 text-center shadow-xs space-y-3">
+              <p className="text-sm font-medium text-gray-600">
                 Hãy lưu ít nhất 1 mẫu câu vào sổ trước khi bắt đầu phiên ôn tập ngắt quãng.
               </p>
               <button
                 type="button"
                 onClick={() => setTab('starter')}
-                className="btn-duo btn-duo-primary px-5 py-2.5 text-xs"
+                className="btn-duo btn-duo-coral px-5 py-2.5 text-xs"
               >
                 Chọn từ tuyển tập mẫu câu
               </button>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs text-[#57534E] tabular-nums">
+              <div className="flex items-center justify-between text-xs text-gray-500 tabular-nums">
                 <span>
                   Thẻ {(cardIndex % flashcardDeck.length) + 1} / {flashcardDeck.length} ·{' '}
-                  <strong className="text-[#1C1917]">
+                  <strong className="text-gray-900">
                     {formatRelativeDueVi(currentCard)}
                   </strong>
                 </span>
                 <span>
-                  Đã ôn trong phiên:{' '}
-                  <strong className="text-[#14532D]">
+                  Phiên này:{' '}
+                  <strong className="text-emerald-600">
                     {reviewedInSession}/{Math.min(SRS_REWARD_TARGET, Math.max(3, phrases.length))}
                   </strong>{' '}
                   {sessionRewarded ? '(Đã cộng +55 XP)' : 'để giữ chuỗi'}
@@ -686,36 +679,36 @@ export default function PhrasesPage() {
                   playTapSound();
                   setFlipped((f) => !f);
                 }}
-                className="card-duo-elevated min-h-72 flex flex-col items-center justify-center p-8 text-center cursor-pointer"
+                className="rounded-3xl border border-gray-200 bg-white shadow-sm min-h-76 flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:shadow-md transition"
               >
                 {!flipped ? (
                   <>
-                    <span className="font-serif-display italic text-sm text-[#C2410C] mb-3">
-                      Nghĩa tiếng Việt — Hãy tự nói thành tiếng bằng tiếng Anh trước khi lật
+                    <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-[#E5483F] mb-4">
+                      Thử nói thành tiếng bằng tiếng Anh
                     </span>
-                    <p className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917]">
+                    <p className="font-display text-2xl sm:text-3xl font-bold text-gray-900">
                       {currentCard.vietnameseMeaning}
                     </p>
-                    <span className="mt-6 inline-flex items-center gap-1.5 text-xs text-[#78716C]">
+                    <span className="mt-6 inline-flex items-center gap-1.5 text-xs text-gray-400">
                       <RotateCw className="h-3.5 w-3.5" />
-                      Chạm vào thẻ (hoặc nhấn phím Space) để đối chiếu đáp án
+                      Chạm vào thẻ (hoặc phím Space) để xem đáp án
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="font-serif-display italic text-sm text-[#14532D] mb-3">
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 mb-4">
                       Cách người bản xứ diễn đạt
                     </span>
-                    <p className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917]">
+                    <p className="font-display text-2xl sm:text-3xl font-bold text-gray-900">
                       {currentCard.englishPhrase}
                     </p>
                     {currentCard.phonetic && (
-                      <p className="mt-2 font-mono text-xs text-[#78716C]">
+                      <p className="mt-2 font-mono text-xs text-gray-500">
                         /{currentCard.phonetic}/
                       </p>
                     )}
                     {currentCard.exampleSentence && (
-                      <p className="mt-3 max-w-md font-serif-display italic text-sm text-[#57534E]">
+                      <p className="mt-3 max-w-md text-sm text-gray-600">
                         &ldquo;{currentCard.exampleSentence}&rdquo;
                       </p>
                     )}
@@ -758,14 +751,14 @@ export default function PhrasesPage() {
                     playTapSound();
                     setFlipped(true);
                   }}
-                  className="btn-duo btn-duo-primary w-full py-3 text-sm"
+                  className="btn-duo btn-duo-primary w-full py-3.5 text-sm"
                 >
                   Hiện câu tiếng Anh để tự đánh giá
                 </button>
               ) : (
-                <div className="space-y-2">
-                  <div className="text-center text-xs text-[#57534E]">
-                    Mức độ bạn vừa nhớ được câu này (hệ thống sẽ hẹn ngày ôn tiếp theo):
+                <div className="space-y-2.5">
+                  <div className="text-center text-xs text-gray-500">
+                    Đánh giá độ nhớ để hệ thống tự lên lịch ôn tiếp theo:
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 tabular-nums">
                     {(
@@ -774,25 +767,25 @@ export default function PhrasesPage() {
                           grade: 'again',
                           keyHint: '1',
                           label: 'Chưa nhớ',
-                          cls: 'border-rose-200 bg-rose-50/70 text-rose-800 hover:bg-rose-100',
+                          cls: 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100',
                         },
                         {
                           grade: 'hard',
                           keyHint: '2',
                           label: 'Ngập ngừng',
-                          cls: 'border-amber-200 bg-amber-50/70 text-amber-900 hover:bg-amber-100',
+                          cls: 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100',
                         },
                         {
                           grade: 'good',
                           keyHint: '3',
                           label: 'Nhớ đúng',
-                          cls: 'border-[#A7F3D0] bg-[#ECFDF5] text-[#14532D] hover:bg-[#D1FAE5]',
+                          cls: 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100',
                         },
                         {
                           grade: 'easy',
                           keyHint: '4',
                           label: 'Bật ra ngay',
-                          cls: 'border-[#14532D] bg-[#14532D] text-white hover:bg-[#166534]',
+                          cls: 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700',
                         },
                       ] as const
                     ).map((btn) => (
@@ -800,9 +793,9 @@ export default function PhrasesPage() {
                         key={btn.grade}
                         type="button"
                         onClick={() => void handleGradeCard(btn.grade)}
-                        className={`flex flex-col items-center justify-center rounded-xl border px-3 py-2.5 transition cursor-pointer ${btn.cls}`}
+                        className={`flex flex-col items-center justify-center rounded-2xl border px-3 py-2.5 transition cursor-pointer ${btn.cls}`}
                       >
-                        <span className="text-xs font-semibold">
+                        <span className="text-xs font-bold">
                           {btn.keyHint}. {btn.label}
                         </span>
                         <span className="text-[11px] opacity-80 mt-0.5">
@@ -837,10 +830,10 @@ export default function PhrasesPage() {
                     cat.id as 'all' | 'daily' | 'business' | 'travel'
                   );
                 }}
-                className={`rounded-full border px-3.5 py-1.5 text-xs font-medium cursor-pointer transition ${
+                className={`rounded-full border px-4 py-1.5 text-xs font-semibold cursor-pointer transition ${
                   starterFilter === cat.id
-                    ? 'border-[#1C1917] bg-[#1C1917] text-white'
-                    : 'border-[#D6CFC2] bg-white text-[#57534E] hover:border-[#1C1917]'
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                 }`}
               >
                 {cat.label}
@@ -858,34 +851,34 @@ export default function PhrasesPage() {
                 >
                   <div>
                     <div className="flex items-start justify-between gap-3">
-                      <h3 className="font-serif-display text-lg font-semibold text-[#1C1917] leading-snug">
+                      <h3 className="font-display text-lg font-bold text-gray-900 leading-snug">
                         {item.english}
                       </h3>
                       <button
                         type="button"
                         onClick={() => speakText(item.english, 0.88)}
-                        className="shrink-0 rounded-full border border-[#D6CFC2] bg-[#FBF9F5] p-2 text-[#1C1917] hover:bg-[#F3EFE6] cursor-pointer"
+                        className="shrink-0 rounded-full border border-gray-200 bg-gray-50 p-2 text-gray-800 hover:bg-gray-900 hover:text-white transition cursor-pointer"
                       >
                         <Volume2 className="h-4 w-4" />
                       </button>
                     </div>
-                    <p className="font-mono text-xs text-[#78716C] mt-1">
+                    <p className="font-mono text-xs text-gray-400 mt-1">
                       /{item.phonetic}/
                     </p>
-                    <p className="mt-2 text-sm text-[#57534E]">
+                    <p className="mt-2 text-sm text-gray-600">
                       {item.vietnamese}
                     </p>
-                    <p className="mt-2.5 border-l-2 border-[#D6CFC2] pl-3 font-serif-display italic text-xs text-[#57534E]">
+                    <p className="mt-2.5 border-l-2 border-gray-200 pl-3 text-xs text-gray-500">
                       &ldquo;{item.example}&rdquo;
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[#E7E2D8]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-3">
                       <button
                         type="button"
                         onClick={() => speakText(item.example, 0.88)}
-                        className="text-xs font-medium text-[#57534E] hover:text-[#1C1917] underline cursor-pointer"
+                        className="text-xs font-semibold text-gray-500 hover:text-gray-900 underline cursor-pointer"
                       >
                         Nghe câu ví dụ
                       </button>
@@ -898,7 +891,7 @@ export default function PhrasesPage() {
                             phonetic: item.phonetic,
                           })
                         }
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#14532D] hover:underline cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline cursor-pointer"
                       >
                         <Mic className="h-3.5 w-3.5" />
                         Chấm âm
@@ -909,13 +902,13 @@ export default function PhrasesPage() {
                       type="button"
                       disabled={alreadySaved}
                       onClick={() => void handleSaveStarter(item)}
-                      className={`btn-duo px-3 py-1.5 text-xs ${
+                      className={`btn-duo px-3.5 py-1.5 text-xs ${
                         alreadySaved ? 'btn-duo-white' : 'btn-duo-primary'
                       }`}
                     >
                       {alreadySaved ? (
                         <>
-                          <Check className="h-3.5 w-3.5 text-[#14532D]" />
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
                           Đã lưu
                         </>
                       ) : (

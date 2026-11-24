@@ -24,6 +24,7 @@ import { AppNav } from '@/components/AppNav';
 import { AppShell } from '@/components/AppShell';
 import {
   LeagueTrophySvg,
+  NovaCompanion,
   ShieldFreezeSvg,
   TreasureChestSvg,
   TutorAvatar,
@@ -43,7 +44,6 @@ import {
   getTodayLocalDate,
   listSavedPhrases,
 } from '@/lib/data-store';
-import { getPhraseReviewSummary } from '@/lib/spaced-repetition';
 import {
   computeStrictStreak,
   DAILY_QUEST_DEFS,
@@ -62,6 +62,7 @@ import {
   playTapSound,
   playWrongSound,
 } from '@/lib/sound-fx';
+import { getPhraseReviewSummary } from '@/lib/spaced-repetition';
 import type {
   AuthSessionInfo,
   DailyStat,
@@ -96,6 +97,8 @@ interface LearningUnit {
   id: string;
   roman: string;
   tabLabel: string;
+  coverImage: string;
+  coverAlt: string;
   titleVi: string;
   subtitleVi: string;
   category: TopicCategory;
@@ -105,11 +108,13 @@ interface LearningUnit {
 const LEARNING_UNITS: LearningUnit[] = [
   {
     id: 'unit-daily',
-    roman: 'Chương I',
-    tabLabel: 'I · Đời sống',
+    roman: 'Chương 1',
+    tabLabel: 'Đời sống',
+    coverImage: '/images/chapter-daily.jpg',
+    coverAlt: 'Trò chuyện sáng tại quán cà phê',
     titleVi: 'Quán cà phê, làm quen & trò chuyện thường nhật',
     subtitleVi:
-      'Làm quen với tốc độ nối âm thực tế và các mẫu câu ngắn gọn người bản xứ dùng hàng ngày.',
+      'Làm quen tốc độ nối âm thực tế và những câu nói ngắn gọn người bản xứ dùng mỗi ngày.',
     category: 'daily',
     stations: [
       {
@@ -181,8 +186,10 @@ const LEARNING_UNITS: LearningUnit[] = [
   },
   {
     id: 'unit-business',
-    roman: 'Chương II',
-    tabLabel: 'II · Công sở',
+    roman: 'Chương 2',
+    tabLabel: 'Công sở',
+    coverImage: '/images/chapter-business.jpg',
+    coverAlt: 'Đồng nghiệp trao đổi công việc trong phòng họp sáng',
     titleVi: 'Họp nhóm, trao đổi tiến độ & phỏng vấn tuyển dụng',
     subtitleVi:
       'Diễn đạt gãy gọn, lịch thiệp khi làm việc cùng đồng nghiệp và đối tác nước ngoài.',
@@ -257,8 +264,10 @@ const LEARNING_UNITS: LearningUnit[] = [
   },
   {
     id: 'unit-travel',
-    roman: 'Chương III',
-    tabLabel: 'III · Du lịch',
+    roman: 'Chương 3',
+    tabLabel: 'Du lịch',
+    coverImage: '/images/chapter-travel.jpg',
+    coverAlt: 'Quán cà phê ngoài trời tại châu Âu vào giờ vàng',
     titleVi: 'Sân bay, khách sạn, hỏi đường & dùng bữa',
     subtitleVi:
       'Xử lý trôi chảy các tình huống thực tế khi đi công tác hoặc du lịch tự túc nước ngoài.',
@@ -333,11 +342,13 @@ const LEARNING_UNITS: LearningUnit[] = [
   },
   {
     id: 'unit-ai-infinite',
-    roman: 'Chương IV',
-    tabLabel: 'IV · Cá nhân hóa',
-    titleVi: 'Tình huống biên soạn theo công việc & mối quan tâm riêng',
+    roman: 'Chương 4',
+    tabLabel: 'Cá nhân hóa',
+    coverImage: '/images/chapter-freetalk.jpg',
+    coverAlt: 'Không gian trò chuyện cởi mở trong hiệu sách ấm cúng',
+    titleVi: 'Tình huống theo công việc & sở thích của riêng bạn',
     subtitleVi:
-      'Luyện tập các chủ đề chuyên biệt sát với lĩnh vực bạn đang làm việc và yêu thích.',
+      'Luyện tập các chủ đề chuyên biệt sát với lĩnh vực bạn đang làm việc và quan tâm.',
     category: 'freetalk',
     stations: [
       {
@@ -413,7 +424,7 @@ const LANDING_VOICE_SAMPLES = [
   {
     personaId: 'emma-us',
     name: 'Emma',
-    origin: 'Seattle · Giọng Mỹ',
+    origin: 'Seattle · Mỹ',
     role: 'Giao tiếp hàng ngày & Quán cà phê',
     sampleEn: 'Morning! Could I get a medium iced oat latte started for you?',
     sampleVi: 'Chào buổi sáng! Mình làm cho bạn một ly latte yến mạch đá cỡ vừa nhé?',
@@ -423,57 +434,77 @@ const LANDING_VOICE_SAMPLES = [
   {
     personaId: 'sonia-uk',
     name: 'Olivia',
-    origin: 'London · Giọng Anh',
-    role: 'Tiếng Anh công sở & Thuyết trình',
+    origin: 'London · Anh',
+    role: 'Công sở & Thuyết trình',
     sampleEn: 'Lovely to meet you. Shall we walk through the project timeline together?',
     sampleVi: 'Rất vui được gặp bạn. Chúng ta cùng điểm qua tiến độ dự án nhé?',
     edgeVoice: 'en-GB-SoniaNeural',
     browserLang: 'en-GB',
   },
   {
-    personaId: 'natasha-au',
-    name: 'Charlotte',
-    origin: 'Melbourne · Giọng Úc',
-    role: 'Du lịch & Đời sống thực tế',
-    sampleEn: 'No worries at all! The train to the city centre leaves from platform two.',
-    sampleVi: 'Đừng lo nhé! Chuyến tàu vào trung tâm thành phố khởi hành ở sân ga số 2.',
-    edgeVoice: 'en-AU-NatashaNeural',
-    browserLang: 'en-AU',
-  },
-  {
     personaId: 'andrew-us',
     name: 'Andrew',
-    origin: 'Chicago · Giọng Mỹ',
-    role: 'Phỏng vấn & Họp nhóm kỹ thuật',
+    origin: 'Chicago · Mỹ',
+    role: 'Phỏng vấn & Họp nhóm',
     sampleEn: 'Thanks for the heads-up. Let us circle back on this tomorrow morning.',
     sampleVi: 'Cảm ơn bạn đã báo trước. Sáng mai chúng ta bàn tiếp việc này nhé.',
     edgeVoice: 'en-US-AndrewMultilingualNeural',
     browserLang: 'en-US',
+  },
+  {
+    personaId: 'natasha-au',
+    name: 'Charlotte',
+    origin: 'Melbourne · Úc',
+    role: 'Du lịch & Đời sống thực tế',
+    sampleEn: 'No worries at all! The train to the city centre leaves from platform two.',
+    sampleVi: 'Đừng lo nhé! Chuyến tàu vào trung tâm khởi hành ở sân ga số 2.',
+    edgeVoice: 'en-AU-NatashaNeural',
+    browserLang: 'en-AU',
+  },
+  {
+    personaId: 'ryan-uk',
+    name: 'Oliver',
+    origin: 'Oxford · Anh',
+    role: 'Đàm phán & Du lịch công tác',
+    sampleEn: 'That sounds like a solid plan. Would Tuesday afternoon work on your end?',
+    sampleVi: 'Kế hoạch đó rất ổn. Chiều thứ Ba phía bạn có thuận tiện không?',
+    edgeVoice: 'en-GB-RyanNeural',
+    browserLang: 'en-GB',
+  },
+  {
+    personaId: 'clara-ca',
+    name: 'Clara',
+    origin: 'Toronto · Canada',
+    role: 'Luyện nghe rõ âm cho người mới',
+    sampleEn: 'Take your time — there is no rush at all. Let us try that phrase once more.',
+    sampleVi: 'Cứ từ từ, không việc gì phải vội. Mình cùng thử lại câu đó một lần nữa nhé.',
+    edgeVoice: 'en-CA-ClaraNeural',
+    browserLang: 'en-CA',
   },
 ];
 
 const DEMO_QUESTION = {
   contextVi: 'Tình huống công sở · Nhờ đồng nghiệp xem giúp tài liệu',
   promptVi:
-    'Khi muốn nhờ đồng nghiệp xem lướt qua bản kế hoạch trước buổi họp một cách lịch sự, người bản xứ thường nói câu nào?',
+    'Khi muốn nhờ đồng nghiệp xem lướt qua bản kế hoạch trước buổi họp một cách lịch sự, người bản xứ nói thế nào?',
   options: [
     {
       en: 'Could you take a quick look at this draft before two?',
       isCorrect: true,
       noteVi:
-        'Tự nhiên nhất! Cụm "take a quick look" nhẹ nhàng, lịch sự và rất phổ biến nơi công sở Anh – Mỹ.',
+        'Rất tự nhiên! Cụm "take a quick look" nhẹ nhàng, lịch sự và phổ biến trong môi trường làm việc Anh – Mỹ.',
     },
     {
       en: 'Please see my plan fast before the meeting.',
       isCorrect: false,
       noteVi:
-        'Câu này dịch sát từng chữ từ tiếng Việt ("xem nhanh"), nghe hơi cứng và giống mệnh lệnh.',
+        'Câu này dịch sát từng chữ từ tiếng Việt ("xem nhanh"), nghe khá cứng và thiếu tự nhiên.',
     },
     {
       en: 'You check this document for me now, okay?',
       isCorrect: false,
       noteVi:
-        'Thiếu cấu trúc nhờ vả lịch sự ("Could you..."), dễ gây cảm giác thúc ép người nghe.',
+        'Thiếu cấu trúc nhờ vả lịch sự ("Could you..."), dễ tạo cảm giác thúc ép người nghe.',
     },
   ],
   phonetic: 'kʊd juː teɪk ə kwɪk lʊk æt ðɪs dræft bɪˈfɔːr tuː',
@@ -577,7 +608,8 @@ export default function HomePage() {
       voice: sample.edgeVoice,
       browserLang: sample.browserLang,
       speed: 0.92,
-      onEnd: () => setPlayingSampleId((cur) => (cur === sample.personaId ? null : cur)),
+      onEnd: () =>
+        setPlayingSampleId((cur) => (cur === sample.personaId ? null : cur)),
     });
   }
 
@@ -670,216 +702,264 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FBF9F5]">
-        <Loader2 className="h-5 w-5 animate-spin text-[#78716C]" />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
       </div>
     );
   }
 
   // ============================================================================
-  // PUBLIC HUMAN-CRAFTED EDITORIAL WEBSITE (Babbel / Cambly / NYT Games Craft)
+  // PUBLIC MODERN CONSUMER LANDING PAGE (Airbnb / Cambly / Speak.com Craft)
   // ============================================================================
   if (!authenticated || !profile) {
     const selectedDemoObj = DEMO_QUESTION.options.find(
       (o) => o.en === demoPicked
     );
+    const heroTutor = LANDING_VOICE_SAMPLES[0];
+    const heroPlaying = playingSampleId === heroTutor.personaId;
 
     return (
-      <div className="min-h-screen flex flex-col bg-[#FBF9F5] text-[#1C1917]">
+      <div className="min-h-screen flex flex-col bg-white text-gray-900">
         <AppNav profile={null} authenticated={false} variant="landing" />
 
         <main className="flex-1">
-          {/* 1. EDITORIAL HERO + REAL LIVE AUDIO ROSTER */}
-          <section className="border-b border-[#E7E2D8]">
-            <div className="mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20 grid gap-12 lg:grid-cols-12 items-start">
-              {/* Left Column: Literary Serif Headline & Clear Proposition */}
-              <div className="lg:col-span-7 space-y-6 pt-2">
-                <p className="font-serif-display italic text-base sm:text-lg text-[#C2410C]">
-                  Thực hành giao tiếp tiếng Anh mỗi ngày
-                </p>
-
-                <h1 className="font-serif-display text-4xl sm:text-[54px] font-semibold tracking-[-0.02em] text-[#1C1917] leading-[1.08]">
-                  Mở lời nói tiếng Anh tự nhiên như đang trò chuyện thật.
+          {/* 1. LUMINOUS PHOTOGRAPHIC SPLIT HERO */}
+          <section className="mx-auto max-w-6xl px-4 sm:px-6 pt-10 pb-16 sm:pt-14 sm:pb-24">
+            <div className="grid gap-10 lg:grid-cols-12 items-center">
+              <div className="lg:col-span-6 space-y-6">
+                <h1 className="font-display text-4xl sm:text-[54px] font-extrabold tracking-[-0.032em] text-gray-900 leading-[1.07]">
+                  Nói tiếng Anh tự nhiên như đang trò chuyện cùng bạn bè.
                 </h1>
 
-                <p className="text-base sm:text-[17px] text-[#57534E] leading-[1.7] max-w-xl">
-                  Thay vì học thuộc lòng từ rời rạc, bạn dành 10–15 phút mỗi ngày nghe ngữ điệu người bản xứ, tập phản xạ trong ngữ cảnh quán cà phê, cuộc họp hay sân bay và nhận góp ý phát âm chi tiết đến từng âm tiết.
+                <p className="text-base sm:text-lg text-gray-600 leading-relaxed max-w-xl">
+                  Dành 10–15 phút mỗi ngày trò chuyện trực tiếp cùng 6 người hướng dẫn bản xứ, nhận phân tích phát âm đến từng âm tiết và rèn thói quen nói trôi chảy qua bài tập 2 phút.
                 </p>
 
-                <div className="flex flex-wrap items-center gap-3 pt-2">
+                <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Link
                     href="/auth"
-                    className="btn-duo btn-duo-primary px-6 py-3.5 text-sm"
+                    className="btn-duo btn-duo-coral px-7 py-3.5 text-sm sm:text-[15px]"
                   >
                     Bắt đầu học miễn phí
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link
                     href="/placement"
-                    className="btn-duo btn-duo-white px-5 py-3.5 text-sm"
+                    className="btn-duo btn-duo-white px-6 py-3.5 text-sm sm:text-[15px]"
                   >
-                    Kiểm tra trình độ CEFR (2 phút)
+                    Kiểm tra trình độ CEFR
                   </Link>
-                  <a
-                    href="#bai-hoc-thu"
-                    className="text-sm font-medium text-[#57534E] hover:text-[#1C1917] underline px-2 py-2"
-                  >
-                    Làm thử 1 câu ↓
-                  </a>
                 </div>
 
-                <dl className="pt-8 mt-4 border-t border-[#E7E2D8] grid grid-cols-3 gap-6">
-                  <div>
-                    <dt className="font-serif-display text-2xl font-semibold text-[#1C1917]">
-                      6 người hướng dẫn
-                    </dt>
-                    <dd className="text-xs text-[#78716C] mt-1">
-                      Giọng Mỹ, Anh, Úc &amp; Canada
-                    </dd>
+                {/* Human Tutor Stack Proof */}
+                <div className="flex items-center gap-3.5 pt-4">
+                  <div className="flex -space-x-2.5">
+                    {LANDING_VOICE_SAMPLES.slice(0, 5).map((t) => (
+                      <TutorAvatar
+                        key={t.personaId}
+                        personaId={t.personaId}
+                        className="h-10 w-10 ring-2 ring-white"
+                      />
+                    ))}
                   </div>
-                  <div>
-                    <dt className="font-serif-display text-2xl font-semibold text-[#1C1917]">
-                      Phân tích IPA
-                    </dt>
-                    <dd className="text-xs text-[#78716C] mt-1">
-                      Chỉ rõ âm cuối, trọng âm &amp; nối âm
-                    </dd>
+                  <div className="text-xs text-gray-500 leading-snug">
+                    <div className="font-semibold text-gray-900">
+                      6 người hướng dẫn bản xứ Mỹ · Anh · Úc · Canada
+                    </div>
+                    <div>
+                      Đồng bộ tiến trình tự động trên Google Drive của riêng bạn
+                    </div>
                   </div>
-                  <div>
-                    <dt className="font-serif-display text-2xl font-semibold text-[#1C1917]">
-                      Lưu trữ tự động
-                    </dt>
-                    <dd className="text-xs text-[#78716C] mt-1">
-                      Đồng bộ qua Google Drive cá nhân
-                    </dd>
-                  </div>
-                </dl>
+                </div>
               </div>
 
-              {/* Right Column: Real Click-to-Hear Voice Tutors */}
-              <div
-                id="nghe-thu"
-                className="lg:col-span-5 rounded-2xl border border-[#E7E2D8] bg-[#F3EFE6]/75 p-5 sm:p-6 space-y-4"
-              >
-                <div className="flex items-baseline justify-between border-b border-[#E7E2D8] pb-3">
-                  <div>
-                    <h2 className="font-serif-display text-lg font-semibold text-[#1C1917]">
-                      Nghe thử giọng người hướng dẫn
-                    </h2>
-                    <p className="text-xs text-[#78716C] mt-0.5">
-                      Bấm vào từng người để nghe câu chào mẫu thực tế
-                    </p>
-                  </div>
-                </div>
+              {/* Right: Real Editorial Hero Photograph + Live Click-to-Hear Bar */}
+              <div className="lg:col-span-6">
+                <div className="relative overflow-hidden rounded-[28px] bg-gray-100 shadow-[0_24px_64px_-24px_rgba(17,24,39,0.28)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/hero-studio.jpg"
+                    alt="Người học Việt Nam trò chuyện tiếng Anh tự nhiên tại quán cà phê ngập nắng"
+                    className="aspect-[4/3] w-full object-cover"
+                  />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/55 to-transparent" />
 
-                <div className="space-y-2.5">
-                  {LANDING_VOICE_SAMPLES.map((item) => {
-                    const isPlaying = playingSampleId === item.personaId;
-                    return (
-                      <button
-                        key={item.personaId}
-                        type="button"
-                        onClick={() => handlePlayLandingVoice(item)}
-                        className={`w-full rounded-xl border p-3.5 text-left transition cursor-pointer ${
-                          isPlaying
-                            ? 'border-[#14532D] bg-white shadow-xs'
-                            : 'border-[#E7E2D8] bg-white/85 hover:bg-white hover:border-[#D6CFC2]'
+                  {/* Real Floating Audio Sample Bar */}
+                  <div className="absolute inset-x-4 bottom-4 sm:inset-x-5 sm:bottom-5">
+                    <button
+                      type="button"
+                      onClick={() => handlePlayLandingVoice(heroTutor)}
+                      className="w-full flex items-center justify-between gap-3 rounded-2xl bg-white/95 backdrop-blur-md p-3 sm:p-3.5 text-left shadow-lg hover:bg-white transition cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <TutorAvatar
+                          personaId={heroTutor.personaId}
+                          className="h-11 w-11 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-bold text-gray-900">
+                              {heroTutor.name}
+                            </span>
+                            <span className="text-gray-400">·</span>
+                            <span className="text-gray-500">{heroTutor.origin}</span>
+                          </div>
+                          <p className="text-xs sm:text-sm font-medium text-gray-800 truncate mt-0.5">
+                            &ldquo;{heroTutor.sampleEn}&rdquo;
+                          </p>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
+                          heroPlaying
+                            ? 'bg-[#E5483F] text-white'
+                            : 'bg-gray-900 text-white'
                         }`}
                       >
+                        {heroPlaying ? (
+                          <Pause className="h-4 w-4 fill-current" />
+                        ) : (
+                          <Play className="h-4 w-4 fill-current ml-0.5" />
+                        )}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 2. MEET THE 6 NATIVE TUTORS (Real Portraits + Live Click-to-Hear) */}
+          <section
+            id="nghe-thu"
+            className="bg-[#F6F7F9] py-16 sm:py-24 border-y border-gray-100"
+          >
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 space-y-10">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div className="space-y-2 max-w-xl">
+                  <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
+                    Nghe thử 6 giọng đọc bản xứ thực tế
+                  </h2>
+                  <p className="text-sm sm:text-base text-gray-600">
+                    Chạm vào từng người hướng dẫn để nghe ngữ điệu thực tế của giọng Mỹ, Anh, Úc và Canada ngay trên trình duyệt.
+                  </p>
+                </div>
+                <a
+                  href="#bai-hoc-thu"
+                  className="text-sm font-semibold text-[#E5483F] hover:underline shrink-0"
+                >
+                  Thử trả lời 1 tình huống ngay →
+                </a>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {LANDING_VOICE_SAMPLES.map((item) => {
+                  const isPlaying = playingSampleId === item.personaId;
+                  return (
+                    <button
+                      key={item.personaId}
+                      type="button"
+                      onClick={() => handlePlayLandingVoice(item)}
+                      className={`group flex flex-col justify-between rounded-2xl border p-5 text-left transition cursor-pointer ${
+                        isPlaying
+                          ? 'border-[#E5483F] bg-white shadow-[0_12px_32px_-12px_rgba(229,72,63,0.28)]'
+                          : 'border-gray-200/80 bg-white hover:border-gray-300 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="space-y-4">
                         <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex items-center gap-3.5 min-w-0">
                             <TutorAvatar
                               personaId={item.personaId}
-                              className="h-11 w-11"
+                              className="h-14 w-14 shrink-0"
                             />
                             <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-[#1C1917]">
-                                  {item.name}
-                                </span>
-                                <span className="text-xs text-[#78716C]">
-                                  · {item.origin}
-                                </span>
+                              <div className="font-display text-base font-bold text-gray-900">
+                                {item.name}
                               </div>
-                              <div className="text-xs text-[#57534E] truncate">
+                              <div className="text-xs font-medium text-gray-500">
+                                {item.origin}
+                              </div>
+                              <div className="text-[11px] text-gray-400 truncate mt-0.5">
                                 {item.role}
                               </div>
                             </div>
                           </div>
 
                           <span
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition ${
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
                               isPlaying
-                                ? 'border-[#C2410C] bg-[#C2410C] text-white'
-                                : 'border-[#D6CFC2] bg-[#FBF9F5] text-[#1C1917]'
+                                ? 'bg-[#E5483F] text-white'
+                                : 'bg-gray-100 text-gray-800 group-hover:bg-gray-900 group-hover:text-white'
                             }`}
                           >
                             {isPlaying ? (
-                              <Pause className="h-3.5 w-3.5 fill-current" />
+                              <span className="flex items-end gap-0.5 h-3.5">
+                                <span className="w-0.5 h-full bg-white rounded-full animate-eq-1" />
+                                <span className="w-0.5 h-full bg-white rounded-full animate-eq-2" />
+                                <span className="w-0.5 h-full bg-white rounded-full animate-eq-3" />
+                              </span>
                             ) : (
-                              <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
+                              <Play className="h-4 w-4 fill-current ml-0.5" />
                             )}
                           </span>
                         </div>
 
-                        <p className="mt-2.5 font-serif-display italic text-[14px] text-[#1C1917] leading-snug">
+                        <p className="text-sm font-medium text-gray-800 leading-relaxed">
                           &ldquo;{item.sampleEn}&rdquo;
                         </p>
-                        {isPlaying && (
-                          <p className="mt-1 text-xs text-[#57534E]">
-                            {item.sampleVi}
-                          </p>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                      </div>
+
+                      <p className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                        {item.sampleVi}
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </section>
 
-          {/* 2. INTERACTIVE 30-SECOND LESSON TRYOUT RIGHT ON LANDING PAGE */}
+          {/* 3. HIGH-CONTRAST DARK INTERACTIVE 30-SECOND TRYOUT (Apple / Speak.com pacing) */}
           <section
             id="bai-hoc-thu"
-            className="border-b border-[#E7E2D8] bg-white py-16 sm:py-20"
+            className="bg-[#111318] text-white py-16 sm:py-24"
           >
             <div className="mx-auto max-w-4xl px-4 sm:px-6 space-y-8">
-              <div className="max-w-2xl space-y-2">
-                <p className="font-serif-display italic text-base text-[#14532D]">
-                  Trải nghiệm trực tiếp · Không cần tạo tài khoản
-                </p>
-                <h2 className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917]">
-                  Khác biệt giữa &ldquo;dịch từng chữ&rdquo; và cách người bản xứ thực sự nói
+              <div className="max-w-2xl space-y-2.5">
+                <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-white">
+                  Khác biệt giữa dịch từng chữ và cách người bản xứ nói thật
                 </h2>
-                <p className="text-sm text-[#57534E]">
-                  Chọn thử đáp án bạn nghĩ tự nhiên nhất bên dưới để nghe phát âm mẫu và giải thích:
+                <p className="text-sm sm:text-base text-gray-400">
+                  Chọn thử đáp án tự nhiên nhất bên dưới để nghe phát âm mẫu và giải thích ngay — không cần đăng nhập.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-[#E7E2D8] bg-[#FBF9F5] p-5 sm:p-8 space-y-5">
+              <div className="rounded-3xl border border-white/10 bg-[#181B22] p-6 sm:p-8 space-y-5 shadow-2xl">
                 <div className="space-y-1.5">
-                  <div className="text-xs font-medium text-[#78716C]">
+                  <div className="text-xs font-medium text-gray-400">
                     {DEMO_QUESTION.contextVi}
                   </div>
-                  <p className="text-base sm:text-lg font-semibold text-[#1C1917] leading-snug">
+                  <p className="font-display text-lg sm:text-xl font-semibold text-white leading-snug">
                     {DEMO_QUESTION.promptVi}
                   </p>
                 </div>
 
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {DEMO_QUESTION.options.map((opt, idx) => {
                     const picked = demoPicked === opt.en;
                     const showState = demoPicked !== null;
                     let cls =
-                      'border-[#D6CFC2] bg-white text-[#1C1917] hover:border-[#1C1917]';
+                      'border-white/12 bg-white/[0.04] text-white hover:border-white/30 hover:bg-white/[0.08]';
                     if (showState) {
                       if (opt.isCorrect) {
                         cls =
-                          'border-[#14532D] bg-[#14532D]/[0.06] text-[#14532D]';
+                          'border-emerald-400/70 bg-emerald-500/15 text-emerald-100';
                       } else if (picked) {
-                        cls = 'border-[#C2410C] bg-[#C2410C]/[0.06] text-[#9A3412]';
+                        cls = 'border-[#E5483F]/70 bg-[#E5483F]/15 text-rose-100';
                       } else {
-                        cls = 'border-[#E7E2D8] bg-white/60 text-[#78716C]';
+                        cls = 'border-white/8 bg-white/[0.02] text-gray-500';
                       }
                     }
 
@@ -888,18 +968,18 @@ export default function HomePage() {
                         key={opt.en}
                         type="button"
                         onClick={() => handlePickDemoOption(opt.en, opt.isCorrect)}
-                        className={`w-full flex items-center justify-between gap-3 rounded-xl border px-4 py-3.5 text-left transition cursor-pointer ${cls}`}
+                        className={`w-full flex items-center justify-between gap-3 rounded-2xl border px-4 py-4 text-left transition cursor-pointer ${cls}`}
                       >
-                        <span className="flex items-baseline gap-3">
-                          <span className="font-mono text-xs text-[#78716C]">
-                            {String.fromCharCode(65 + idx)}.
+                        <span className="flex items-baseline gap-3.5">
+                          <span className="font-mono text-xs text-gray-400">
+                            {String.fromCharCode(65 + idx)}
                           </span>
-                          <span className="font-serif-display text-base sm:text-[17px] font-medium">
+                          <span className="text-sm sm:text-base font-semibold">
                             {opt.en}
                           </span>
                         </span>
                         {showState && opt.isCorrect && (
-                          <CheckCircle2 className="h-5 w-5 shrink-0 text-[#14532D]" />
+                          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
                         )}
                       </button>
                     );
@@ -907,18 +987,18 @@ export default function HomePage() {
                 </div>
 
                 {selectedDemoObj && (
-                  <div className="rounded-xl border border-[#E7E2D8] bg-white p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                  <div className="rounded-2xl border border-white/10 bg-[#111318] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2.5">
                         <span
-                          className={`text-xs font-semibold ${
+                          className={`text-xs font-bold ${
                             selectedDemoObj.isCorrect
-                              ? 'text-[#14532D]'
-                              : 'text-[#C2410C]'
+                              ? 'text-emerald-400'
+                              : 'text-amber-300'
                           }`}
                         >
                           {selectedDemoObj.isCorrect
-                            ? 'Chính xác — Diễn đạt rất tự nhiên'
+                            ? 'Chính xác — Diễn đạt tự nhiên'
                             : 'Gợi ý chỉnh lại cho tự nhiên hơn'}
                         </span>
                         <button
@@ -931,26 +1011,26 @@ export default function HomePage() {
                               speed: 0.88,
                             })
                           }
-                          className="inline-flex items-center gap-1 text-xs font-medium text-[#1C1917] underline cursor-pointer"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-white underline cursor-pointer"
                         >
                           <Volume2 className="h-3.5 w-3.5" />
                           Nghe lại
                         </button>
                       </div>
-                      <p className="text-xs text-[#57534E] leading-relaxed">
+                      <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
                         {selectedDemoObj.noteVi}
                       </p>
-                      <p className="font-mono text-[11px] text-[#78716C]">
+                      <p className="font-mono text-xs text-gray-400">
                         /{DEMO_QUESTION.phonetic}/
                       </p>
                     </div>
 
                     <Link
                       href="/auth"
-                      className="btn-duo btn-duo-primary shrink-0 px-5 py-2.5 text-xs"
+                      className="btn-duo btn-duo-coral shrink-0 px-5 py-3 text-xs sm:text-sm"
                     >
-                      Học tiếp trọn bộ lộ trình
-                      <ArrowRight className="h-3.5 w-3.5" />
+                      Học trọn bộ lộ trình
+                      <ArrowRight className="h-4 w-4" />
                     </Link>
                   </div>
                 )}
@@ -958,113 +1038,130 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* 3. EDITORIAL CURRICULUM INDEX (Book Table-of-Contents Layout) */}
-          <section id="lo-trinh" className="py-16 sm:py-20">
+          {/* 4. PHOTOGRAPHIC 4-CHAPTER CURRICULUM GALLERY (Airbnb Experiences / MasterClass style) */}
+          <section id="lo-trinh" className="bg-white py-16 sm:py-24">
             <div className="mx-auto max-w-6xl px-4 sm:px-6 space-y-10">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E7E2D8] pb-6">
-                <div className="space-y-1.5 max-w-xl">
-                  <p className="font-serif-display italic text-base text-[#C2410C]">
-                    Cấu trúc chương trình
-                  </p>
-                  <h2 className="font-serif-display text-2xl sm:text-4xl font-semibold text-[#1C1917]">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div className="space-y-2 max-w-xl">
+                  <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
                     Bốn chặng thực hành từ đời sống đến công việc quốc tế
                   </h2>
+                  <p className="text-sm sm:text-base text-gray-600">
+                    Mỗi chặng kết hợp bài tập phản xạ 2 phút, luyện nghe, hội thoại trực tiếp và mốc quà thưởng duy trì chuỗi ngày học.
+                  </p>
                 </div>
                 <Link
                   href="/placement"
-                  className="text-sm font-semibold text-[#14532D] hover:underline shrink-0"
+                  className="text-sm font-semibold text-[#E5483F] hover:underline shrink-0"
                 >
-                  Định vị trình độ CEFR để chọn chặng phù hợp →
+                  Chưa rõ bắt đầu từ đâu? Đo CEFR 2 phút →
                 </Link>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
+              <div className="grid md:grid-cols-2 gap-7">
                 {LEARNING_UNITS.map((unit) => (
-                  <div
+                  <Link
                     key={unit.id}
-                    className="border-b border-[#E7E2D8] pb-7 space-y-2.5"
+                    href="/auth"
+                    className="group overflow-hidden rounded-3xl border border-gray-200/80 bg-white shadow-xs hover:shadow-xl transition duration-300 flex flex-col"
                   >
-                    <div className="font-serif-display italic text-sm text-[#78716C]">
-                      {unit.roman}
+                    <div className="relative aspect-[16/9] overflow-hidden bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={unit.coverImage}
+                        alt={unit.coverAlt}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                      <div className="absolute bottom-4 left-5 right-5 text-white">
+                        <span className="inline-block rounded-full bg-white/20 backdrop-blur-md px-3 py-1 text-[11px] font-semibold">
+                          {unit.roman} · {unit.tabLabel}
+                        </span>
+                        <h3 className="font-display text-xl font-bold mt-2 leading-snug">
+                          {unit.titleVi}
+                        </h3>
+                      </div>
                     </div>
-                    <h3 className="font-serif-display text-xl font-semibold text-[#1C1917]">
-                      {unit.titleVi}
-                    </h3>
-                    <p className="text-sm text-[#57534E] leading-relaxed">
-                      {unit.subtitleVi}
-                    </p>
-                    <div className="pt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#78716C]">
-                      {unit.stations
-                        .filter((s) => s.kind !== 'chest')
-                        .slice(0, 3)
-                        .map((s) => (
-                          <span key={s.id}>· {s.titleVi}</span>
-                        ))}
+
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        {unit.subtitleVi}
+                      </p>
+                      <div className="space-y-1.5 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                        {unit.stations
+                          .filter((s) => s.kind !== 'chest')
+                          .slice(0, 3)
+                          .map((s) => (
+                            <div key={s.id} className="flex items-center justify-between gap-2">
+                              <span className="truncate font-medium text-gray-700">
+                                {s.titleVi}
+                              </span>
+                              <span className="shrink-0 text-gray-400">
+                                {s.durationVi}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
           </section>
         </main>
 
-        {/* 4. PROPER HUMAN-CRAFTED EDITORIAL FOOTER */}
-        <footer className="border-t border-[#E7E2D8] bg-[#F3EFE6]/70 py-12">
+        {/* 5. CLEAN MODERN FOOTER */}
+        <footer className="border-t border-gray-200 bg-[#F6F7F9] py-12">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 grid gap-8 sm:grid-cols-12">
             <div className="sm:col-span-5 space-y-3">
-              <div className="flex items-baseline gap-0.5">
-                <span className="font-serif-display text-xl font-bold text-[#1C1917]">
+              <div className="flex items-center gap-2.5">
+                <NovaCompanion className="h-7 w-7" />
+                <span className="font-display text-lg font-bold text-gray-900">
                   SpeakMate
                 </span>
-                <span className="font-serif-display text-xl font-bold text-[#C2410C]">
-                  .
-                </span>
               </div>
-              <p className="text-xs text-[#57534E] leading-relaxed max-w-sm">
-                Không gian rèn phản xạ nghe – nói tiếng Anh dành cho người học Việt Nam. Tập trung vào câu chữ thực tế, duy trì thói quen đều đặn mỗi ngày và lưu trữ dữ liệu minh bạch.
+              <p className="text-xs text-gray-500 leading-relaxed max-w-sm">
+                Nền tảng luyện giao tiếp tiếng Anh thực tế dành cho người Việt. Tập trung phản xạ tự nhiên, chấm phát âm IPA, lặp lại ngắt quãng SRS và lưu trữ minh bạch trên Google Drive.
               </p>
             </div>
 
-            <div className="sm:col-span-3 space-y-2 text-xs">
-              <div className="font-semibold text-[#1C1917]">Kỹ năng rèn luyện</div>
-              <ul className="space-y-1.5 text-[#57534E]">
+            <div className="sm:col-span-3 space-y-2.5 text-xs">
+              <div className="font-bold text-gray-900">Trải nghiệm học</div>
+              <ul className="space-y-2 text-gray-600">
                 <li>
-                  <Link href="/auth" className="hover:text-[#1C1917]">
-                    Phản xạ câu 15 giây
+                  <Link href="/placement" className="hover:text-gray-900">
+                    Kiểm tra định vị trình độ CEFR
                   </Link>
                 </li>
                 <li>
-                  <Link href="/auth" className="hover:text-[#1C1917]">
-                    Nghe hiểu ngữ cảnh bản xứ
-                  </Link>
+                  <a href="#nghe-thu" className="hover:text-gray-900">
+                    6 giọng đọc bản xứ
+                  </a>
                 </li>
                 <li>
-                  <Link href="/auth" className="hover:text-[#1C1917]">
-                    Hội thoại &amp; chấm điểm IPA
-                  </Link>
+                  <a href="#bai-hoc-thu" className="hover:text-gray-900">
+                    Bài học thử 30 giây
+                  </a>
                 </li>
               </ul>
             </div>
 
-            <div className="sm:col-span-4 space-y-2 text-xs">
-              <div className="font-semibold text-[#1C1917]">Tài khoản &amp; Pháp lý</div>
-              <ul className="space-y-1.5 text-[#57534E]">
+            <div className="sm:col-span-4 space-y-2.5 text-xs">
+              <div className="font-bold text-gray-900">Tài khoản &amp; Pháp lý</div>
+              <ul className="space-y-2 text-gray-600">
                 <li>
-                  <Link href="/placement" className="hover:text-[#1C1917]">
-                    Kiểm tra định vị trình độ CEFR (A1–C1)
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth" className="hover:text-[#1C1917]">
+                  <Link href="/auth" className="hover:text-gray-900">
                     Đăng nhập &amp; đồng bộ Google Drive
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacy" className="hover:text-[#1C1917]">
+                  <Link href="/privacy" className="hover:text-gray-900">
                     Chính sách quyền riêng tư
                   </Link>
-                  {' · '}
-                  <Link href="/terms" className="hover:text-[#1C1917]">
+                </li>
+                <li>
+                  <Link href="/terms" className="hover:text-gray-900">
                     Điều khoản sử dụng
                   </Link>
                 </li>
@@ -1072,8 +1169,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 mt-10 pt-6 border-t border-[#E7E2D8] flex flex-wrap items-center justify-between gap-2 text-xs text-[#78716C]">
-            <span>© {new Date().getFullYear()} SpeakMate. Thiết kế cho việc học thực chất mỗi ngày.</span>
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 mt-10 pt-6 border-t border-gray-200 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+            <span>© {new Date().getFullYear()} SpeakMate.</span>
             <span>US · UK · AU · CA Spoken English</span>
           </div>
         </footer>
@@ -1082,7 +1179,7 @@ export default function HomePage() {
   }
 
   // ============================================================================
-  // AUTHENTICATED CURRICULUM STUDIO (Open Editorial Layout — Zero Box Soup)
+  // AUTHENTICATED MODERN CONSUMER LEARNING HUB
   // ============================================================================
   const todayStr = getTodayLocalDate();
   const statByDate = new Map(stats.map((s) => [s.practiceDate, s]));
@@ -1162,46 +1259,46 @@ export default function HomePage() {
     }
   }
 
-  // CALM RIGHT EDITORIAL NOTEBOOK RAIL (Single Cohesive Linen Sheet Instead of 6 Separate Shadow Cards)
+  // CLEAN WHITE RIGHT PROGRESS RAIL
   const rightRail = (
-    <div className="rounded-2xl border border-[#E7E2D8] bg-[#F3EFE6]/65 p-5 space-y-6">
+    <div className="rounded-3xl border border-gray-200/80 bg-white p-5 shadow-xs space-y-6">
       {/* 1. Streak & 7-Day Rhythm */}
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         <div className="flex items-baseline justify-between">
           <div>
-            <div className="text-xs text-[#78716C]">Nhịp độ học tập</div>
-            <div className="font-serif-display text-2xl font-semibold text-[#1C1917] tabular-nums">
-              Chuỗi {profile.streakDays} ngày
+            <div className="text-xs font-medium text-gray-500">Chuỗi học tập</div>
+            <div className="font-display text-2xl font-bold text-gray-900 tabular-nums mt-0.5">
+              {profile.streakDays} ngày liên tiếp
             </div>
           </div>
           <Link
             href="/history"
-            className="text-xs font-medium text-[#14532D] hover:underline"
+            className="text-xs font-semibold text-[#E5483F] hover:underline"
           >
             Lịch tháng →
           </Link>
         </div>
 
-        <div className="grid grid-cols-7 gap-1.5 tabular-nums pt-1">
+        <div className="grid grid-cols-7 gap-1.5 tabular-nums">
           {miniWeek.map((d) => (
             <div key={d.dateStr} className="flex flex-col items-center gap-1">
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs ${
+                className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs transition ${
                   d.studied
-                    ? 'border-[#14532D] bg-[#14532D] text-white'
+                    ? 'border-[#059669] bg-[#059669] text-white'
                     : d.frozen
-                      ? 'border-slate-500 bg-slate-500 text-white'
+                      ? 'border-sky-500 bg-sky-500 text-white'
                       : d.isToday
-                        ? 'border-dashed border-[#C2410C] bg-white text-[#C2410C]'
-                        : 'border-[#E7E2D8] bg-white/70 text-[#A8A29E]'
+                        ? 'border-dashed border-[#E5483F] bg-rose-50/50 text-[#E5483F]'
+                        : 'border-gray-200 bg-gray-50 text-gray-300'
                 }`}
               >
                 {d.studied ? (
-                  <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+                  <Check className="h-4 w-4 stroke-[2.5]" />
                 ) : d.frozen ? (
-                  <Shield className="h-3 w-3" />
+                  <Shield className="h-3.5 w-3.5" />
                 ) : (
-                  <span className="text-[10px]">
+                  <span className="text-[11px] font-bold">
                     {d.isToday ? '•' : ''}
                   </span>
                 )}
@@ -1209,8 +1306,8 @@ export default function HomePage() {
               <span
                 className={`text-[10px] ${
                   d.isToday
-                    ? 'font-semibold text-[#1C1917]'
-                    : 'text-[#78716C]'
+                    ? 'font-bold text-gray-900'
+                    : 'font-medium text-gray-400'
                 }`}
               >
                 {d.label}
@@ -1233,13 +1330,11 @@ export default function HomePage() {
       </div>
 
       {/* 2. Daily Goals */}
-      <div className="border-t border-[#E7E2D8] pt-5 space-y-3 tabular-nums">
+      <div className="border-t border-gray-100 pt-5 space-y-3.5 tabular-nums">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-xs font-semibold text-[#1C1917]">
-            Mục tiêu hôm nay
-          </h2>
-          <span className="text-[11px] text-[#78716C]">
-            {claimedQuestsToday.length}/{DAILY_QUEST_DEFS.length} hoàn thành
+          <h2 className="text-xs font-bold text-gray-900">Mục tiêu hôm nay</h2>
+          <span className="text-[11px] text-gray-500">
+            {claimedQuestsToday.length}/{DAILY_QUEST_DEFS.length} xong
           </span>
         </div>
 
@@ -1268,11 +1363,11 @@ export default function HomePage() {
             const claimed = claimedQuestsToday.includes(q.id);
 
             return (
-              <div key={q.id} className="space-y-1">
+              <div key={q.id} className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2 text-xs">
-                  <span className="text-[#1C1917] truncate">{title}</span>
+                  <span className="font-medium text-gray-700 truncate">{title}</span>
                   {claimed ? (
-                    <span className="text-[#14532D] font-medium shrink-0">
+                    <span className="text-emerald-600 font-semibold shrink-0">
                       Đã nhận
                     </span>
                   ) : done ? (
@@ -1280,20 +1375,22 @@ export default function HomePage() {
                       type="button"
                       disabled={claimingQuestId === q.id}
                       onClick={() => void handleClaimDailyQuest(q.id, title)}
-                      className="shrink-0 rounded bg-[#C2410C] px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-[#9A3412] cursor-pointer"
+                      className="shrink-0 rounded-full bg-[#E5483F] px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-[#cf3a31] cursor-pointer"
                     >
                       Nhận +{q.rewardGems}
                     </button>
                   ) : (
-                    <span className="text-[#78716C] shrink-0 text-[11px]">
+                    <span className="text-gray-400 shrink-0 text-[11px]">
                       {current}/{target} {unit}
                     </span>
                   )}
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-[#E7E2D8] overflow-hidden">
+                <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[#14532D] transition-all duration-300"
-                    style={{ width: `${Math.max(done ? 100 : 3, pct)}%` }}
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      done ? 'bg-emerald-500' : 'bg-gray-900'
+                    }`}
+                    style={{ width: `${Math.max(done ? 100 : 4, pct)}%` }}
                   />
                 </div>
               </div>
@@ -1303,29 +1400,29 @@ export default function HomePage() {
       </div>
 
       {/* 3. Streak Milestone Reward */}
-      <div className="border-t border-[#E7E2D8] pt-5 space-y-3 tabular-nums">
+      <div className="border-t border-gray-100 pt-5 space-y-3 tabular-nums">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <TreasureChestSvg
               state={claimableMilestones.length > 0 ? 'ready' : 'locked'}
-              className="h-7 w-7"
+              className="h-9 w-9"
             />
             <div>
-              <div className="text-xs font-semibold text-[#1C1917]">
+              <div className="text-xs font-bold text-gray-900">
                 {claimableMilestones.length > 0
-                  ? `Mở thưởng mốc ${claimableMilestones[0].days} ngày`
-                  : `Cột mốc kế tiếp: ${nextMilestone.days} ngày`}
+                  ? `Quà mốc ${claimableMilestones[0].days} ngày sẵn sàng`
+                  : `Mốc thưởng kế tiếp: ${nextMilestone.days} ngày`}
               </div>
-              <div className="text-[11px] text-[#78716C]">
-                +{nextMilestone.rewardXp} XP · +{nextMilestone.rewardGems} điểm thưởng
+              <div className="text-[11px] text-gray-500">
+                +{nextMilestone.rewardXp} XP · +{nextMilestone.rewardGems} Ngọc
               </div>
             </div>
           </div>
           <Link
             href="/history#rewards"
-            className="text-xs font-medium text-[#14532D] hover:underline shrink-0"
+            className="text-xs font-semibold text-gray-600 hover:text-gray-900 shrink-0"
           >
-            Kho quà
+            Xem
           </Link>
         </div>
 
@@ -1336,30 +1433,30 @@ export default function HomePage() {
             onClick={() =>
               void handleClaimStreakReward(claimableMilestones[0].days)
             }
-            className="btn-duo btn-duo-orange w-full py-2 text-xs"
+            className="btn-duo btn-duo-coral w-full py-2.5 text-xs"
           >
             <Gift className="h-3.5 w-3.5" />
             {claimingDays !== null
               ? 'Đang mở...'
-              : `Nhận thưởng mốc ${claimableMilestones[0].days} ngày`}
+              : `Nhận quà mốc ${claimableMilestones[0].days} ngày`}
           </button>
         )}
       </div>
 
       {/* 3.5 Spaced Repetition Due Reminder */}
       {duePhraseCount > 0 && (
-        <div className="border-t border-[#E7E2D8] pt-5 flex items-center justify-between gap-3">
+        <div className="border-t border-gray-100 pt-5 flex items-center justify-between gap-3">
           <div>
-            <div className="text-xs font-semibold text-[#1C1917]">
-              Ôn tập ngắt quãng (SRS)
+            <div className="text-xs font-bold text-gray-900">
+              Ôn từ vựng ngắt quãng
             </div>
-            <div className="text-[11px] text-[#57534E] mt-0.5 tabular-nums">
-              Có <strong className="text-[#C2410C]">{duePhraseCount}</strong> mẫu câu đến lịch ôn hôm nay
+            <div className="text-[11px] text-gray-500 mt-0.5 tabular-nums">
+              Có <strong className="text-[#E5483F]">{duePhraseCount}</strong> câu đến hạn ôn hôm nay
             </div>
           </div>
           <Link
             href="/phrases"
-            className="text-xs font-semibold text-[#14532D] hover:underline shrink-0"
+            className="text-xs font-semibold text-[#E5483F] hover:underline shrink-0"
           >
             Ôn ngay →
           </Link>
@@ -1367,40 +1464,38 @@ export default function HomePage() {
       )}
 
       {/* 4. League & Cloud Footer */}
-      <div className="border-t border-[#E7E2D8] pt-5 space-y-3 tabular-nums">
+      <div className="border-t border-gray-100 pt-5 space-y-3 tabular-nums">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <LeagueTrophySvg tier={league.tier} className="h-7 w-7 shrink-0" />
+          <div className="flex items-center gap-3 min-w-0">
+            <LeagueTrophySvg tier={league.tier} className="h-9 w-9 shrink-0" />
             <div className="min-w-0">
-              <div className="text-xs font-semibold text-[#1C1917] truncate">
-                {league.nameVi} · Cấp {levelInfo.level} ({profile.englishLevel})
+              <div className="text-xs font-bold text-gray-900 truncate">
+                {league.nameVi} · Cấp {levelInfo.level}
               </div>
-              <div className="text-[11px] text-[#78716C]">
-                {profile.xp} XP tích lũy
-                {boostActive ? ` · 2x XP (${boostMins}p)` : ''}
+              <div className="text-[11px] text-gray-500">
+                {profile.xp} XP · {profile.englishLevel}
+                {boostActive ? ` · 2x (${boostMins}p)` : ''}
               </div>
             </div>
           </div>
           <Link
             href="/leaderboard"
-            className="text-xs font-medium text-[#14532D] hover:underline shrink-0"
+            className="text-xs font-semibold text-gray-600 hover:text-gray-900 shrink-0"
           >
             Xếp hạng →
           </Link>
         </div>
 
-        <div className="text-[11px] text-[#78716C] flex items-center justify-between pt-1">
+        <div className="text-[11px] text-gray-400 flex items-center justify-between pt-1">
           <span>
-            {isDriveActive
-              ? 'Đã kết nối lưu trữ Google Drive'
-              : 'Đang lưu cục bộ trên trình duyệt'}
+            {isDriveActive ? 'Đã đồng bộ Google Drive' : 'Lưu cục bộ trên máy'}
           </span>
-          <div className="flex items-center gap-2.5">
-            <Link href="/placement" className="underline hover:text-[#1C1917]">
+          <div className="flex items-center gap-3">
+            <Link href="/placement" className="text-gray-600 hover:text-gray-900 font-medium">
               Đo CEFR
             </Link>
-            <Link href="/settings" className="underline hover:text-[#1C1917]">
-              Thiết lập
+            <Link href="/settings" className="text-gray-600 hover:text-gray-900 font-medium">
+              Cài đặt
             </Link>
           </div>
         </div>
@@ -1408,49 +1503,59 @@ export default function HomePage() {
     </div>
   );
 
+  const unitPct = Math.round(
+    (completedInUnit / Math.max(1, currentUnit.stations.length)) * 100
+  );
+
   return (
     <AppShell profile={profile} authenticated={authenticated} rightRail={rightRail}>
-      {/* Open Editorial Greeting & Tutor Picker (No Card Box!) */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-[#E7E2D8]">
-        <div className="space-y-1">
-          <p className="text-xs text-[#78716C]">
-            {strict.studiedToday
-              ? 'Bạn đã hoàn thành mục tiêu giữ chuỗi hôm nay.'
-              : 'Hoàn thành 1 bài luyện tập bên dưới để duy trì chuỗi ngày học.'}
-          </p>
-          <h1 className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917]">
-            Chào {profile.displayName || 'bạn'}, hôm nay mình luyện chủ đề nào?
-          </h1>
+      {/* Greeting + Visual Photo Tutor Picker */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+              Chào {profile.displayName || 'bạn'}, sẵn sàng luyện nói hôm nay?
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {strict.studiedToday
+                ? 'Hôm nay bạn đã giữ vững chuỗi ngày học. Luyện thêm để bứt phá thứ hạng tuần này.'
+                : 'Chỉ cần hoàn thành trọn vẹn 1 bài bên dưới để tính giữ chuỗi ngày hôm nay.'}
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <TutorAvatar personaId={activeTutor.id} className="h-9 w-9" />
-          <div className="text-xs">
-            <label htmlFor="home-tutor-select" className="block text-[11px] text-[#78716C]">
-              Người hướng dẫn
-            </label>
-            <select
-              id="home-tutor-select"
-              value={selectedPersonaId}
-              onChange={(e) => setSelectedPersonaId(e.target.value)}
-              className="bg-transparent font-semibold text-[#1C1917] focus:outline-none cursor-pointer"
-            >
-              <option value="auto">
-                {activeTutor.name} ({profile.preferredAccent} mặc định)
-              </option>
-              {AI_PERSONAS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} · {p.accentLabel}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Visual Circular Photo Tutor Picker Strip */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {AI_PERSONAS.map((p) => {
+            const isSelected = activeTutor.id === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  playTapSound();
+                  setSelectedPersonaId(p.id);
+                }}
+                className={`inline-flex items-center gap-2 rounded-full border pl-1.5 pr-3.5 py-1 text-xs font-semibold transition shrink-0 cursor-pointer ${
+                  isSelected
+                    ? 'border-gray-900 bg-gray-900 text-white shadow-xs'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <TutorAvatar personaId={p.id} className="h-7 w-7" />
+                <span>{p.name}</span>
+                <span className={isSelected ? 'text-gray-300' : 'text-gray-400'}>
+                  {p.accent}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Chapter Navigation Tabs — Clean Editorial Underlines */}
+      {/* Chapter Pill Tabs + Photographic Chapter Hero Banner */}
       <div className="space-y-5">
-        <div className="flex flex-wrap items-center gap-6 border-b border-[#E7E2D8]">
+        <div className="flex flex-wrap items-center gap-2">
           {LEARNING_UNITS.map((u, idx) => {
             const active = idx === activeUnitIdx;
             return (
@@ -1461,51 +1566,68 @@ export default function HomePage() {
                   playTapSound();
                   setActiveUnitIdx(idx);
                 }}
-                className={`relative pb-3 text-sm transition cursor-pointer ${
+                className={`rounded-full px-4 py-2 text-xs sm:text-sm font-semibold transition cursor-pointer ${
                   active
-                    ? 'font-semibold text-[#14532D]'
-                    : 'font-medium text-[#78716C] hover:text-[#1C1917]'
+                    ? 'bg-[#E5483F] text-white shadow-xs'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900'
                 }`}
               >
-                {u.tabLabel}
-                {active && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#14532D]" />
-                )}
+                {u.roman} · {u.tabLabel}
               </button>
             );
           })}
         </div>
 
-        {/* Active Chapter Heading */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1 max-w-xl">
-            <div className="font-serif-display italic text-sm text-[#C2410C]">
-              {currentUnit.roman} · Đã hoàn thành {completedInUnit}/{currentUnit.stations.length} mục
-            </div>
-            <h2 className="font-serif-display text-xl sm:text-2xl font-semibold text-[#1C1917]">
-              {currentUnit.titleVi}
-            </h2>
-            <p className="text-xs sm:text-sm text-[#57534E]">
-              {currentUnit.subtitleVi}
-            </p>
-          </div>
+        {/* Photographic Active Chapter Hero Card */}
+        <div className="relative overflow-hidden rounded-3xl bg-gray-900 text-white shadow-md">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={currentUnit.coverImage}
+            alt={currentUnit.coverAlt}
+            className="absolute inset-0 h-full w-full object-cover opacity-55"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/30" />
 
-          <button
-            type="button"
-            onClick={() =>
-              handleLaunchStation(
-                currentUnit.stations[activeStationIndex] ?? currentUnit.stations[0]
-              )
-            }
-            className="btn-duo btn-duo-primary shrink-0 px-5 py-2.5 text-sm"
-          >
-            Học bài tiếp theo
-            <ArrowRight className="h-4 w-4" />
-          </button>
+          <div className="relative z-10 p-6 sm:p-7 flex flex-col sm:flex-row sm:items-end justify-between gap-5">
+            <div className="space-y-2.5 max-w-lg">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md px-3 py-1 text-xs font-semibold">
+                <span>{currentUnit.roman}</span>
+                <span>·</span>
+                <span className="tabular-nums">
+                  {completedInUnit}/{currentUnit.stations.length} mục đã xong ({unitPct}%)
+                </span>
+              </div>
+              <h2 className="font-display text-xl sm:text-2xl font-bold leading-snug">
+                {currentUnit.titleVi}
+              </h2>
+              <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
+                {currentUnit.subtitleVi}
+              </p>
+              <div className="h-1.5 max-w-xs rounded-full bg-white/20 overflow-hidden pt-0">
+                <div
+                  className="h-full rounded-full bg-[#E5483F] transition-all duration-300"
+                  style={{ width: `${Math.max(8, unitPct)}%` }}
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                handleLaunchStation(
+                  currentUnit.stations[activeStationIndex] ?? currentUnit.stations[0]
+                )
+              }
+              className="btn-duo btn-duo-coral shrink-0 px-6 py-3 text-sm"
+            >
+              Học bài tiếp theo
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Single Clean Curriculum Sheet */}
-        <section className="card-duo overflow-hidden divide-y divide-[#E7E2D8]">
+        {/* Elevated White Lesson Track */}
+        <section className="rounded-3xl border border-gray-200/80 bg-white shadow-xs overflow-hidden divide-y divide-gray-100">
           {currentUnit.stations.map((station, idx) => {
             const Icon = getStationIcon(station.kind);
             const isChest = station.kind === 'chest';
@@ -1519,24 +1641,24 @@ export default function HomePage() {
                 onClick={() => handleLaunchStation(station)}
                 className={`group flex items-center justify-between gap-4 px-5 py-4 transition cursor-pointer ${
                   isActive
-                    ? 'bg-[#14532D]/[0.04]'
+                    ? 'bg-rose-50/45'
                     : chestReady
-                      ? 'bg-[#C2410C]/[0.05]'
-                      : 'bg-white hover:bg-[#FBF9F5]'
+                      ? 'bg-amber-50/50'
+                      : 'bg-white hover:bg-gray-50/80'
                 }`}
               >
                 <div className="flex items-start sm:items-center gap-4 min-w-0">
                   <span
-                    className={`font-serif-display flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm ${
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-bold transition ${
                       isDone
-                        ? 'border-[#14532D] bg-[#14532D] text-white'
+                        ? 'border-emerald-600 bg-emerald-600 text-white'
                         : isActive
-                          ? 'border-[#C2410C] bg-[#C2410C] text-white font-semibold'
-                          : 'border-[#D6CFC2] bg-[#FBF9F5] text-[#57534E]'
+                          ? 'border-[#E5483F] bg-[#E5483F] text-white shadow-sm'
+                          : 'border-gray-200 bg-gray-50 text-gray-500 group-hover:border-gray-300'
                     }`}
                   >
                     {isDone ? (
-                      <Check className="h-4 w-4 stroke-[2.5]" />
+                      <Check className="h-4 w-4 stroke-[2.6]" />
                     ) : isChest ? (
                       <Gift className="h-4 w-4" />
                     ) : (
@@ -1545,34 +1667,34 @@ export default function HomePage() {
                   </span>
 
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-[#78716C]">
-                      <span className="inline-flex items-center gap-1 font-medium text-[#57534E]">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                      <span className="inline-flex items-center gap-1 font-semibold text-gray-700">
                         <Icon className="h-3.5 w-3.5" />
                         {station.modeLabel}
                       </span>
                       <span>·</span>
                       <span>{station.durationVi}</span>
                     </div>
-                    <h3 className="mt-0.5 text-sm sm:text-[15px] font-semibold text-[#1C1917] group-hover:text-[#14532D] transition">
+                    <h3 className="mt-0.5 text-sm sm:text-[15px] font-bold text-gray-900 group-hover:text-[#E5483F] transition">
                       {station.titleVi}
                     </h3>
-                    <p className="text-xs text-[#78716C] mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5">
                       {station.subtitleVi}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 shrink-0 tabular-nums">
+                <div className="flex items-center gap-3 shrink-0 tabular-nums">
                   {station.xpValue !== null && (
-                    <span className="hidden sm:inline text-xs text-[#78716C]">
+                    <span className="hidden sm:inline rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-600">
                       +{station.xpValue} XP
                     </span>
                   )}
                   <span
-                    className={`text-xs font-semibold ${
+                    className={`text-xs font-bold ${
                       isActive || chestReady
-                        ? 'text-[#C2410C]'
-                        : 'text-[#57534E] group-hover:text-[#1C1917]'
+                        ? 'text-[#E5483F]'
+                        : 'text-gray-500 group-hover:text-gray-900'
                     }`}
                   >
                     {isChest
@@ -1590,16 +1712,19 @@ export default function HomePage() {
         </section>
       </div>
 
-      {/* CUSTOM ROLEPLAY & SCENARIO INDEX — Open Editorial Section */}
-      <section className="pt-4 border-t border-[#E7E2D8] space-y-6">
+      {/* CUSTOM ROLEPLAY & 13-SCENARIO LIBRARY */}
+      <section className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-xs space-y-6">
         <div className="space-y-3">
-          <div>
-            <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
-              Thực hành hội thoại theo tình huống riêng
-            </h2>
-            <p className="text-xs sm:text-sm text-[#57534E] mt-0.5">
-              Nhập một bối cảnh bạn sắp gặp ngoài đời thực để trò chuyện trực tiếp cùng {activeTutor.name}.
-            </p>
+          <div className="flex items-center gap-3">
+            <TutorAvatar personaId={activeTutor.id} className="h-11 w-11 shrink-0" />
+            <div>
+              <h2 className="font-display text-lg sm:text-xl font-bold text-gray-900">
+                Hội thoại theo tình huống riêng cùng {activeTutor.name}
+              </h2>
+              <p className="text-xs text-gray-500">
+                Nhập bối cảnh bạn sắp gặp ngoài đời thực để trò chuyện trực tiếp bằng giọng nói.
+              </p>
+            </div>
           </div>
 
           <form
@@ -1616,15 +1741,15 @@ export default function HomePage() {
               onChange={(e) => setCustomRoleplayInput(e.target.value)}
               maxLength={140}
               placeholder="Ví dụ: Họp báo cáo tiến độ dự án, đặt phòng khách sạn ở Tokyo..."
-              className="flex-1 rounded-xl border border-[#D6CFC2] bg-white px-4 py-2.5 text-sm text-[#1C1917] focus:border-[#14532D] focus:outline-none"
+              className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-900 focus:border-gray-900 focus:bg-white focus:outline-none"
             />
             <button
               type="submit"
               disabled={!customRoleplayInput.trim()}
-              className="btn-duo btn-duo-primary px-5 py-2.5 text-sm shrink-0"
+              className="btn-duo btn-duo-primary px-6 py-3 text-sm shrink-0"
             >
               <PhoneCall className="h-4 w-4" />
-              Bắt đầu trò chuyện
+              Bắt đầu gọi
             </button>
           </form>
 
@@ -1634,7 +1759,7 @@ export default function HomePage() {
                 key={preset}
                 type="button"
                 onClick={() => startCall('free-talk-custom', preset)}
-                className="rounded-full border border-[#E7E2D8] bg-white px-3.5 py-1.5 text-xs text-[#57534E] hover:border-[#1C1917] hover:text-[#1C1917] transition cursor-pointer"
+                className="rounded-full border border-gray-200 bg-gray-50 px-3.5 py-1.5 text-xs font-medium text-gray-600 hover:border-gray-900 hover:bg-white hover:text-gray-900 transition cursor-pointer"
               >
                 {preset}
               </button>
@@ -1642,43 +1767,41 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Clean Scenario List with Hairlines */}
-        <div className="space-y-3">
+        <div className="space-y-3 pt-4 border-t border-gray-100">
           <div className="flex items-baseline justify-between">
-            <h3 className="text-sm font-semibold text-[#1C1917]">
+            <h3 className="text-sm font-bold text-gray-900">
               Thư viện tình huống có sẵn ({SCENARIOS.length} chủ đề)
             </h3>
             <button
               type="button"
               onClick={() => setShowScenarioDrawer((v) => !v)}
-              className="text-xs font-semibold text-[#14532D] hover:underline cursor-pointer"
+              className="text-xs font-semibold text-[#E5483F] hover:underline cursor-pointer"
             >
               {showScenarioDrawer
                 ? 'Thu gọn'
-                : `Xem đầy đủ ${SCENARIOS.length} chủ đề`}
+                : `Xem tất cả ${SCENARIOS.length} chủ đề`}
             </button>
           </div>
 
-          <div className="divide-y divide-[#E7E2D8] border-y border-[#E7E2D8]">
+          <div className="grid sm:grid-cols-2 gap-2.5">
             {(showScenarioDrawer ? SCENARIOS : SCENARIOS.slice(0, 4)).map(
               (scenario) => (
                 <button
                   key={scenario.id}
                   type="button"
                   onClick={() => startCall(scenario.id)}
-                  className="group w-full flex items-center justify-between gap-4 py-3.5 text-left hover:bg-[#F3EFE6]/50 px-2 transition cursor-pointer"
+                  className="group flex items-center justify-between gap-3 rounded-2xl border border-gray-200/80 bg-[#F6F7F9]/60 p-4 text-left hover:border-gray-300 hover:bg-white hover:shadow-xs transition cursor-pointer"
                 >
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-[#1C1917] group-hover:text-[#14532D] transition">
+                    <div className="text-sm font-semibold text-gray-900 group-hover:text-[#E5483F] transition truncate">
                       {scenario.titleVi}
                     </div>
-                    <div className="text-xs text-[#78716C] truncate mt-0.5">
+                    <div className="text-xs text-gray-500 truncate mt-0.5">
                       {scenario.descriptionVi}
                     </div>
                   </div>
-                  <span className="shrink-0 text-xs font-medium text-[#78716C] group-hover:text-[#1C1917] flex items-center gap-1">
+                  <span className="shrink-0 rounded-full bg-white border border-gray-200 px-2.5 py-0.5 text-[11px] font-semibold text-gray-600">
                     {scenario.recommendedLevel}
-                    <ArrowRight className="h-3.5 w-3.5" />
                   </span>
                 </button>
               )

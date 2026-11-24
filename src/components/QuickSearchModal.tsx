@@ -34,7 +34,7 @@ const CORE_DESTINATIONS: SearchEntry[] = [
     id: 'nav-home',
     group: 'Điều hướng',
     title: 'Lộ trình học 4 chương',
-    subtitle: 'Giáo trình theo chặng Đời sống, Công sở, Du lịch & Mở rộng',
+    subtitle: 'Giáo trình theo chặng Đời sống, Công sở, Du lịch & Cá nhân hóa',
     href: '/',
     icon: Compass,
   },
@@ -168,15 +168,15 @@ export function QuickSearchModal({ open, onClose }: QuickSearchModalProps) {
       role="dialog"
       aria-modal="true"
       aria-label="Tìm kiếm nhanh bài học và tình huống"
-      className="fixed inset-0 z-50 flex items-start justify-center bg-[#1C1917]/55 backdrop-blur-xs px-4 pt-16 sm:pt-24"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-xs px-4 pt-16 sm:pt-24"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl overflow-hidden rounded-2xl border border-[#E7E2D8] bg-[#FBF9F5] shadow-2xl"
+        className="w-full max-w-xl overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 border-b border-[#E7E2D8] bg-white px-4 py-3.5">
-          <Search className="h-4 w-4 text-[#78716C] shrink-0" />
+        <div className="flex items-center gap-3 border-b border-gray-100 bg-white px-5 py-4">
+          <Search className="h-4 w-4 text-gray-400 shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -209,21 +209,21 @@ export function QuickSearchModal({ open, onClose }: QuickSearchModalProps) {
               }
             }}
             placeholder="Tìm tình huống hội thoại, bài tập, mẫu câu đã lưu..."
-            className="flex-1 bg-transparent text-sm text-[#1C1917] placeholder-[#78716C] focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none"
           />
           <button
             type="button"
             onClick={onClose}
             aria-label="Đóng tìm kiếm"
-            className="rounded-lg p-1 text-[#78716C] hover:bg-[#F3EFE6] hover:text-[#1C1917] cursor-pointer"
+            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="max-h-96 overflow-y-auto divide-y divide-[#EFECE4] p-2">
+        <div className="max-h-96 overflow-y-auto divide-y divide-gray-100 p-2">
           {filtered.length === 0 ? (
-            <div className="py-10 text-center text-xs text-[#78716C]">
+            <div className="py-10 text-center text-xs text-gray-400">
               Không tìm thấy mục phù hợp với từ khóa &ldquo;{query}&rdquo;.
             </div>
           ) : (
@@ -236,37 +236,37 @@ export function QuickSearchModal({ open, onClose }: QuickSearchModalProps) {
                   type="button"
                   onMouseEnter={() => setSelectedIndex(idx)}
                   onClick={() => go(item)}
-                  className={`w-full flex items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left transition cursor-pointer ${
-                    active ? 'bg-[#14532D]/[0.08]' : 'hover:bg-white'
+                  className={`w-full flex items-center justify-between gap-3 rounded-2xl px-3.5 py-2.5 text-left transition cursor-pointer ${
+                    active ? 'bg-gray-100' : 'hover:bg-gray-50'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${
                         active
-                          ? 'border-[#14532D] bg-[#14532D] text-white'
-                          : 'border-[#E7E2D8] bg-white text-[#57534E]'
+                          ? 'border-gray-900 bg-gray-900 text-white'
+                          : 'border-gray-200 bg-white text-gray-600'
                       }`}
                     >
                       <Icon className="h-4 w-4" />
                     </span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[#1C1917] truncate">
+                        <span className="text-sm font-semibold text-gray-900 truncate">
                           {item.title}
                         </span>
-                        <span className="hidden sm:inline rounded bg-[#F3EFE6] px-1.5 py-0.5 text-[10px] font-medium text-[#78716C] shrink-0">
+                        <span className="hidden sm:inline rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500 shrink-0">
                           {item.group}
                         </span>
                       </div>
-                      <p className="text-xs text-[#57534E] truncate mt-0.5">
+                      <p className="text-xs text-gray-500 truncate mt-0.5">
                         {item.subtitle}
                       </p>
                     </div>
                   </div>
                   <ArrowRight
                     className={`h-3.5 w-3.5 shrink-0 ${
-                      active ? 'text-[#14532D]' : 'text-[#A8A29E]'
+                      active ? 'text-[#E5483F]' : 'text-gray-300'
                     }`}
                   />
                 </button>
@@ -275,9 +275,9 @@ export function QuickSearchModal({ open, onClose }: QuickSearchModalProps) {
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-[#E7E2D8] bg-[#F3EFE6]/70 px-4 py-2 text-[11px] text-[#78716C]">
+        <div className="flex items-center justify-between border-t border-gray-100 bg-[#F6F7F9] px-5 py-2.5 text-[11px] text-gray-500">
           <span>Dùng phím ↑↓ để di chuyển · Enter để mở</span>
-          <span className="font-mono">Esc để đóng</span>
+          <span className="font-mono">Esc</span>
         </div>
       </div>
     </div>

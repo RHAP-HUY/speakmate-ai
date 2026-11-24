@@ -83,7 +83,7 @@ const STEP_HEADINGS: Record<1 | 2 | 3, { title: string; sub: string }> = {
   },
   3: {
     title: 'Tên hiển thị & mục tiêu mỗi ngày',
-    sub: 'Mọi thiết lập và tiến trình sẽ tự động lưu trữ an toàn trên Google Drive 5TB.',
+    sub: 'Mọi thiết lập và tiến trình sẽ tự động lưu trữ an toàn trên Google Drive.',
   },
 };
 
@@ -212,9 +212,8 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FBF9F5]">
-        <NovaCompanion mood="happy" className="h-11 w-11" />
-        <Loader2 className="h-5 w-5 animate-spin text-[#78716C]" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
       </div>
     );
   }
@@ -224,8 +223,8 @@ export default function OnboardingPage() {
   const progressPct = step === 1 ? 34 : step === 2 ? 68 : 100;
 
   return (
-    <div className="min-h-screen bg-[#FBF9F5] flex flex-col text-[#1C1917]">
-      <header className="sticky top-0 z-20 bg-[#FBF9F5]/95 backdrop-blur-md border-b border-[#E7E2D8]">
+    <div className="min-h-screen bg-[#F6F7F9] flex flex-col text-gray-900">
+      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-200">
         <div className="mx-auto max-w-2xl px-4 h-16 flex items-center gap-4">
           {step > 1 ? (
             <button
@@ -235,27 +234,27 @@ export default function OnboardingPage() {
                 setStep((s) => (s === 3 ? 2 : 1));
               }}
               aria-label="Bước trước"
-              className="rounded-lg p-1.5 text-[#78716C] hover:bg-[#F3EFE6] hover:text-[#1C1917] cursor-pointer"
+              className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
           ) : (
-            <div className="flex items-center gap-2">
-              <NovaCompanion mood="happy" className="h-7 w-7" />
-              <span className="font-serif-display text-lg font-semibold text-[#1C1917]">
-                SpeakMate<span className="text-[#C2410C]">.</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <NovaCompanion className="h-7 w-7" />
+              <span className="font-display text-base font-bold text-gray-900">
+                SpeakMate
               </span>
             </div>
           )}
 
-          <div className="flex-1 h-2 rounded-full bg-[#E7E2D8] overflow-hidden">
+          <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
             <div
-              className="h-full rounded-full bg-[#14532D] transition-all duration-300"
+              className="h-full rounded-full bg-[#E5483F] transition-all duration-300"
               style={{ width: `${progressPct}%` }}
             />
           </div>
 
-          <span className="text-xs font-medium text-[#57534E] tabular-nums">
+          <span className="text-xs font-semibold text-gray-500 tabular-nums shrink-0">
             Bước {step}/3
           </span>
         </div>
@@ -263,17 +262,17 @@ export default function OnboardingPage() {
 
       <main className="flex-1 mx-auto w-full max-w-2xl px-4 py-8 sm:py-10 space-y-6">
         <div className="space-y-1.5">
-          <h1 className="font-serif-display text-2xl sm:text-3xl font-semibold tracking-tight text-[#1C1917]">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
             {STEP_HEADINGS[step].title}
           </h1>
-          <p className="text-sm text-[#57534E]">{STEP_HEADINGS[step].sub}</p>
+          <p className="text-sm text-gray-500">{STEP_HEADINGS[step].sub}</p>
         </div>
 
         {/* STEP 1 */}
         {step === 1 && (
-          <div className="rounded-2xl border border-[#E7E2D8] bg-white p-5 sm:p-7 space-y-6">
+          <div className="rounded-3xl border border-gray-200/80 bg-white p-6 sm:p-7 shadow-xs space-y-6">
             <div>
-              <label className="block text-xs font-semibold text-[#57534E] mb-2.5">
+              <label className="block text-xs font-bold text-gray-700 mb-2.5">
                 Ngôn ngữ giải thích
               </label>
               <div className="grid gap-2.5 sm:grid-cols-2">
@@ -287,25 +286,25 @@ export default function OnboardingPage() {
                         playTapSound();
                         setNativeLanguage(lang.value);
                       }}
-                      className={`flex items-center gap-3 rounded-xl border p-3.5 text-left transition cursor-pointer ${
+                      className={`flex items-center gap-3 rounded-2xl border p-3.5 text-left transition cursor-pointer ${
                         selected
-                          ? 'border-[#14532D] bg-[#ECFDF5]/60 ring-1 ring-[#14532D]'
-                          : 'border-[#E7E2D8] bg-white hover:border-[#A8A29E]'
+                          ? 'border-gray-900 bg-gray-50 ring-1 ring-gray-900'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                     >
-                      <span className="font-mono text-xs font-semibold rounded-md bg-[#F3EFE6] px-2 py-1 text-[#57534E]">
+                      <span className="font-mono text-xs font-bold rounded-lg bg-gray-100 px-2 py-1 text-gray-700">
                         {lang.code}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold text-[#1C1917]">
+                        <div className="text-sm font-bold text-gray-900">
                           {lang.label}
                         </div>
-                        <div className="text-[11px] text-[#78716C] truncate">
+                        <div className="text-[11px] text-gray-500 truncate">
                           {lang.sub}
                         </div>
                       </div>
                       {selected && (
-                        <Check className="h-4 w-4 text-[#14532D] shrink-0" />
+                        <Check className="h-4 w-4 text-emerald-600 shrink-0" />
                       )}
                     </button>
                   );
@@ -314,7 +313,7 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#57534E] mb-2.5">
+              <label className="block text-xs font-bold text-gray-700 mb-2.5">
                 Giọng tiếng Anh bản xứ ưu tiên
               </label>
               <div className="grid gap-2.5 sm:grid-cols-2">
@@ -328,25 +327,25 @@ export default function OnboardingPage() {
                         playTapSound();
                         setPreferredAccent(acc.value);
                       }}
-                      className={`flex items-center gap-3 rounded-xl border p-3 text-left transition cursor-pointer ${
+                      className={`flex items-center gap-3 rounded-2xl border p-3.5 text-left transition cursor-pointer ${
                         selected
-                          ? 'border-[#14532D] bg-[#ECFDF5]/60 ring-1 ring-[#14532D]'
-                          : 'border-[#E7E2D8] bg-white hover:border-[#A8A29E]'
+                          ? 'border-gray-900 bg-gray-50 ring-1 ring-gray-900'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                     >
-                      <span className="font-mono text-xs font-semibold rounded-md bg-[#F3EFE6] px-2 py-1 text-[#57534E]">
+                      <span className="font-mono text-xs font-bold rounded-lg bg-gray-100 px-2 py-1 text-gray-700">
                         {acc.code}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-semibold text-[#1C1917]">
+                        <div className="text-xs font-bold text-gray-900">
                           {acc.label}
                         </div>
-                        <div className="text-[11px] text-[#78716C] truncate">
+                        <div className="text-[11px] text-gray-500 truncate">
                           {acc.desc}
                         </div>
                       </div>
                       {selected && (
-                        <Check className="h-4 w-4 text-[#14532D] shrink-0" />
+                        <Check className="h-4 w-4 text-emerald-600 shrink-0" />
                       )}
                     </button>
                   );
@@ -356,12 +355,12 @@ export default function OnboardingPage() {
 
             <div>
               <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2.5">
-                <label className="block text-xs font-semibold text-[#57534E]">
+                <label className="block text-xs font-bold text-gray-700">
                   Trình độ tiếng Anh hiện tại
                 </label>
                 <Link
                   href="/placement"
-                  className="text-xs font-semibold text-[#14532D] hover:underline"
+                  className="text-xs font-semibold text-[#E5483F] hover:underline"
                 >
                   Chưa chắc trình độ? Kiểm tra CEFR 2 phút →
                 </Link>
@@ -384,19 +383,19 @@ export default function OnboardingPage() {
                               : 1.0
                         );
                       }}
-                      className={`rounded-xl border p-3.5 text-left transition cursor-pointer ${
+                      className={`rounded-2xl border p-3.5 text-left transition cursor-pointer ${
                         selected
-                          ? 'border-[#14532D] bg-[#ECFDF5]/60 ring-1 ring-[#14532D]'
-                          : 'border-[#E7E2D8] bg-white hover:border-[#A8A29E]'
+                          ? 'border-gray-900 bg-gray-50 ring-1 ring-gray-900'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                     >
-                      <span className="font-mono inline-block rounded bg-[#14532D] px-2 py-0.5 text-[10px] font-semibold text-white mb-1.5">
+                      <span className="font-mono inline-block rounded-md bg-gray-900 px-2 py-0.5 text-[10px] font-bold text-white mb-1.5">
                         {lvl.badge}
                       </span>
-                      <div className="text-xs font-semibold text-[#1C1917]">
+                      <div className="text-xs font-bold text-gray-900">
                         {lvl.title}
                       </div>
-                      <p className="text-[11px] text-[#78716C] mt-1 leading-relaxed">
+                      <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
                         {lvl.desc}
                       </p>
                     </button>
@@ -411,7 +410,7 @@ export default function OnboardingPage() {
                 playTapSound();
                 setStep(2);
               }}
-              className="btn-duo btn-duo-green w-full py-3.5 text-sm"
+              className="btn-duo btn-duo-coral w-full py-3.5 text-sm"
             >
               Tiếp tục
               <ArrowRight className="h-4 w-4" />
@@ -421,9 +420,9 @@ export default function OnboardingPage() {
 
         {/* STEP 2 */}
         {step === 2 && (
-          <div className="rounded-2xl border border-[#E7E2D8] bg-white p-5 sm:p-7 space-y-6">
+          <div className="rounded-3xl border border-gray-200/80 bg-white p-6 sm:p-7 shadow-xs space-y-6">
             <div>
-              <label className="block text-xs font-semibold text-[#57534E] mb-2.5">
+              <label className="block text-xs font-bold text-gray-700 mb-2.5">
                 Chủ đề quan tâm (có thể chọn nhiều mục)
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -436,8 +435,8 @@ export default function OnboardingPage() {
                       onClick={() => toggleHobby(hobby)}
                       className={`flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-xs font-semibold transition cursor-pointer ${
                         selected
-                          ? 'border-[#14532D] bg-[#14532D] text-white'
-                          : 'border-[#E7E2D8] bg-white text-[#57534E] hover:border-[#A8A29E]'
+                          ? 'border-gray-900 bg-gray-900 text-white'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                       }`}
                     >
                       <span className="truncate">{hobby}</span>
@@ -454,7 +453,7 @@ export default function OnboardingPage() {
                     .map((custom) => (
                       <span
                         key={custom}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#14532D] px-3 py-1 text-xs font-medium text-white"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white"
                       >
                         {custom}
                         <button
@@ -481,7 +480,7 @@ export default function OnboardingPage() {
                     }
                   }}
                   placeholder="Thêm chủ đề khác (ví dụ: Kiến trúc, Chạy bộ...)"
-                  className="flex-1 rounded-xl border border-[#D6D0C4] bg-[#FBF9F5] px-3.5 py-2 text-sm text-[#1C1917] focus:border-[#14532D] focus:bg-white focus:outline-none"
+                  className="flex-1 rounded-xl border border-gray-300 bg-gray-50 px-3.5 py-2 text-sm text-gray-900 focus:border-gray-900 focus:bg-white focus:outline-none"
                 />
                 <button
                   type="button"
@@ -495,7 +494,7 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#57534E] mb-2">
+              <label className="block text-xs font-bold text-gray-700 mb-2">
                 Công việc / Ngành học (tùy chọn)
               </label>
               <div className="flex flex-wrap gap-1.5 mb-2.5">
@@ -509,10 +508,10 @@ export default function OnboardingPage() {
                         playTapSound();
                         setJobField(active ? '' : job);
                       }}
-                      className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                         active
-                          ? 'border-[#14532D] bg-[#ECFDF5] text-[#14532D] font-semibold'
-                          : 'border-[#E7E2D8] bg-white text-[#57534E] hover:border-[#A8A29E]'
+                          ? 'border-gray-900 bg-gray-900 text-white'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                       }`}
                     >
                       {job}
@@ -525,7 +524,7 @@ export default function OnboardingPage() {
                 value={jobField}
                 onChange={(e) => setJobField(e.target.value)}
                 placeholder="Hoặc nhập lĩnh vực công việc của bạn..."
-                className="w-full rounded-xl border border-[#D6D0C4] bg-[#FBF9F5] px-3.5 py-2.5 text-sm text-[#1C1917] focus:border-[#14532D] focus:bg-white focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 focus:border-gray-900 focus:bg-white focus:outline-none"
               />
             </div>
 
@@ -535,7 +534,7 @@ export default function OnboardingPage() {
                 playTapSound();
                 setStep(3);
               }}
-              className="btn-duo btn-duo-green w-full py-3.5 text-sm"
+              className="btn-duo btn-duo-coral w-full py-3.5 text-sm"
             >
               Tiếp tục
               <ArrowRight className="h-4 w-4" />
@@ -545,9 +544,9 @@ export default function OnboardingPage() {
 
         {/* STEP 3 */}
         {step === 3 && (
-          <div className="rounded-2xl border border-[#E7E2D8] bg-white p-5 sm:p-7 space-y-6">
+          <div className="rounded-3xl border border-gray-200/80 bg-white p-6 sm:p-7 shadow-xs space-y-6">
             <div>
-              <label className="block text-xs font-semibold text-[#57534E] mb-2">
+              <label className="block text-xs font-bold text-gray-700 mb-2">
                 Tên gọi của bạn <span className="text-rose-500">*</span>
               </label>
               <input
@@ -556,13 +555,13 @@ export default function OnboardingPage() {
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Ví dụ: Huy, Minh, Thảo..."
                 maxLength={40}
-                className="w-full rounded-xl border border-[#D6D0C4] bg-[#FBF9F5] px-4 py-3 text-base font-semibold text-[#1C1917] focus:border-[#14532D] focus:bg-white focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-base font-semibold text-gray-900 focus:border-gray-900 focus:bg-white focus:outline-none"
               />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 tabular-nums">
               <div>
-                <label className="block text-xs font-semibold text-[#57534E] mb-2">
+                <label className="block text-xs font-bold text-gray-700 mb-2">
                   Tốc độ giọng đọc
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -580,8 +579,8 @@ export default function OnboardingPage() {
                       }}
                       className={`rounded-xl border py-2.5 text-xs font-semibold transition cursor-pointer ${
                         Math.abs(preferredSpeed - s.val) < 0.04
-                          ? 'border-[#14532D] bg-[#14532D] text-white'
-                          : 'border-[#E7E2D8] bg-white text-[#57534E]'
+                          ? 'border-gray-900 bg-gray-900 text-white'
+                          : 'border-gray-200 bg-white text-gray-600'
                       }`}
                     >
                       {s.label}
@@ -591,7 +590,7 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#57534E] mb-2">
+                <label className="block text-xs font-bold text-gray-700 mb-2">
                   Mục tiêu mỗi ngày
                 </label>
                 <div className="grid grid-cols-4 gap-2">
@@ -605,8 +604,8 @@ export default function OnboardingPage() {
                       }}
                       className={`rounded-xl border py-2.5 text-xs font-semibold transition cursor-pointer ${
                         dailyGoalMinutes === m
-                          ? 'border-[#14532D] bg-[#14532D] text-white'
-                          : 'border-[#E7E2D8] bg-white text-[#57534E]'
+                          ? 'border-gray-900 bg-gray-900 text-white'
+                          : 'border-gray-200 bg-white text-gray-600'
                       }`}
                     >
                       {m}p
@@ -616,28 +615,28 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-[#E7E2D8] bg-[#F3EFE6]/70 p-4 text-xs space-y-1.5">
-              <div className="font-semibold text-[#1C1917]">
+            <div className="rounded-2xl border border-gray-200 bg-[#F6F7F9] p-4 text-xs space-y-1.5">
+              <div className="font-bold text-gray-900">
                 Tóm tắt thiết lập cho {displayName.trim() || 'bạn'}
               </div>
-              <div className="text-[#57534E]">
+              <div className="text-gray-600">
                 Ngôn ngữ:{' '}
-                <strong className="text-[#1C1917]">
+                <strong className="text-gray-900">
                   {NATIVE_LANGUAGES.find((l) => l.value === nativeLanguage)?.label}
                 </strong>{' '}
-                · Giọng ưu tiên: <strong className="text-[#1C1917]">{preferredAccent}</strong> · Trình độ:{' '}
-                <strong className="text-[#1C1917]">{englishLevel}</strong>
+                · Giọng ưu tiên: <strong className="text-gray-900">{preferredAccent}</strong> · Trình độ:{' '}
+                <strong className="text-gray-900">{englishLevel}</strong>
               </div>
-              <div className="text-[#57534E]">
+              <div className="text-gray-600">
                 Chủ đề:{' '}
-                <strong className="text-[#1C1917]">
+                <strong className="text-gray-900">
                   {hobbies.length > 0 ? hobbies.join(', ') : 'Giao tiếp hàng ngày'}
                 </strong>
               </div>
-              <div className="text-[#14532D] font-semibold pt-1 flex items-center gap-1.5">
+              <div className="text-emerald-700 font-semibold pt-1 flex items-center gap-1.5">
                 <Cloud className="h-3.5 w-3.5" />
                 {isDrive
-                  ? 'Tự động đồng bộ trên Google Drive 5TB.'
+                  ? 'Tự động đồng bộ trên Google Drive.'
                   : 'Sẵn sàng lưu hồ sơ học tập.'}
               </div>
             </div>
@@ -652,7 +651,7 @@ export default function OnboardingPage() {
               type="button"
               disabled={saving}
               onClick={() => void handleFinish()}
-              className="btn-duo btn-duo-green w-full py-3.5 text-sm"
+              className="btn-duo btn-duo-coral w-full py-3.5 text-sm"
             >
               {saving ? (
                 <>

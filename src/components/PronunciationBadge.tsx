@@ -83,9 +83,9 @@ export function PronunciationBadge({
     <div
       className={`mt-1.5 max-w-[92%] sm:max-w-[82%] rounded-2xl border px-3.5 py-2 text-xs ${
         isDark
-          ? 'border-[#38312C] bg-[#26221E] text-[#E7E2D8]'
-          : 'border-[#E7E2D8] bg-white text-[#1C1917]'
-        }`}
+          ? 'border-white/10 bg-[#181B22] text-gray-100'
+          : 'border-gray-200 bg-white text-[#111827]'
+      }`}
     >
       <button
         type="button"
@@ -173,26 +173,26 @@ export function PronunciationBadge({
           {improveWords.length > 0 && (
             <div
               className={`space-y-1 rounded-xl px-2.5 py-2 text-[11px] ${isDark
-                  ? 'bg-slate-950/80 text-slate-300'
-                  : 'bg-slate-50 text-slate-700'
+                ? 'bg-slate-950/80 text-slate-300'
+                : 'bg-slate-50 text-slate-700'
                 }`}
             >
               {improveWords.slice(0, 4).map((w, idx) => (
                 <div key={`${w.word}-tip-${idx}`} className="flex flex-wrap items-baseline gap-1.5">
                   <span
                     className={`font-bold ${w.status === 'missing'
-                        ? isDark
-                          ? 'text-rose-300'
-                          : 'text-rose-700'
-                        : isDark
-                          ? 'text-amber-300'
-                          : 'text-amber-700'
+                      ? isDark
+                        ? 'text-rose-300'
+                        : 'text-rose-700'
+                      : isDark
+                        ? 'text-amber-300'
+                        : 'text-amber-700'
                       }`}
                   >
                     {w.word}
                   </span>
                   {w.ipa && (
-                    <span className={isDark ? 'text-amber-200' : 'text-[#14532D]'}>
+                    <span className={isDark ? 'text-amber-200' : 'text-emerald-700'}>
                       /{w.ipa.replace(/^\/|\/$/g, '')}/
                     </span>
                   )}

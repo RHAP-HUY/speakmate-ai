@@ -194,8 +194,8 @@ export default function SettingsPage() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FBF9F5]">
-        <Loader2 className="h-5 w-5 animate-spin text-[#78716C]" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
       </div>
     );
   }
@@ -206,51 +206,48 @@ export default function SettingsPage() {
       authenticated={authenticated}
       maxWidthClass="max-w-3xl"
     >
-      <div className="pb-4 border-b border-[#E7E2D8] space-y-1">
-        <p className="font-serif-display italic text-sm text-[#C2410C]">
-          Tài khoản &amp; Tùy chỉnh cá nhân
-        </p>
-        <h1 className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917]">
-          Hồ sơ học tập &amp; Đồng bộ dữ liệu
+      <div className="space-y-1">
+        <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+          Hồ sơ &amp; Đồng bộ dữ liệu
         </h1>
-        <p className="text-sm text-[#57534E]">
-          Quản lý mục tiêu hàng ngày, tài khoản Google Drive và tệp sao lưu tiến trình.
+        <p className="text-sm text-gray-500">
+          Quản lý mục tiêu hàng ngày, tài khoản Google Drive và bản sao lưu tiến trình học tập.
         </p>
       </div>
 
       {/* Cloud Sync & Backup */}
-      <section className="card-duo-elevated p-6 space-y-4">
+      <section className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-xs space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1 max-w-lg">
-            <h2 className="text-base font-semibold text-[#1C1917]">
-              Đồng bộ qua Google Drive &amp; Sao lưu tệp
+            <h2 className="font-display text-base font-bold text-gray-900">
+              Đồng bộ Google Drive &amp; Sao lưu tệp
             </h2>
-            <p className="text-xs text-[#57534E] leading-relaxed">
+            <p className="text-xs text-gray-500 leading-relaxed">
               {sessionInfo?.provider === 'google' && sessionInfo.user
-                ? `Đang kết nối với tài khoản ${sessionInfo.user.email}. Mọi tiến trình học, chuỗi ngày và sổ câu tự động cập nhật lên Google Drive.`
+                ? `Đang kết nối với ${sessionInfo.user.email}. Mọi tiến trình học, chuỗi ngày và sổ câu tự động cập nhật lên Google Drive.`
                 : sessionInfo?.provider === 'supabase' && sessionInfo.user
                   ? `Đang đồng bộ đám mây (${sessionInfo.user.email}).`
-                  : 'Hiện đang lưu trên trình duyệt này. Đăng nhập Google để tự động khôi phục dữ liệu khi chuyển sang điện thoại hoặc máy tính khác.'}
+                  : 'Hiện đang lưu trên trình duyệt này. Đăng nhập Google để tự động khôi phục dữ liệu khi đổi thiết bị.'}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/onboarding"
-              className="btn-duo btn-duo-white px-3.5 py-2 text-xs"
+              className="btn-duo btn-duo-white px-4 py-2 text-xs"
             >
               Thiết lập lại lộ trình
             </Link>
             <Link
               href="/auth"
-              className="btn-duo btn-duo-primary px-3.5 py-2 text-xs"
+              className="btn-duo btn-duo-primary px-4 py-2 text-xs"
             >
               Tài khoản Google →
             </Link>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-[#E7E2D8]">
+        <div className="flex flex-wrap items-center gap-2.5 pt-3 border-t border-gray-100">
           {sessionInfo?.provider === 'google' && sessionInfo.authenticated && (
             <button
               type="button"
@@ -266,7 +263,7 @@ export default function SettingsPage() {
                     : `Không thể đồng bộ lúc này: ${res.error}`
                 );
               }}
-              className="btn-duo btn-duo-primary px-4 py-2 text-xs"
+              className="btn-duo btn-duo-coral px-4 py-2 text-xs"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${syncingDrive ? 'animate-spin' : ''}`}
@@ -288,13 +285,13 @@ export default function SettingsPage() {
               URL.revokeObjectURL(url);
               setBackupNotice('Đã tải tệp sao lưu (.json) về máy của bạn.');
             }}
-            className="btn-duo btn-duo-white px-3.5 py-2 text-xs"
+            className="btn-duo btn-duo-white px-4 py-2 text-xs"
           >
             <Download className="h-3.5 w-3.5" />
             Tải bản sao lưu (.json)
           </button>
 
-          <label className="btn-duo btn-duo-white px-3.5 py-2 text-xs">
+          <label className="btn-duo btn-duo-white px-4 py-2 text-xs">
             <Upload className="h-3.5 w-3.5" />
             Khôi phục từ tệp
             <input
@@ -327,7 +324,7 @@ export default function SettingsPage() {
                 router.push('/auth');
                 router.refresh();
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 cursor-pointer"
             >
               <LogOut className="h-3.5 w-3.5" />
               Đăng xuất
@@ -336,15 +333,15 @@ export default function SettingsPage() {
         </div>
 
         {backupNotice && (
-          <div className="rounded-xl border border-[#14532D]/25 bg-[#14532D]/[0.05] px-3.5 py-2.5 text-xs font-medium text-[#14532D]">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-medium text-emerald-800">
             {backupNotice}
           </div>
         )}
       </section>
 
       {/* Profile Form */}
-      <section className="card-duo-elevated p-6">
-        <h2 className="font-serif-display text-xl font-semibold text-[#1C1917] mb-5">
+      <section className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-xs">
+        <h2 className="font-display text-lg font-bold text-gray-900 mb-5">
           Thông tin cá nhân hóa nội dung học
         </h2>
         <ProfileForm
@@ -358,17 +355,17 @@ export default function SettingsPage() {
       </section>
 
       {/* API Key Configuration */}
-      <section className="card-duo-elevated p-6 space-y-4">
+      <section className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-xs space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-[#1C1917]">
-              Cấu hình kết nối mô hình giọng nói &amp; ngôn ngữ
+            <h2 className="font-display text-base font-bold text-gray-900">
+              Cấu hình kết nối giọng nói &amp; ngôn ngữ
             </h2>
-            <p className="text-xs text-[#57534E] mt-0.5">
-              Sử dụng hạn mức mặc định của hệ thống hoặc gắn khóa Gemini API riêng nếu bạn muốn dùng hạn mức độc lập.
+            <p className="text-xs text-gray-500 mt-0.5">
+              Dùng hạn mức mặc định của hệ thống hoặc gắn khóa Gemini API riêng của bạn.
             </p>
           </div>
-          <span className="font-mono text-[11px] text-[#78716C] tabular-nums">
+          <span className="font-mono text-[11px] text-gray-400 tabular-nums">
             Hệ thống: {keyStatus.sharedPoolCount} khóa sẵn sàng
           </span>
         </div>
@@ -378,21 +375,21 @@ export default function SettingsPage() {
             type="button"
             onClick={() => void handleSaveKeySettings('system')}
             disabled={keyActionLoading}
-            className={`rounded-xl border p-4 text-left transition cursor-pointer ${
+            className={`rounded-2xl border p-4 text-left transition cursor-pointer ${
               keyStatus.apiKeyMode === 'system'
-                ? 'border-[#14532D] bg-[#14532D]/[0.04]'
-                : 'border-[#E7E2D8] bg-white hover:border-[#D6CFC2]'
+                ? 'border-gray-900 bg-gray-50 ring-1 ring-gray-900'
+                : 'border-gray-200 bg-white hover:border-gray-300'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-[#1C1917]">
+              <span className="text-sm font-bold text-gray-900">
                 Dùng kết nối hệ thống (Khuyên dùng)
               </span>
               {keyStatus.apiKeyMode === 'system' && (
-                <CheckCircle2 className="h-4 w-4 text-[#14532D]" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               )}
             </div>
-            <p className="mt-1 text-xs text-[#57534E]">
+            <p className="mt-1 text-xs text-gray-500">
               Hoạt động ngay lập tức, không cần thiết lập thêm.
             </p>
           </button>
@@ -402,30 +399,30 @@ export default function SettingsPage() {
             onClick={() =>
               setKeyStatus((prev) => ({ ...prev, apiKeyMode: 'personal' }))
             }
-            className={`rounded-xl border p-4 text-left transition cursor-pointer ${
+            className={`rounded-2xl border p-4 text-left transition cursor-pointer ${
               keyStatus.apiKeyMode === 'personal'
-                ? 'border-[#14532D] bg-[#14532D]/[0.04]'
-                : 'border-[#E7E2D8] bg-white hover:border-[#D6CFC2]'
+                ? 'border-gray-900 bg-gray-50 ring-1 ring-gray-900'
+                : 'border-gray-200 bg-white hover:border-gray-300'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-[#1C1917]">
+              <span className="text-sm font-bold text-gray-900">
                 Dùng khóa Gemini cá nhân
               </span>
               {keyStatus.apiKeyMode === 'personal' && (
-                <CheckCircle2 className="h-4 w-4 text-[#14532D]" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               )}
             </div>
-            <p className="mt-1 text-xs text-[#57534E]">
-              Dùng hạn mức riêng của bạn, được mã hóa AES-256-GCM trên máy chủ.
+            <p className="mt-1 text-xs text-gray-500">
+              Dùng hạn mức riêng của bạn, mã hóa AES-256-GCM trên máy chủ.
             </p>
           </button>
         </div>
 
         {keyStatus.apiKeyMode === 'personal' && (
-          <div className="rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] p-4 space-y-3">
+          <div className="rounded-2xl border border-gray-200 bg-[#F6F7F9] p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-[#1C1917]">
+              <span className="font-semibold text-gray-900">
                 {keyStatus.personalKeyHint
                   ? `Khóa đang lưu: ${keyStatus.personalKeyHint}`
                   : 'Nhập khóa Gemini API của bạn'}
@@ -434,7 +431,7 @@ export default function SettingsPage() {
                 href="https://aistudio.google.com/apikey"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 font-medium text-[#14532D] hover:underline"
+                className="inline-flex items-center gap-1 font-semibold text-[#E5483F] hover:underline"
               >
                 Lấy khóa tại Google AI Studio
                 <ExternalLink className="h-3 w-3" />
@@ -446,7 +443,7 @@ export default function SettingsPage() {
               value={personalInput}
               onChange={(e) => setPersonalInput(e.target.value)}
               placeholder="AIza..."
-              className="w-full rounded-xl border border-[#D6CFC2] bg-white px-3.5 py-2.5 text-sm font-mono focus:border-[#14532D] focus:outline-none"
+              className="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-mono focus:border-gray-900 focus:outline-none"
             />
 
             <div className="flex flex-wrap gap-2">
@@ -471,7 +468,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={handleDeletePersonalKey}
                   disabled={keyActionLoading}
-                  className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100 cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 cursor-pointer"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Gỡ khóa
@@ -487,7 +484,7 @@ export default function SettingsPage() {
           </div>
         )}
         {keyMessage && (
-          <div className="rounded-xl border border-[#14532D]/25 bg-[#14532D]/[0.05] px-3.5 py-2.5 text-xs font-medium text-[#14532D]">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-medium text-emerald-800">
             {keyMessage}
           </div>
         )}

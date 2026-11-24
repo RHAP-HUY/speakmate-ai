@@ -118,9 +118,9 @@ export function StreakRewardsPanel({
     <div className="space-y-6">
       {feedback && (
         <div
-          className={`rounded-xl border px-4 py-3 text-xs font-semibold ${
+          className={`rounded-2xl border px-4 py-3 text-xs font-semibold ${
             feedback.type === 'success'
-              ? 'border-[#A7F3D0] bg-[#ECFDF5] text-[#14532D]'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
               : 'border-rose-200 bg-rose-50 text-rose-700'
           }`}
         >
@@ -129,23 +129,23 @@ export function StreakRewardsPanel({
       )}
 
       {/* Streak Milestone Rewards */}
-      <section className="rounded-2xl border border-[#E7E2D8] bg-white p-5 sm:p-6 space-y-5">
+      <section className="rounded-3xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-xs space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-serif-display text-xl font-semibold tracking-tight text-[#1C1917]">
+            <h2 className="font-display text-lg font-bold tracking-tight text-gray-900">
               Cột mốc phần thưởng chuỗi ngày học
             </h2>
-            <p className="text-xs text-[#78716C] mt-0.5">
+            <p className="text-xs text-gray-500 mt-0.5">
               Nhận thêm XP, Ngọc tích lũy, Khiên bảo vệ và danh hiệu khi duy trì thói quen mỗi ngày.
             </p>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-semibold tabular-nums">
-            <span className="inline-flex items-center gap-1 rounded-lg border border-[#E7E2D8] bg-[#FBF9F5] px-2.5 py-1.5 text-[#1C1917]">
+            <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-[#F6F7F9] px-3 py-1.5 text-gray-900">
               <StreakFlameSvg active={profile.streakDays > 0} className="h-4 w-4" />
               Hiện tại: {profile.streakDays} ngày
             </span>
-            <span className="rounded-lg border border-[#E7E2D8] bg-[#FBF9F5] px-2.5 py-1.5 text-[#57534E]">
+            <span className="rounded-full border border-gray-200 bg-[#F6F7F9] px-3 py-1.5 text-gray-600">
               Kỷ lục: {bestStreak} ngày
             </span>
           </div>
@@ -161,12 +161,12 @@ export function StreakRewardsPanel({
             return (
               <div
                 key={m.days}
-                className={`flex flex-col justify-between rounded-xl border p-4 transition ${
+                className={`flex flex-col justify-between rounded-2xl border p-4 transition ${
                   unlocked && !claimed
-                    ? 'border-[#FDBA74] bg-[#FFF7ED]/70'
+                    ? 'border-[#FECACA] bg-[#FFF1F0]/70'
                     : claimed
-                      ? 'border-[#A7F3D0] bg-[#ECFDF5]/40'
-                      : 'border-[#E7E2D8] bg-[#FBF9F5]'
+                      ? 'border-emerald-200 bg-emerald-50/40'
+                      : 'border-gray-200/80 bg-[#F6F7F9]'
                 }`}
               >
                 <div>
@@ -176,39 +176,39 @@ export function StreakRewardsPanel({
                       className="h-9 w-9"
                     />
                     <span
-                      className={`tabular-nums rounded-md px-2 py-0.5 text-[11px] font-semibold ${
+                      className={`tabular-nums rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
                         claimed
-                          ? 'bg-[#D1FAE5] text-[#14532D]'
+                          ? 'bg-emerald-100 text-emerald-700'
                           : unlocked
-                            ? 'bg-[#C2410C] text-white'
-                            : 'bg-[#E7E2D8] text-[#57534E]'
+                            ? 'bg-[#E5483F] text-white'
+                            : 'bg-gray-200 text-gray-600'
                       }`}
                     >
                       {m.days} ngày
                     </span>
                   </div>
 
-                  <h3 className="font-serif-display text-base font-semibold text-[#1C1917]">
+                  <h3 className="font-display text-base font-bold text-gray-900">
                     {m.titleVi}
                   </h3>
-                  <p className="text-xs text-[#78716C] mt-0.5">
+                  <p className="text-xs text-gray-500 mt-0.5">
                     {m.subtitleVi}
                   </p>
 
                   <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-semibold tabular-nums">
-                    <span className="rounded-md bg-white border border-[#E7E2D8] px-2 py-0.5 text-[#9A3412]">
+                    <span className="rounded-full bg-white border border-gray-200 px-2.5 py-0.5 text-amber-700">
                       +{m.rewardXp} XP
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-md bg-white border border-[#E7E2D8] px-2 py-0.5 text-[#14532D]">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 px-2.5 py-0.5 text-emerald-700">
                       +{m.rewardGems}
                       <GemSvg className="h-3 w-3" />
                     </span>
                     {m.rewardFreezes > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-white border border-[#E7E2D8] px-2 py-0.5 text-[#57534E]">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 px-2.5 py-0.5 text-sky-700">
                         +{m.rewardFreezes} Khiên
                       </span>
                     )}
-                    <span className="rounded-md bg-white border border-[#E7E2D8] px-2 py-0.5 text-[#57534E]">
+                    <span className="rounded-full bg-white border border-gray-200 px-2.5 py-0.5 text-gray-600">
                       {m.badgeLabel}
                     </span>
                   </div>
@@ -216,7 +216,7 @@ export function StreakRewardsPanel({
 
                 <div className="mt-4">
                   {claimed ? (
-                    <div className="flex items-center justify-center gap-1.5 rounded-lg border border-[#A7F3D0] bg-white py-2 text-xs font-semibold text-[#14532D]">
+                    <div className="flex items-center justify-center gap-1.5 rounded-full border border-emerald-200 bg-white py-2 text-xs font-semibold text-emerald-700">
                       <Check className="h-3.5 w-3.5" />
                       Đã nhận thưởng
                     </div>
@@ -225,23 +225,23 @@ export function StreakRewardsPanel({
                       type="button"
                       disabled={busyId === `m-${m.days}`}
                       onClick={() => void handleClaim(m.days)}
-                      className="btn-duo btn-duo-orange w-full py-2 text-xs"
+                      className="btn-duo btn-duo-coral w-full py-2 text-xs"
                     >
                       <Gift className="h-3.5 w-3.5" />
                       {busyId === `m-${m.days}` ? 'Đang mở...' : 'Nhận phần thưởng'}
                     </button>
                   ) : (
                     <div className="space-y-1.5 tabular-nums">
-                      <div className="flex items-center justify-between text-[11px] font-medium text-[#78716C]">
+                      <div className="flex items-center justify-between text-[11px] font-medium text-gray-500">
                         <span className="inline-flex items-center gap-1">
                           <Lock className="h-3 w-3" />
                           Còn {remaining} ngày
                         </span>
                         <span>{pct}%</span>
                       </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-[#E7E2D8]">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
                         <div
-                          className="h-full rounded-full bg-[#C2410C]"
+                          className="h-full rounded-full bg-[#E5483F]"
                           style={{ width: `${Math.max(6, pct)}%` }}
                         />
                       </div>
@@ -255,23 +255,23 @@ export function StreakRewardsPanel({
       </section>
 
       {/* Gem Reward Shop */}
-      <section className="rounded-2xl border border-[#E7E2D8] bg-white p-5 sm:p-6 space-y-5">
+      <section className="rounded-3xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-xs space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-serif-display text-xl font-semibold tracking-tight text-[#1C1917]">
+            <h2 className="font-display text-lg font-bold tracking-tight text-gray-900">
               Đổi vật phẩm hỗ trợ bằng Ngọc
             </h2>
-            <p className="text-xs text-[#78716C] mt-0.5">
-              Sử dụng Ngọc tích lũy từ bài học để đổi Khiên bảo vệ chuỗi, nhân đôi XP và danh hiệu.
+            <p className="text-xs text-gray-500 mt-0.5">
+              Dùng Ngọc tích lũy để đổi Khiên bảo vệ chuỗi, nhân đôi XP và danh hiệu cá nhân.
             </p>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-semibold tabular-nums">
-            <span className="inline-flex items-center gap-1 rounded-lg border border-[#E7E2D8] bg-[#FBF9F5] px-2.5 py-1.5 text-[#1C1917]">
+            <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-[#F6F7F9] px-3 py-1.5 text-gray-900">
               <GemSvg className="h-4 w-4" />
               {profile.gems} Ngọc
             </span>
-            <span className="inline-flex items-center gap-1 rounded-lg border border-[#E7E2D8] bg-[#FBF9F5] px-2.5 py-1.5 text-[#1C1917]">
+            <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-[#F6F7F9] px-3 py-1.5 text-gray-900">
               <ShieldFreezeSvg className="h-4 w-4" />
               {profile.streakFreezes} Khiên
             </span>
@@ -296,33 +296,33 @@ export function StreakRewardsPanel({
             return (
               <div
                 key={item.id}
-                className={`flex flex-col justify-between rounded-xl border p-4 ${
+                className={`flex flex-col justify-between rounded-2xl border p-4 ${
                   boostActive
-                    ? 'border-[#FDBA74] bg-[#FFF7ED]/50'
-                    : 'border-[#E7E2D8] bg-[#FBF9F5]'
+                    ? 'border-amber-300 bg-amber-50/50'
+                    : 'border-gray-200/80 bg-[#F6F7F9]'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E7E2D8] bg-white text-[#1C1917]">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white">
                       {item.type === 'freeze' ? (
-                        <Shield className="h-4 w-4 text-[#14532D]" />
+                        <Shield className="h-4 w-4 text-sky-600" />
                       ) : item.type === 'xp_boost' ? (
-                        <Zap className="h-4 w-4 text-[#C2410C]" />
+                        <Zap className="h-4 w-4 text-amber-500" />
                       ) : (
-                        <Award className="h-4 w-4 text-[#B45309]" />
+                        <Award className="h-4 w-4 text-[#E5483F]" />
                       )}
                     </div>
                     {boostActive && (
-                      <span className="tabular-nums rounded-md bg-[#C2410C] px-2 py-0.5 text-[10px] font-semibold text-white">
+                      <span className="tabular-nums rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white">
                         Còn {boostMins}p
                       </span>
                     )}
                   </div>
-                  <h3 className="text-sm font-semibold text-[#1C1917]">
+                  <h3 className="text-sm font-bold text-gray-900">
                     {item.titleVi}
                   </h3>
-                  <p className="text-xs text-[#78716C] mt-1 leading-relaxed">
+                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                     {item.descVi}
                   </p>
                 </div>
@@ -337,7 +337,7 @@ export function StreakRewardsPanel({
                         isEquipped ? 'btn-duo-green' : 'btn-duo-white'
                       }`}
                     >
-                      {isEquipped ? 'Đang hiển thị' : 'Hiển thị danh hiệu'}
+                      {isEquipped ? 'Đang hiển thị' : 'Hiển thị'}
                     </button>
                   ) : (
                     <button
@@ -345,13 +345,13 @@ export function StreakRewardsPanel({
                       disabled={!canAfford || busyId === `shop-${item.id}`}
                       onClick={() => void handleBuy(item.id)}
                       className={`btn-duo w-full py-2 text-xs tabular-nums ${
-                        canAfford ? 'btn-duo-green' : 'btn-duo-white'
+                        canAfford ? 'btn-duo-primary' : 'btn-duo-white'
                       }`}
                     >
                       {busyId === `shop-${item.id}`
                         ? 'Đang đổi...'
                         : boostActive
-                          ? `+15 phút (${item.costGems} Ngọc)`
+                          ? `+15p (${item.costGems} Ngọc)`
                           : `Đổi ${item.costGems} Ngọc`}
                     </button>
                   )}
@@ -363,10 +363,10 @@ export function StreakRewardsPanel({
 
         {/* Owned Badges Locker */}
         {profile.unlockedBadges.length > 0 && (
-          <div className="border-t border-[#E7E2D8] pt-4">
-            <div className="text-xs font-semibold text-[#57534E] mb-2.5 flex items-center gap-1.5">
-              <Award className="h-4 w-4 text-[#C2410C]" />
-              Danh hiệu đã mở khóa (chạm để hiển thị trên hồ sơ):
+          <div className="border-t border-gray-100 pt-4">
+            <div className="text-xs font-bold text-gray-700 mb-2.5 flex items-center gap-1.5">
+              <Award className="h-4 w-4 text-[#E5483F]" />
+              Danh hiệu đã mở khóa (chạm để hiển thị):
             </div>
             <div className="flex flex-wrap gap-2">
               {profile.unlockedBadges.map((bid) => {
@@ -376,10 +376,10 @@ export function StreakRewardsPanel({
                     key={bid}
                     type="button"
                     onClick={() => void handleEquip(bid)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold border transition cursor-pointer ${
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold border transition cursor-pointer ${
                       active
-                        ? 'border-[#14532D] bg-[#14532D] text-white'
-                        : 'border-[#E7E2D8] bg-white text-[#57534E] hover:border-[#A8A29E]'
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
                     }`}
                   >
                     {BADGE_DIRECTORY[bid] || bid}

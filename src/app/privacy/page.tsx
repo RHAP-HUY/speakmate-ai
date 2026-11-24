@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { NovaCompanion } from '@/components/BrandArt';
 
 export const metadata: Metadata = {
   title: 'Chính sách Quyền riêng tư — SpeakMate',
@@ -10,20 +11,18 @@ export const metadata: Metadata = {
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-[#FBF9F5] text-[#1C1917] flex flex-col">
-      <header className="border-b border-[#E7E2D8] bg-[#FBF9F5]">
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col">
+      <header className="border-b border-gray-100 bg-white">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-baseline gap-0.5">
-            <span className="font-serif-display text-2xl font-bold text-[#1C1917]">
+          <Link href="/" className="flex items-center gap-2.5">
+            <NovaCompanion className="h-8 w-8" />
+            <span className="font-display text-lg font-bold text-gray-900">
               SpeakMate
-            </span>
-            <span className="font-serif-display text-2xl font-bold text-[#C2410C]">
-              .
             </span>
           </Link>
           <Link
             href="/"
-            className="text-xs font-medium text-[#57534E] hover:text-[#1C1917]"
+            className="text-xs font-semibold text-gray-500 hover:text-gray-900"
           >
             ← Quay lại trang chủ
           </Link>
@@ -31,21 +30,21 @@ export default function PrivacyPolicyPage() {
       </header>
 
       <main className="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-6 py-12 sm:py-16 space-y-8">
-        <div className="space-y-2 border-b border-[#E7E2D8] pb-6">
-          <p className="font-serif-display italic text-sm text-[#C2410C]">
+        <div className="space-y-2 border-b border-gray-200 pb-6">
+          <p className="text-xs font-semibold text-gray-400">
             Cập nhật hiệu lực: Tháng 11/2026
           </p>
-          <h1 className="font-serif-display text-3xl sm:text-4xl font-semibold text-[#1C1917]">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-gray-900">
             Chính sách Quyền riêng tư &amp; Bảo vệ Dữ liệu
           </h1>
-          <p className="text-sm text-[#57534E] leading-relaxed">
+          <p className="text-sm text-gray-500 leading-relaxed">
             SpeakMate cam kết thu thập tối thiểu, minh bạch mục đích lưu trữ và trao toàn quyền kiểm soát dữ liệu học tập cho người dùng.
           </p>
         </div>
 
-        <article className="space-y-6 text-sm text-[#44403C] leading-relaxed">
+        <article className="space-y-6 text-sm text-gray-600 leading-relaxed">
           <section className="space-y-2">
-            <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
+            <h2 className="font-display text-lg font-bold text-gray-900">
               1. Thông tin được thu thập khi bạn sử dụng ứng dụng
             </h2>
             <ul className="list-disc pl-5 space-y-1.5">
@@ -62,7 +61,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
+            <h2 className="font-display text-lg font-bold text-gray-900">
               2. Tuân thủ Chính sách Dữ liệu Người dùng của Dịch vụ Google API
             </h2>
             <p>
@@ -71,7 +70,7 @@ export default function PrivacyPolicyPage() {
                 href="https://developers.google.com/terms/api-services-user-data-policy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-[#14532D] underline"
+                className="font-semibold text-[#E5483F] underline"
               >
                 Google API Services User Data Policy
               </a>
@@ -91,16 +90,16 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
+            <h2 className="font-display text-lg font-bold text-gray-900">
               3. Quyền xuất, khôi phục và xóa dữ liệu của bạn
             </h2>
             <p>
-              Tại trang <Link href="/settings" className="text-[#14532D] underline">Cài đặt &amp; Hồ sơ</Link>, bạn có thể tải toàn bộ dữ liệu học tập của mình dưới định dạng JSON tiêu chuẩn hoặc xuất sổ từ vựng dưới định dạng TSV bất cứ lúc nào. Bạn cũng có thể ngắt kết nối ứng dụng khỏi tài khoản Google tại trang Quản lý Quyền truy cập của Google.
+              Tại trang <Link href="/settings" className="font-semibold text-gray-900 underline">Cài đặt &amp; Hồ sơ</Link>, bạn có thể tải toàn bộ dữ liệu học tập của mình dưới định dạng JSON tiêu chuẩn hoặc xuất sổ từ vựng dưới định dạng TSV bất cứ lúc nào. Bạn cũng có thể ngắt kết nối ứng dụng khỏi tài khoản Google tại trang Quản lý Quyền truy cập của Google.
             </p>
           </section>
 
-          <section className="rounded-2xl border border-[#E7E2D8] bg-white p-5 space-y-2 text-xs text-[#57534E]">
-            <h2 className="font-serif-display text-base font-semibold text-[#1C1917]">
+          <section className="rounded-2xl border border-gray-200 bg-[#F6F7F9] p-5 space-y-2 text-xs text-gray-600">
+            <h2 className="font-display text-sm font-bold text-gray-900">
               English Summary (Google OAuth &amp; API Limited Use Disclosure)
             </h2>
             <p>
@@ -110,14 +109,14 @@ export default function PrivacyPolicyPage() {
         </article>
       </main>
 
-      <footer className="border-t border-[#E7E2D8] py-6 text-center text-xs text-[#78716C]">
+      <footer className="border-t border-gray-100 py-6 text-center text-xs text-gray-500">
         <div className="mx-auto max-w-3xl px-4 flex flex-wrap items-center justify-between gap-2">
           <span>© {new Date().getFullYear()} SpeakMate.</span>
           <div className="flex items-center gap-4">
-            <Link href="/terms" className="hover:text-[#1C1917] underline">
+            <Link href="/terms" className="hover:text-gray-900 underline">
               Điều khoản sử dụng
             </Link>
-            <Link href="/" className="hover:text-[#1C1917] underline">
+            <Link href="/" className="hover:text-gray-900 underline">
               Trang chủ
             </Link>
           </div>

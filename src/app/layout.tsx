@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Be_Vietnam_Pro, Geist_Mono, Newsreader } from 'next/font/google';
+import { Be_Vietnam_Pro, Geist_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import './globals.css';
 
@@ -9,11 +9,10 @@ const beVietnamPro = Be_Vietnam_Pro({
   weight: ['400', '500', '600', '700'],
 });
 
-const newsreader = Newsreader({
-  variable: '--font-serif-editorial',
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: '--font-display-sans',
   subsets: ['latin', 'vietnamese'],
-  weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
+  weight: ['500', '600', '700', '800'],
 });
 
 const geistMono = Geist_Mono({
@@ -22,7 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: '#14532D',
+  themeColor: '#111827',
   width: 'device-width',
   initialScale: 1,
 };
@@ -31,7 +30,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://speakmate-ai-nu.vercel.app'),
   title: 'SpeakMate — Luyện nói tiếng Anh tự nhiên qua hội thoại thực tế',
   description:
-    'Rèn phản xạ giao tiếp tiếng Anh mỗi ngày cùng 6 giọng đọc bản xứ, phân tích phát âm IPA từng âm tiết, sổ mẫu câu và đồng bộ Google Drive.',
+    'Rèn phản xạ giao tiếp tiếng Anh mỗi ngày cùng 6 người hướng dẫn bản xứ, phân tích phát âm IPA từng âm tiết, lặp lại ngắt quãng SRS và đồng bộ Google Drive.',
   applicationName: 'SpeakMate',
   alternates: {
     canonical: '/',
@@ -83,9 +82,9 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${beVietnamPro.variable} ${newsreader.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${beVietnamPro.variable} ${plusJakarta.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full text-[#1C1917] flex flex-col selection:bg-[#14532D]/15 selection:text-[#14532D]">
+      <body className="min-h-full bg-white text-[#111827] flex flex-col selection:bg-[#E5483F]/15 selection:text-[#B91C1C]">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
