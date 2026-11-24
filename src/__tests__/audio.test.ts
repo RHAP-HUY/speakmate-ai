@@ -4,6 +4,7 @@ import {
   clearClientTtsCache,
   getClientTtsCacheSize,
   pickSupportedAudioMimeType,
+  playBase64Audio,
   playNaturalVoice,
   preloadNaturalVoice,
   stopVoicePlayback,
@@ -119,5 +120,44 @@ describe('Client Audio & TTS Engine', () => {
 
   it('falls back to audio/webm mime type when MediaRecorder is unavailable', () => {
     expect(pickSupportedAudioMimeType()).toBe('audio/webm');
+  });
+
+  it('decodes inline base64 audio into client cache for instant zero-RTT playback', async () => {
+    const onEnd = vi.fn();
+    const fakeAudioInstances: { play: ReturnType<typeof vi.fn>; onplay?: () => void; onended?: () => void }[] = [];
+    const origAudio = globalThis.Audio;
+    globalThis.Audio = vi.fn().mockImplementation(function MockAudio() {
+      const inst = {
+        play: vi.fn().mockImplementation(async () => {
+          inst.onplay?.();
+          inst.onended?.();
+        }),
+        pause: vi.fn(),
+        currentTime: 0,
+        onplay: undefined as (() => void) | undefined,
+        onended: undefined as (() => void) | undefined,
+        onerror: undefined as (() => void) | undefined,
+      };
+      fakeAudioInstances.push(inst);
+      return inst;
+    }) as unknown as typeof Audio;
+
+    try {
+      const base64 = Buffer.from('fake-mp3-data').toString('base64');
+      await playBase64Audio({
+        base64,
+        text: 'Welcome in!',
+        voice: 'en-US-EmmaMultilingualNeural',
+        browserLang: 'en-US',
+        speed: 0.85,
+        onEnd,
+      });
+
+      expect(getClientTtsCacheSize()).toBe(1);
+      expect(fakeAudioInstances).toHaveLength(1);
+      expect(onEnd).toHaveBeenCalledTimes(1);
+    } finally {
+      globalThis.Audio = origAudio;
+    }
   });
 });

@@ -159,6 +159,88 @@ export async function preloadNaturalVoice(params: {
   }
 }
 
+/**
+ * Plays inline base64 MP3 audio returned directly by /api/tutor/turn at 0ms extra RTT,
+ * caching the Blob URL so replay clicks are also instantaneous.
+ */
+export async function playBase64Audio(params: {
+  base64: string;
+  mimeType?: string;
+  text: string;
+  voice: string;
+  browserLang: string;
+  speed: number;
+  onStart?: () => void;
+  onEnd?: () => void;
+}): Promise<void> {
+  stopVoicePlayback();
+  const token = ++playbackToken;
+  const cleanText = params.text.trim();
+
+  try {
+    const binary = atob(params.base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: params.mimeType || 'audio/mpeg' });
+    if (blob.size === 0) {
+      throw new Error('Empty inline audio');
+    }
+
+    const audioUrl = URL.createObjectURL(blob);
+    if (cleanText) {
+      const cacheKey = buildClientTtsCacheKey(
+        params.voice,
+        params.speed,
+        cleanText
+      );
+      if (!ttsCache.has(cacheKey)) {
+        evictOldestCacheIfNeeded();
+        ttsCache.set(cacheKey, audioUrl);
+      }
+    }
+
+    if (playbackToken !== token) return;
+
+    const audio = new Audio(audioUrl);
+    currentAudio = audio;
+    audio.onplay = () => {
+      if (playbackToken === token) params.onStart?.();
+    };
+    audio.onended = () => {
+      if (currentAudio === audio) currentAudio = null;
+      if (playbackToken === token) params.onEnd?.();
+    };
+    audio.onerror = () => {
+      if (currentAudio === audio) currentAudio = null;
+      if (playbackToken === token) {
+        void playNaturalVoice({
+          text: cleanText,
+          voice: params.voice,
+          browserLang: params.browserLang,
+          speed: params.speed,
+          onStart: params.onStart,
+          onEnd: params.onEnd,
+        });
+      }
+    };
+
+    await audio.play();
+  } catch {
+    if (playbackToken === token) {
+      await playNaturalVoice({
+        text: cleanText,
+        voice: params.voice,
+        browserLang: params.browserLang,
+        speed: params.speed,
+        onStart: params.onStart,
+        onEnd: params.onEnd,
+      });
+    }
+  }
+}
+
 export async function playNaturalVoice(params: {
   text: string;
   voice: string;
@@ -188,7 +270,7 @@ export async function playNaturalVoice(params: {
       currentAbortController = controller;
       const timeoutId =
         typeof window !== 'undefined'
-          ? window.setTimeout(() => controller.abort(), 10_000)
+          ? window.setTimeout(() => controller.abort(), 6_500)
           : null;
 
       try {

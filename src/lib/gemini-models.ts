@@ -92,7 +92,10 @@ export function isTransientOverloadError(error: unknown): boolean {
     lower.includes('overloaded') ||
     lower.includes('502') ||
     lower.includes('504') ||
-    lower.includes('econnreset')
+    lower.includes('econnreset') ||
+    lower.includes('etimedout') ||
+    lower.includes('fetch failed') ||
+    lower.includes('socket hang up')
   );
 }
 

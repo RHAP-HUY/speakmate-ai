@@ -31,6 +31,7 @@ import {
 } from '@/components/PronunciationPracticeModal';
 import {
   createSpeechRecorder,
+  playBase64Audio,
   playNaturalVoice,
   stopVoicePlayback,
 } from '@/lib/audio';
@@ -47,6 +48,7 @@ import { MIN_CALL_TURNS_FOR_LESSON } from '@/lib/gamification';
 import { AI_PERSONAS, pickPersona, SCENARIOS } from '@/lib/scenarios';
 import {
   buildFallbackConversationReport,
+  buildInstantScenarioOpening,
   serializeConversationReport,
 } from '@/lib/tutor-prompt';
 import type {
@@ -67,6 +69,17 @@ type CallPhase =
   | 'speaking'
   | 'ended';
 type MicMode = 'tap' | 'handsfree';
+
+interface BrowserSpeechRecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((ev: { results: ArrayLike<{ 0?: { transcript?: string } }> }) => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
 
 function formatTimer(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -108,6 +121,9 @@ function CallStudioInner() {
   const [textInput, setTextInput] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [canRetryLastTurn, setCanRetryLastTurn] = useState<boolean>(false);
+  const [retryingTurn, setRetryingTurn] = useState<boolean>(false);
+  const [liveTranscript, setLiveTranscript] = useState<string>('');
+  const [pendingUserText, setPendingUserText] = useState<string | null>(null);
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
   const [micLevel, setMicLevel] = useState<number>(0);
   const [autoListenTick, setAutoListenTick] = useState<number>(0);
@@ -133,6 +149,8 @@ function CallStudioInner() {
   const recordStartRef = useRef<number>(0);
   const vadRafRef = useRef<number | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const speechRecRef = useRef<BrowserSpeechRecognitionLike | null>(null);
+  const liveTranscriptRef = useRef<string>('');
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const conversationIdRef = useRef<string | null>(null);
   const messagesRef = useRef<TutorMessage[]>([]);
@@ -146,6 +164,7 @@ function CallStudioInner() {
   const lastFailedTurnRef = useRef<{
     isStart?: boolean;
     userText?: string;
+    clientTranscript?: string;
     audioBlob?: Blob;
     audioMime?: string;
   } | null>(null);
@@ -181,6 +200,16 @@ function CallStudioInner() {
   }, [phase]);
 
   const cleanupRecordingResources = useCallback(() => {
+    if (speechRecRef.current) {
+      try {
+        speechRecRef.current.onresult = null;
+        speechRecRef.current.onerror = null;
+        speechRecRef.current.stop();
+      } catch {
+        // ignore speech recognition cleanup errors
+      }
+      speechRecRef.current = null;
+    }
     if (vadRafRef.current !== null) {
       cancelAnimationFrame(vadRafRef.current);
       vadRafRef.current = null;
@@ -195,6 +224,7 @@ function CallStudioInner() {
     }
     mediaRecorderRef.current = null;
     setMicLevel(0);
+    setLiveTranscript('');
   }, []);
 
   useEffect(() => {
@@ -214,27 +244,48 @@ function CallStudioInner() {
   }, []);
 
   const speakAiSentence = useCallback(
-    async (text: string, customSpeed?: number, autoListenAfter = false) => {
+    async (
+      text: string,
+      customSpeed?: number,
+      autoListenAfter = false,
+      inlineAudioBase64?: string | null
+    ) => {
       const p = personaRef.current;
       setPhase((prev) => (prev === 'ended' ? 'ended' : 'speaking'));
+      const onStart = () =>
+        setPhase((prev) => (prev === 'ended' ? 'ended' : 'speaking'));
+      const onEnd = () => {
+        setPhase((prev) => (prev === 'ended' ? 'ended' : 'idle'));
+        if (
+          autoListenAfter &&
+          micModeRef.current === 'handsfree' &&
+          phaseRef.current !== 'ended' &&
+          !practiceOpenRef.current
+        ) {
+          setAutoListenTick((t) => t + 1);
+        }
+      };
+
+      if (inlineAudioBase64 && customSpeed === undefined) {
+        await playBase64Audio({
+          base64: inlineAudioBase64,
+          text,
+          voice: p.edgeVoice,
+          browserLang: p.browserLang,
+          speed: speedRef.current,
+          onStart,
+          onEnd,
+        });
+        return;
+      }
+
       await playNaturalVoice({
         text,
         voice: p.edgeVoice,
         browserLang: p.browserLang,
         speed: customSpeed ?? speedRef.current,
-        onStart: () =>
-          setPhase((prev) => (prev === 'ended' ? 'ended' : 'speaking')),
-        onEnd: () => {
-          setPhase((prev) => (prev === 'ended' ? 'ended' : 'idle'));
-          if (
-            autoListenAfter &&
-            micModeRef.current === 'handsfree' &&
-            phaseRef.current !== 'ended' &&
-            !practiceOpenRef.current
-          ) {
-            setAutoListenTick((t) => t + 1);
-          }
-        },
+        onStart,
+        onEnd,
       });
     },
     []
@@ -244,24 +295,36 @@ function CallStudioInner() {
     async (opts: {
       isStart?: boolean;
       userText?: string;
+      clientTranscript?: string;
       audioBlob?: Blob;
       audioMime?: string;
     }) => {
       setErrorMsg(null);
       setCanRetryLastTurn(false);
+      setRetryingTurn(false);
       lastFailedTurnRef.current = null;
       setPhase('thinking');
       stopVoicePlayback();
 
-      try {
+      const optimisticText =
+        !opts.isStart
+          ? (opts.userText || opts.clientTranscript || '').trim() ||
+            (opts.audioBlob ? 'Đang gửi đoạn ghi âm giọng nói...' : null)
+          : null;
+      setPendingUserText(optimisticText);
+
+      const executeRequest = async () => {
         const payload = {
           scenarioId: scenario.id,
           personaId: personaRef.current.id,
           customTopic: customTopic || undefined,
           isStart: opts.isStart,
           userText: opts.userText,
-          // Keep payload lean: only send recent 8 turns
-          history: messagesRef.current.slice(-8).map((m) => ({
+          clientTranscript: opts.clientTranscript || undefined,
+          speed: speedRef.current,
+          includeAudio: true,
+          // Keep payload lean: only send recent 6 turns
+          history: messagesRef.current.slice(-6).map((m) => ({
             role: m.role,
             englishText: m.englishText,
           })),
@@ -275,33 +338,72 @@ function CallStudioInner() {
             : undefined,
         };
 
-        let response: Response;
-        const headers = buildAuthHeaders();
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 24_000);
 
-        if (opts.audioBlob) {
-          const fd = new FormData();
-          fd.append('payload', JSON.stringify(payload));
-          fd.append('audio', opts.audioBlob, 'speech.webm');
-          response = await fetch('/api/tutor/turn', {
-            method: 'POST',
-            headers,
-            body: fd,
-          });
-        } else {
-          response = await fetch('/api/tutor/turn', {
-            method: 'POST',
-            headers: {
-              ...headers,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-          });
+        try {
+          let response: Response;
+          const headers = buildAuthHeaders();
+
+          if (opts.audioBlob) {
+            const fd = new FormData();
+            fd.append('payload', JSON.stringify(payload));
+            fd.append('audio', opts.audioBlob, 'speech.webm');
+            response = await fetch('/api/tutor/turn', {
+              method: 'POST',
+              headers,
+              body: fd,
+              signal: controller.signal,
+            });
+          } else {
+            response = await fetch('/api/tutor/turn', {
+              method: 'POST',
+              headers: {
+                ...headers,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(payload),
+              signal: controller.signal,
+            });
+          }
+
+          const data = await response.json();
+          if (!response.ok) {
+            const err = new Error(
+              data.error || 'Không thể kết nối AI Tutor.'
+            ) as Error & { status?: number };
+            err.status = response.status;
+            throw err;
+          }
+          return data;
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+      };
+
+      const isCallEnded = () => phaseRef.current === 'ended';
+
+      try {
+        let data;
+        try {
+          data = await executeRequest();
+        } catch (firstErr) {
+          const status = (firstErr as { status?: number })?.status;
+          // Auto-retry once silently on transient network / 5xx gateway spikes
+          const isRetryable =
+            status === undefined || status >= 500 || status === 408;
+          if (!isRetryable || isCallEnded()) {
+            throw firstErr;
+          }
+          setRetryingTurn(true);
+          await new Promise((r) => setTimeout(r, 450));
+          if (isCallEnded()) return;
+          data = await executeRequest();
         }
 
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || 'Không thể kết nối AI Tutor.');
-        }
+        if (isCallEnded()) return;
+        setRetryingTurn(false);
+        setPendingUserText(null);
 
         if (
           typeof data.meta?.latencyMs === 'number' &&
@@ -352,12 +454,25 @@ function CallStudioInner() {
           });
         }
 
-        await speakAiSentence(data.aiReplyEn, undefined, true);
+        await speakAiSentence(
+          data.aiReplyEn,
+          undefined,
+          true,
+          typeof data.aiAudioBase64 === 'string' ? data.aiAudioBase64 : null
+        );
       } catch (err) {
+        setRetryingTurn(false);
+        setPendingUserText(null);
         lastFailedTurnRef.current = opts;
         setCanRetryLastTurn(true);
+        const isAbort =
+          err instanceof DOMException && err.name === 'AbortError';
         setErrorMsg(
-          err instanceof Error ? err.message : 'Có lỗi xảy ra khi gọi AI.'
+          isAbort
+            ? 'Kết nối mạng hơi chậm. Bạn bấm "Thử lại lượt vừa rồi" để tiếp tục ngay nhé!'
+            : err instanceof Error
+              ? err.message
+              : 'Có lỗi xảy ra khi gọi AI.'
         );
         setPhase('idle');
       }
@@ -400,11 +515,38 @@ function CallStudioInner() {
       conversationIdRef.current = conv.id;
       setConversationId(conv.id);
 
+      // Instant zero-delay native opening for all built-in scenarios!
+      if (!customTopic) {
+        const opening = buildInstantScenarioOpening({
+          scenario,
+          persona: chosenPersona,
+          displayName: loadedProfile.displayName,
+          englishLevel: loadedProfile.englishLevel,
+          hobbies: loadedProfile.hobbies,
+          jobField: loadedProfile.jobField,
+        });
+        const aiMsg: TutorMessage = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          englishText: opening.aiReplyEn,
+          vietnameseTranslation: opening.aiReplyVi,
+          coachingTip: opening.coachingTip,
+          replyHints: opening.replyHints,
+          createdAt: new Date().toISOString(),
+        };
+        setMessages([aiMsg]);
+        setReplyHints(opening.replyHints);
+        setLastTurnMeta({ latencyMs: 0, modelUsed: 'instant-opening' });
+        void appendConversationMessages(conv.id, [aiMsg]).catch(() => {});
+        await speakAiSentence(opening.aiReplyEn, undefined, true);
+        return;
+      }
+
       await sendTurn({ isStart: true });
     }
 
     init();
-  }, [personaParam, router, scenario, sendTurn]);
+  }, [customTopic, personaParam, router, scenario, sendTurn, speakAiSentence]);
 
   const stopRecordingAndSend = useCallback(() => {
     const recorder = mediaRecorderRef.current;
@@ -437,8 +579,49 @@ function CallStudioInner() {
       const recorder = createSpeechRecorder(stream);
 
       chunksRef.current = [];
+      liveTranscriptRef.current = '';
+      setLiveTranscript('');
       recordStartRef.current = Date.now();
       mediaRecorderRef.current = recorder;
+
+      // Parallel browser SpeechRecognition for live captions + voice rescue fallback
+      try {
+        const SpeechRecCtor = (
+          window as unknown as {
+            SpeechRecognition?: new () => BrowserSpeechRecognitionLike;
+            webkitSpeechRecognition?: new () => BrowserSpeechRecognitionLike;
+          }
+        ).SpeechRecognition ||
+          (
+            window as unknown as {
+              webkitSpeechRecognition?: new () => BrowserSpeechRecognitionLike;
+            }
+          ).webkitSpeechRecognition;
+
+        if (SpeechRecCtor) {
+          const rec = new SpeechRecCtor();
+          rec.lang = personaRef.current.browserLang || 'en-US';
+          rec.continuous = true;
+          rec.interimResults = true;
+          rec.onresult = (ev) => {
+            const parts: string[] = [];
+            for (let i = 0; i < ev.results.length; i++) {
+              const t = ev.results[i]?.[0]?.transcript;
+              if (t) parts.push(t.trim());
+            }
+            const joined = parts.join(' ').trim();
+            liveTranscriptRef.current = joined;
+            setLiveTranscript(joined);
+          };
+          rec.onerror = () => {
+            // Silent fallback: MediaRecorder audio still works independently
+          };
+          rec.start();
+          speechRecRef.current = rec;
+        }
+      } catch {
+        // Unsupported browser or mic contention — ignore cleanly
+      }
 
       recorder.ondataavailable = (ev) => {
         if (ev.data.size > 0) chunksRef.current.push(ev.data);
@@ -446,6 +629,7 @@ function CallStudioInner() {
 
       recorder.onstop = () => {
         const duration = Date.now() - recordStartRef.current;
+        const capturedTranscript = liveTranscriptRef.current.trim();
         const blob = new Blob(chunksRef.current, {
           type: recorder.mimeType || 'audio/webm',
         });
@@ -462,6 +646,7 @@ function CallStudioInner() {
         void sendTurn({
           audioBlob: blob,
           audioMime: recorder.mimeType || 'audio/webm',
+          clientTranscript: capturedTranscript || undefined,
         });
       };
 
@@ -1058,11 +1243,32 @@ function CallStudioInner() {
           );
         })}
 
+        {phase === 'recording' && liveTranscript && (
+          <div className="flex flex-col items-end">
+            <div className="max-w-[92%] sm:max-w-[82%] rounded-2xl border border-emerald-400/35 bg-emerald-600/25 px-4 py-3 text-sm text-emerald-50">
+              <span className="block text-[10px] font-semibold uppercase tracking-wider text-emerald-300 mb-0.5">
+                Đang nghe trực tiếp...
+              </span>
+              {liveTranscript}
+            </div>
+          </div>
+        )}
+
+        {phase === 'thinking' && pendingUserText && (
+          <div className="flex flex-col items-end">
+            <div className="max-w-[92%] sm:max-w-[82%] rounded-2xl bg-emerald-600/80 px-4 py-3 text-sm text-white/95">
+              {pendingUserText}
+            </div>
+          </div>
+        )}
+
         {phase === 'thinking' && (
-          <div className="flex items-center gap-2 text-xs text-gray-300 pl-2">
+          <div className="flex items-center gap-2.5 text-xs text-gray-300 pl-2">
             <Loader2 className="h-4 w-4 animate-spin text-[#E5483F]" />
             <span>
-              {persona.name} đang phân tích phát âm và chuẩn bị câu trả lời...
+              {retryingTurn
+                ? `Đang chuyển nhanh sang cụm máy chủ ổn định hơn cho ${persona.name}...`
+                : `${persona.name} đang nghe âm vị và phản hồi ngay...`}
             </span>
           </div>
         )}

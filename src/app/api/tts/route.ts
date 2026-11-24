@@ -1,23 +1,12 @@
-import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import { NextResponse, type NextRequest } from 'next/server';
 import { checkSlidingWindowRateLimit } from '@/lib/rate-limit';
 import { extractClientIp } from '@/lib/security';
-import {
-  buildTtsCacheKey,
-  getCachedTtsAudio,
-  setCachedTtsAudio,
-} from '@/lib/tts-cache';
-import {
-  resolveEdgeVoice,
-  sanitizeTextForTts,
-  speedToEdgeRate,
-} from '@/lib/tts-utils';
+import { synthesizeEdgeTtsMp3 } from '@/lib/tts-server';
+import { sanitizeTextForTts } from '@/lib/tts-utils';
 
 export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
-  let tts: MsEdgeTTS | null = null;
-
   try {
     const rl = checkSlidingWindowRateLimit({
       namespace: 'tts',
@@ -54,79 +43,33 @@ export async function POST(request: NextRequest) {
     }
 
     const rawText = typeof body?.text === 'string' ? body.text : '';
-    const cleanedText = sanitizeTextForTts(rawText);
-    if (!cleanedText) {
+    if (!sanitizeTextForTts(rawText)) {
       return NextResponse.json(
         { error: 'Thiếu nội dung văn bản để đọc.' },
         { status: 400 }
       );
     }
 
-    const voice = resolveEdgeVoice(
-      typeof body?.voice === 'string' ? body.voice : undefined
-    );
-    const rate = speedToEdgeRate(
-      typeof body?.speed === 'number' ? body.speed : undefined
-    );
-    const cacheKey = buildTtsCacheKey(voice, rate, cleanedText);
-
-    const cached = getCachedTtsAudio(cacheKey);
-    if (cached) {
-      return new NextResponse(new Uint8Array(cached), {
-        status: 200,
-        headers: {
-          'Content-Type': 'audio/mpeg',
-          'Content-Length': String(cached.length),
-          'Cache-Control': 'private, max-age=3600',
-          'X-TTS-Cache': 'HIT',
-        },
-      });
-    }
-
-    tts = new MsEdgeTTS({
-      connectionTimeoutMs: 7000,
-      synthesisTimeoutMs: 12000,
+    const result = await synthesizeEdgeTtsMp3({
+      text: rawText,
+      voice: typeof body?.voice === 'string' ? body.voice : undefined,
+      speed: typeof body?.speed === 'number' ? body.speed : undefined,
+      connectionTimeoutMs: 5_000,
+      synthesisTimeoutMs: 9_000,
     });
 
-    await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-    const { audioStream } = tts.toStream(cleanedText, { rate });
-
-    const chunks: Buffer[] = [];
-    await new Promise<void>((resolve, reject) => {
-      audioStream.on('data', (chunk: Buffer) => {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-      });
-      audioStream.on('end', () => resolve());
-      audioStream.on('error', (err) => reject(err));
-    });
-
-    const audioBuffer = Buffer.concat(chunks);
-    if (audioBuffer.length === 0) {
-      throw new Error('Không nhận được dữ liệu âm thanh từ Edge TTS.');
-    }
-
-    setCachedTtsAudio(cacheKey, audioBuffer);
-
-    return new NextResponse(new Uint8Array(audioBuffer), {
+    return new NextResponse(new Uint8Array(result.buffer), {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',
-        'Content-Length': String(audioBuffer.length),
+        'Content-Length': String(result.buffer.length),
         'Cache-Control': 'private, max-age=3600',
-        'X-TTS-Cache': 'MISS',
+        'X-TTS-Cache': result.cacheHit ? 'HIT' : 'MISS',
       },
     });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Edge TTS không khả dụng.';
     return NextResponse.json({ error: message }, { status: 502 });
-  } finally {
-    if (tts) {
-      try {
-        tts.close();
-      } catch {
-        // Ignore close cleanup errors
-      }
-    }
   }
 }

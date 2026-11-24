@@ -162,6 +162,150 @@ async function withTimeout<T>(
   }
 }
 
+export interface StaggeredRaceResult<T> {
+  value: T;
+  model: string;
+}
+
+/**
+ * Staggered Hedged Parallel Racing (Google "The Tail at Scale"):
+ * - Fires model #0 immediately at t=0.
+ * - If model #0 succeeds before hedgeDelayMs, zero extra requests are sent.
+ * - If model #0 fails early (e.g. 503 high demand), launches the next cluster immediately at 0ms.
+ * - If model #0 is still slow after hedgeDelayMs, launches a hedged backup cluster in parallel
+ *   (up to maxConcurrent in-flight) and resolves with whichever cluster succeeds first.
+ */
+export async function runStaggeredHedgedRace<T>(params: {
+  models: string[];
+  hedgeDelayMs: number;
+  maxConcurrent?: number;
+  totalBudgetMs: number;
+  attempt: (model: string, remainingBudgetMs: number) => Promise<T>;
+  isFatalKeyError?: (error: unknown) => boolean;
+  onModelError?: (model: string, error: unknown) => void;
+}): Promise<StaggeredRaceResult<T>> {
+  const {
+    models,
+    hedgeDelayMs,
+    maxConcurrent = 3,
+    totalBudgetMs,
+    attempt,
+    isFatalKeyError,
+    onModelError,
+  } = params;
+
+  if (models.length === 0) {
+    throw new Error('Không có model AI khả dụng.');
+  }
+
+  const startedAt = Date.now();
+
+  return new Promise<StaggeredRaceResult<T>>((resolve, reject) => {
+    let nextIndex = 0;
+    let inFlight = 0;
+    let settled = false;
+    let lastError: unknown = null;
+    let hedgeTimer: ReturnType<typeof setTimeout> | null = null;
+    let budgetTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const clearTimers = () => {
+      if (hedgeTimer) {
+        clearTimeout(hedgeTimer);
+        hedgeTimer = null;
+      }
+      if (budgetTimer) {
+        clearTimeout(budgetTimer);
+        budgetTimer = null;
+      }
+    };
+
+    const finishResolve = (result: StaggeredRaceResult<T>) => {
+      if (settled) return;
+      settled = true;
+      clearTimers();
+      resolve(result);
+    };
+
+    const finishReject = (err: unknown) => {
+      if (settled) return;
+      settled = true;
+      clearTimers();
+      reject(err);
+    };
+
+    const scheduleNextHedge = () => {
+      if (settled || hedgeTimer) return;
+      if (nextIndex >= models.length || inFlight >= maxConcurrent) return;
+      const remaining = totalBudgetMs - (Date.now() - startedAt);
+      if (remaining < 2_500) return;
+
+      hedgeTimer = setTimeout(() => {
+        hedgeTimer = null;
+        launchNext();
+      }, hedgeDelayMs);
+    };
+
+    const launchNext = () => {
+      if (settled) return;
+      if (nextIndex >= models.length || inFlight >= maxConcurrent) return;
+      const remaining = totalBudgetMs - (Date.now() - startedAt);
+      if (remaining < 2_000) {
+        if (inFlight === 0) {
+          finishReject(lastError ?? new Error('Hết thời gian chờ kết nối AI.'));
+        }
+        return;
+      }
+
+      const model = models[nextIndex++];
+      inFlight += 1;
+
+      if (nextIndex < models.length && inFlight < maxConcurrent) {
+        scheduleNextHedge();
+      }
+
+      attempt(model, remaining).then(
+        (value) => {
+          inFlight -= 1;
+          finishResolve({ value, model });
+        },
+        (err) => {
+          inFlight -= 1;
+          lastError = err;
+          onModelError?.(model, err);
+
+          if (settled) return;
+
+          if (isFatalKeyError?.(err)) {
+            finishReject(err);
+            return;
+          }
+
+          // Current model failed -> cancel waiting timer and launch backup immediately!
+          if (hedgeTimer) {
+            clearTimeout(hedgeTimer);
+            hedgeTimer = null;
+          }
+
+          const left = totalBudgetMs - (Date.now() - startedAt);
+          if (nextIndex < models.length && left >= 2_000) {
+            launchNext();
+          } else if (inFlight === 0) {
+            finishReject(lastError);
+          }
+        }
+      );
+    };
+
+    budgetTimer = setTimeout(() => {
+      finishReject(
+        lastError ?? new Error(`Timeout (${totalBudgetMs}ms) khi kết nối cụm AI.`)
+      );
+    }, totalBudgetMs);
+
+    launchNext();
+  });
+}
+
 export interface GeminiJsonCallResult {
   rawText: string;
   keySource: 'personal' | 'shared';
@@ -201,9 +345,14 @@ export async function generateGeminiJson(params: {
 
   const models = getOrderedGeminiModels();
   const speedMode = params.speedMode ?? 'realtime';
-  const baseAttemptTimeoutMs =
-    params.timeoutMs ?? (speedMode === 'report' ? 14_000 : 8_000);
-  const totalBudgetMs = speedMode === 'report' ? 24_000 : 21_000;
+  const hasInlineAudio = params.parts.some((p) => Boolean(p.inlineData));
+  const attemptCapMs =
+    params.timeoutMs ??
+    (speedMode === 'report' ? 15_000 : hasInlineAudio ? 13_500 : 10_000);
+  const totalBudgetMs = speedMode === 'report' ? 24_000 : 21_500;
+  const hedgeDelayMs =
+    speedMode === 'report' ? 3_500 : hasInlineAudio ? 2_200 : 1_450;
+
   const startedAt = Date.now();
   let lastError: unknown = null;
 
@@ -243,92 +392,53 @@ export async function generateGeminiJson(params: {
   };
 
   for (const candidate of candidates) {
+    const elapsedBeforeKey = Date.now() - startedAt;
+    const remainingForKey = totalBudgetMs - elapsedBeforeKey;
+    if (remainingForKey < 2_500) break;
+
     const ai = getCachedClient(candidate.key);
 
-    for (const model of models) {
-      const elapsed = Date.now() - startedAt;
-      const remainingBudget = totalBudgetMs - elapsed;
-      if (remainingBudget < 2_500) {
-        break;
-      }
-      // Keep individual realtime attempts tightly bounded so no single slow cluster starves fallbacks
-      const modelCapMs =
-        speedMode === 'realtime'
-          ? Math.min(baseAttemptTimeoutMs, model === 'gemini-3.5-flash-lite' ? 7_500 : 6_500)
-          : baseAttemptTimeoutMs;
-      const attemptTimeoutMs = Math.min(modelCapMs, remainingBudget);
-      const attemptStartedAt = Date.now();
-
-      try {
-        const rawText = await invokeModel(ai, model, attemptTimeoutMs);
-        markModelHealthy(model);
-
-        return {
-          rawText,
-          keySource: candidate.source,
-          modelUsed: model,
-          latencyMs: Date.now() - startedAt,
-        };
-      } catch (err) {
-        lastError = err;
-
-        // Invalid/revoked API key -> cool down this key immediately and move to next key
-        if (isFatalGeminiKeyAuthError(err)) {
-          if (candidate.source === 'shared') {
-            markKeyCooldown(candidate.key, 5 * 60_000);
+    try {
+      const winner = await runStaggeredHedgedRace<string>({
+        models,
+        hedgeDelayMs,
+        maxConcurrent: speedMode === 'report' ? 2 : 3,
+        totalBudgetMs: remainingForKey,
+        isFatalKeyError: isFatalGeminiKeyAuthError,
+        onModelError: (model, err) => {
+          if (isFatalGeminiKeyAuthError(err)) return;
+          if (isRetryableGeminiKeyError(err)) {
+            markModelCooldown(model, 45_000);
+          } else if (isUnsupportedOrMissingModelError(err)) {
+            markModelCooldown(model, 5 * 60_000);
+          } else if (isTransientOverloadError(err)) {
+            markModelCooldown(model, 15_000);
+          } else {
+            markModelCooldown(model, 20_000);
           }
-          break;
-        }
+        },
+        attempt: (model, remaining) =>
+          invokeModel(ai, model, Math.min(attemptCapMs, remaining)),
+      });
 
-        // Fast transient 503 on a lite model -> brief 350ms retry once before failing over
-        const attemptDuration = Date.now() - attemptStartedAt;
-        const leftAfterFirst = totalBudgetMs - (Date.now() - startedAt);
-        if (
-          model.includes('lite') &&
-          isTransientOverloadError(err) &&
-          attemptDuration < 4_500 &&
-          leftAfterFirst > 6_000
-        ) {
-          await new Promise((r) => setTimeout(r, 350));
-          try {
-            const retryText = await invokeModel(
-              ai,
-              model,
-              Math.min(attemptTimeoutMs, totalBudgetMs - (Date.now() - startedAt))
-            );
-            markModelHealthy(model);
-            return {
-              rawText: retryText,
-              keySource: candidate.source,
-              modelUsed: model,
-              latencyMs: Date.now() - startedAt,
-            };
-          } catch (retryErr) {
-            lastError = retryErr;
-          }
+      markModelHealthy(winner.model);
+      return {
+        rawText: winner.value,
+        keySource: candidate.source,
+        modelUsed: winner.model,
+        latencyMs: Date.now() - startedAt,
+      };
+    } catch (err) {
+      lastError = err;
+      if (isFatalGeminiKeyAuthError(err)) {
+        if (candidate.source === 'shared') {
+          markKeyCooldown(candidate.key, 5 * 60_000);
         }
-
-        // Per-model 429 quota -> cool down ONLY this model (each Gemini model has its own RPM quota!)
-        if (isRetryableGeminiKeyError(lastError)) {
-          markModelCooldown(model, 45_000);
-          continue;
-        }
-
-        if (isUnsupportedOrMissingModelError(lastError)) {
-          // Avoid retrying missing/unsupported models for 5 minutes
-          markModelCooldown(model, 5 * 60_000);
-        } else if (isTransientOverloadError(lastError)) {
-          // Short 12s cooldown on transient 503 so fast clusters recover quickly
-          markModelCooldown(model, 12_000);
-        } else {
-          markModelCooldown(model, 25_000);
-        }
+        continue;
       }
-    }
-
-    // All models failed on this shared key -> briefly cool down key if multiple keys exist
-    if (candidate.source === 'shared' && candidates.length > 1) {
-      markKeyCooldown(candidate.key, 30_000);
+      if (candidate.source === 'shared' && candidates.length > 1) {
+        markKeyCooldown(candidate.key, 25_000);
+      }
     }
   }
 

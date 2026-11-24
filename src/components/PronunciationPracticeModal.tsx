@@ -94,7 +94,7 @@ function PronunciationPracticeModalInner({
       rafRef.current = null;
     }
     if (audioCtxRef.current) {
-      audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current.close().catch(() => { });
       audioCtxRef.current = null;
     }
     if (streamRef.current) {
@@ -177,25 +177,50 @@ function PronunciationPracticeModalInner({
           englishLevel: (profile?.englishLevel ?? 'A0-A1') as EnglishLevel,
           profileOverride: profile
             ? {
-                displayName: profile.displayName,
-                englishLevel: profile.englishLevel,
-                jobField: profile.jobField,
-                hobbies: profile.hobbies,
-              }
+              displayName: profile.displayName,
+              englishLevel: profile.englishLevel,
+              jobField: profile.jobField,
+              hobbies: profile.hobbies,
+            }
             : undefined,
         })
       );
       fd.append('audio', blob, 'practice.webm');
 
-      const res = await fetch('/api/tutor/pronunciation', {
-        method: 'POST',
-        headers,
-        body: fd,
-      });
+      const runScoringFetch = async () => {
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), 22_000);
+        try {
+          const res = await fetch('/api/tutor/pronunciation', {
+            method: 'POST',
+            headers,
+            body: fd,
+            signal: controller.signal,
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            const err = new Error(
+              data.error || 'Không thể chấm điểm phát âm lúc này.'
+            ) as Error & { status?: number };
+            err.status = res.status;
+            throw err;
+          }
+          return data;
+        } finally {
+          window.clearTimeout(timer);
+        }
+      };
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Không thể chấm điểm phát âm lúc này.');
+      let data;
+      try {
+        data = await runScoringFetch();
+      } catch (firstErr) {
+        const status = (firstErr as { status?: number })?.status;
+        if (status !== undefined && status < 500 && status !== 408) {
+          throw firstErr;
+        }
+        await new Promise((r) => setTimeout(r, 400));
+        data = await runScoringFetch();
       }
 
       const assessment = data.assessment as PronunciationPracticeResult;
@@ -407,11 +432,10 @@ function PronunciationPracticeModalInner({
                 void startPracticeRecording();
               }
             }}
-            className={`btn-duo px-6 py-3 text-sm ${
-              status === 'recording'
-                ? 'btn-duo-coral'
-                : 'btn-duo-primary'
-            }`}
+            className={`btn-duo px-6 py-3 text-sm ${status === 'recording'
+              ? 'btn-duo-coral'
+              : 'btn-duo-primary'
+              }`}
           >
             {status === 'scoring' ? (
               <>
@@ -540,13 +564,12 @@ function PronunciationPracticeModalInner({
                 {result.wordFeedback.map((wf, idx) => (
                   <span
                     key={`${wf.word}-${idx}`}
-                    className={`rounded-xl border px-2.5 py-1 text-xs font-semibold ${
-                      wf.status === 'good'
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                        : wf.status === 'improve'
-                          ? 'border-amber-300 bg-amber-50 text-amber-900'
-                          : 'border-rose-300 bg-rose-50 text-rose-800 line-through'
-                    }`}
+                    className={`rounded-xl border px-2.5 py-1 text-xs font-semibold ${wf.status === 'good'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                      : wf.status === 'improve'
+                        ? 'border-amber-300 bg-amber-50 text-amber-900'
+                        : 'border-rose-300 bg-rose-50 text-rose-800 line-through'
+                      }`}
                   >
                     {wf.word}
                   </span>
@@ -566,9 +589,8 @@ function PronunciationPracticeModalInner({
                     className="flex flex-wrap items-baseline gap-1.5 text-xs text-slate-700"
                   >
                     <span
-                      className={`font-bold ${
-                        w.status === 'missing' ? 'text-rose-700' : 'text-amber-800'
-                      }`}
+                      className={`font-bold ${w.status === 'missing' ? 'text-rose-700' : 'text-amber-800'
+                        }`}
                     >
                       {w.word}
                     </span>

@@ -10,11 +10,15 @@ import { AI_PERSONAS, SCENARIOS } from '@/lib/scenarios';
 import { extractClientIp } from '@/lib/security';
 import {
   buildConversationTurnPrompt,
+  buildInstantScenarioOpening,
   buildTutorSystemInstruction,
   parseTutorTurnOutput,
   sanitizePromptField,
   TUTOR_RESPONSE_SCHEMA,
+  TUTOR_TEXT_RESPONSE_SCHEMA,
+  type TutorTurnOutput,
 } from '@/lib/tutor-prompt';
+import { synthesizeEdgeTtsMp3 } from '@/lib/tts-server';
 import type { TutorMessage, UserProfile } from '@/types';
 
 export const maxDuration = 30;
@@ -25,10 +29,35 @@ interface TurnPayload {
   customTopic?: string;
   isStart?: boolean;
   userText?: string;
+  clientTranscript?: string;
+  speed?: number;
+  includeAudio?: boolean;
   history: Pick<TutorMessage, 'role' | 'englishText'>[];
   profileOverride?: Partial<
     Pick<UserProfile, 'displayName' | 'englishLevel' | 'jobField' | 'hobbies'>
   >;
+}
+
+async function attachOptionalInlineAudio(params: {
+  includeAudio?: boolean;
+  text: string;
+  voice: string;
+  speed?: number;
+}): Promise<string | null> {
+  if (params.includeAudio === false || !params.text.trim()) return null;
+  try {
+    const tts = await synthesizeEdgeTtsMp3({
+      text: params.text,
+      voice: params.voice,
+      speed: params.speed ?? 0.85,
+      connectionTimeoutMs: 2_200,
+      synthesisTimeoutMs: 2_800,
+    });
+    return tts.buffer.toString('base64');
+  } catch {
+    // Non-blocking: client will seamlessly fall back to /api/tts or browser voice
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -45,6 +74,7 @@ export async function POST(request: NextRequest) {
         { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
       );
     }
+
     let payload: TurnPayload;
     let audioBase64: string | null = null;
     let audioMimeType = 'audio/webm';
@@ -119,11 +149,45 @@ export async function POST(request: NextRequest) {
     const persona =
       AI_PERSONAS.find((p) => p.id === payload.personaId) ?? AI_PERSONAS[0];
 
+    // Fast-path (<1ms AI latency): instant natural native opening for built-in scenarios
+    if (payload.isStart && !cleanCustomTopic) {
+      const opening = buildInstantScenarioOpening({
+        scenario,
+        persona,
+        displayName: profile.displayName,
+        englishLevel: profile.englishLevel,
+        hobbies: profile.hobbies,
+        jobField: profile.jobField,
+      });
+      const aiAudioBase64 = await attachOptionalInlineAudio({
+        includeAudio: payload.includeAudio,
+        text: opening.aiReplyEn,
+        voice: persona.edgeVoice,
+        speed: payload.speed,
+      });
+
+      return NextResponse.json({
+        ...opening,
+        aiAudioBase64,
+        meta: {
+          keySource: 'instant',
+          modelUsed: 'instant-opening',
+          latencyMs: 0,
+          fallback: false,
+        },
+      });
+    }
+
     const systemInstruction = buildTutorSystemInstruction({
       profile,
       persona,
       scenario,
     });
+
+    const cleanClientTranscript = sanitizePromptField(
+      payload.clientTranscript,
+      320
+    );
 
     const promptText = buildConversationTurnPrompt({
       history: safeHistory,
@@ -150,18 +214,27 @@ export async function POST(request: NextRequest) {
         userPersonalKey,
         parts,
         systemInstruction,
-        responseSchema: TUTOR_RESPONSE_SCHEMA,
+        responseSchema: audioBase64
+          ? TUTOR_RESPONSE_SCHEMA
+          : TUTOR_TEXT_RESPONSE_SCHEMA,
         temperature: 0.65,
-        maxOutputTokens: audioBase64 ? 950 : 650,
+        maxOutputTokens: audioBase64 ? 780 : 480,
         speedMode: 'realtime',
-        timeoutMs: audioBase64 ? 11_000 : 6_500,
+        timeoutMs: audioBase64 ? 13_000 : 10_000,
       });
 
       const parsed = parseTutorTurnOutput(result.rawText);
+      const aiAudioBase64 = await attachOptionalInlineAudio({
+        includeAudio: payload.includeAudio,
+        text: parsed.aiReplyEn,
+        voice: persona.edgeVoice,
+        speed: payload.speed,
+      });
 
       return NextResponse.json({
         ...parsed,
         pronunciation: audioBase64 ? parsed.pronunciation ?? null : null,
+        aiAudioBase64,
         meta: {
           keySource: result.keySource,
           modelUsed: result.modelUsed,
@@ -173,65 +246,103 @@ export async function POST(request: NextRequest) {
       if (aiErr instanceof TutorHttpError && aiErr.status < 500) {
         throw aiErr;
       }
-      // Graceful conversational fallback for text/greeting turns during upstream Google 503 waves
-      if (!audioBase64) {
+
+      // Voice rescue: if audio multimodal call hit upstream 503 wave, retry once with lightweight clientTranscript text
+      if (audioBase64 && cleanClientTranscript) {
+        try {
+          const textPrompt = buildConversationTurnPrompt({
+            history: safeHistory,
+            userText: cleanClientTranscript,
+            isStart: false,
+            isAudio: false,
+            displayName: profile.displayName,
+          });
+          const rescueRes = await generateGeminiJson({
+            userId,
+            userPersonalKey,
+            parts: [{ text: textPrompt }],
+            systemInstruction,
+            responseSchema: TUTOR_TEXT_RESPONSE_SCHEMA,
+            temperature: 0.65,
+            maxOutputTokens: 450,
+            speedMode: 'realtime',
+            timeoutMs: 7_500,
+          });
+          const parsedRescue = parseTutorTurnOutput(rescueRes.rawText);
+          const aiAudioBase64 = await attachOptionalInlineAudio({
+            includeAudio: payload.includeAudio,
+            text: parsedRescue.aiReplyEn,
+            voice: persona.edgeVoice,
+            speed: payload.speed,
+          });
+          return NextResponse.json({
+            ...parsedRescue,
+            userTranscript: cleanClientTranscript,
+            pronunciation: null,
+            aiAudioBase64,
+            meta: {
+              keySource: rescueRes.keySource,
+              modelUsed: `${rescueRes.modelUsed}-rescue`,
+              latencyMs: rescueRes.latencyMs,
+              fallback: false,
+            },
+          });
+        } catch {
+          // Fall through to graceful conversational fallback below
+        }
+      }
+
+      // Graceful conversational fallback for text, start, OR voice with clientTranscript during upstream waves
+      const userSaid = (payload.userText || cleanClientTranscript || '').trim();
+      if (!audioBase64 || userSaid) {
         const learnerName = profile.displayName?.trim() || 'bạn';
         const isStart = Boolean(payload.isStart);
-        const userSaid = (payload.userText || '').trim();
-        const fallbackTurn = isStart
-          ? {
-              userTranscript: '',
-              naturalRewrite: null,
-              coachingTip:
-                'Mẹo nhỏ: Hãy trả lời ngắn gọn, tự nhiên 1–2 câu như đang nói chuyện thật nhé!',
-              aiReplyEn: `Hey ${learnerName}! Welcome to "${scenario.titleEn}". How's it going today — ready to jump right in?`,
-              aiReplyVi: `Chào ${learnerName}! Chào mừng đến với tình huống "${scenario.titleVi}". Hôm nay bạn thế nào — sẵn sàng trò chuyện luôn nhé?`,
-              replyHints: [
-                {
-                  en: "I'm doing great, thanks! Let's get started.",
-                  vi: 'Mình khỏe lắm, cảm ơn bạn! Bắt đầu luôn nhé.',
-                  phonetic: 'aim du-ing grayt, thanks! lets get star-tid',
-                },
-                {
-                  en: "Pretty good! Could we start slow today?",
-                  vi: 'Khá ổn! Hôm nay mình nói chậm một chút nhé?',
-                  phonetic: 'pri-ti gud! kud wi start slou tu-day?',
-                },
-                {
-                  en: "I'm excited to practice this topic with you!",
-                  vi: 'Mình rất hào hứng luyện chủ đề này cùng bạn!',
-                  phonetic: 'aim ik-sai-tid tu prak-tis this to-pik with yu!',
-                },
-              ],
-            }
+        const fallbackTurn: TutorTurnOutput = isStart
+          ? buildInstantScenarioOpening({
+              scenario,
+              persona,
+              displayName: profile.displayName,
+              englishLevel: profile.englishLevel,
+              hobbies: profile.hobbies,
+              jobField: profile.jobField,
+            })
           : {
               userTranscript: userSaid,
-              naturalRewrite: userSaid || null,
+              naturalRewrite: null,
               coachingTip: `${persona.name} đã giữ nhịp hội thoại giúp bạn trong lúc kết nối cao điểm — hãy tiếp tục trả lời tự nhiên nhé!`,
-              aiReplyEn: `Got it, ${learnerName}! That sounds clear. Could you tell me a bit more about what you'd prefer next?`,
-              aiReplyVi: `Rõ rồi ${learnerName} ơi! Nghe rất ổn. Bạn có thể chia sẻ thêm chút nữa điều bạn muốn tiếp theo không?`,
+              aiReplyEn: `Got it, ${learnerName === 'Bạn' || learnerName === 'bạn' ? 'my friend' : learnerName}! That makes total sense. Tell me a bit more — what would you like to do next?`,
+              aiReplyVi: `Rõ rồi ${learnerName} ơi! Nghe rất hợp lý. Bạn chia sẻ thêm chút nữa nhé — tiếp theo bạn muốn làm gì nào?`,
               replyHints: [
                 {
                   en: 'Sure! What do you recommend?',
                   vi: 'Chắc chắn rồi! Bạn gợi ý gì nào?',
-                  phonetic: 'shur! wat du yu re-ko-mend?',
+                  phonetic: 'sua! uắt đu du re-cơ-men?',
                 },
                 {
-                  en: "Let's keep going — I'd love to try something new.",
-                  vi: 'Tiếp tục nhé — mình muốn thử điều mới mẻ.',
-                  phonetic: 'lets kip gou-ing — aid lav tu trai sam-thing niu',
+                  en: "Let's keep going — I'd love to hear your thoughts.",
+                  vi: 'Tiếp tục nhé — mình muốn nghe ý kiến của bạn.',
+                  phonetic: 'lét-s kíp gâu-inh — aid lav tu hia do thót-s',
                 },
                 {
-                  en: 'Sounds good to me! How much does it cost?',
-                  vi: 'Nghe hợp lý đấy! Giá bao nhiêu vậy bạn?',
-                  phonetic: 'saunz gud tu mi! hau mach daz it kost?',
+                  en: 'Sounds good to me! Could we try another question?',
+                  vi: 'Nghe hợp lý đấy! Bạn hỏi thêm câu nữa nhé?',
+                  phonetic: 'sao-z gút tu mi! cút uy t-rai ơ-ná-đơ quét-chần?',
                 },
               ],
+              pronunciation: null,
             };
+
+        const aiAudioBase64 = await attachOptionalInlineAudio({
+          includeAudio: payload.includeAudio,
+          text: fallbackTurn.aiReplyEn,
+          voice: persona.edgeVoice,
+          speed: payload.speed,
+        });
 
         return NextResponse.json({
           ...fallbackTurn,
           pronunciation: null,
+          aiAudioBase64,
           meta: {
             keySource: 'fallback',
             modelUsed: 'conversational-fallback',

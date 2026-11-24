@@ -95,30 +95,27 @@ const PRONUNCIATION_ASSESSMENT_SCHEMA: Schema = {
   ],
 };
 
-export const TUTOR_RESPONSE_SCHEMA: Schema = {
+export const TUTOR_TEXT_RESPONSE_SCHEMA: Schema = {
   type: Type.OBJECT,
   properties: {
     userTranscript: {
       type: Type.STRING,
-      description:
-        'Exact transcription of what the user said (or typed). If audio was silent/unclear, write a short polite note in brackets.',
+      description: 'What the learner typed or said.',
     },
     naturalRewrite: {
       type: Type.STRING,
       nullable: true,
       description:
-        'How a native speaker would express the user’s exact thought naturally. Null if user’s sentence is already completely natural or on conversation start.',
+        'More natural native phrasing if needed; null if already natural or on start.',
     },
     coachingTip: {
       type: Type.STRING,
       nullable: true,
-      description:
-        'Short, encouraging tip in Vietnamese (1-2 sentences) explaining a grammar fix, natural expression, or pronunciation/linking tip. Null on start.',
+      description: 'One short encouraging Vietnamese tip (max 20 words); null on start.',
     },
     aiReplyEn: {
       type: Type.STRING,
-      description:
-        'The AI persona’s natural conversational response in English tailored to the user’s level and accent.',
+      description: 'Short natural conversational reply in English (1-2 crisp sentences, max 32 words).',
     },
     aiReplyVi: {
       type: Type.STRING,
@@ -126,18 +123,13 @@ export const TUTOR_RESPONSE_SCHEMA: Schema = {
     },
     replyHints: {
       type: Type.ARRAY,
-      description:
-        'Exactly 3 helpful suggested replies the user can say next, ordered from easiest to slightly more expressive.',
+      description: '3 short suggested replies from easiest to more expressive.',
       items: {
         type: Type.OBJECT,
         properties: {
           en: { type: Type.STRING },
           vi: { type: Type.STRING },
-          phonetic: {
-            type: Type.STRING,
-            description:
-              'Easy Vietnamese-style phonetic guide for A0-A1 learners (or concise IPA for B2+).',
-          },
+          phonetic: { type: Type.STRING },
         },
         required: ['en', 'vi', 'phonetic'],
       },
@@ -153,6 +145,14 @@ export const TUTOR_RESPONSE_SCHEMA: Schema = {
       },
       required: ['en', 'vi', 'phonetic'],
     },
+  },
+  required: ['userTranscript', 'aiReplyEn', 'aiReplyVi', 'replyHints'],
+};
+
+export const TUTOR_RESPONSE_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    ...(TUTOR_TEXT_RESPONSE_SCHEMA.properties ?? {}),
     pronunciation: PRONUNCIATION_ASSESSMENT_SCHEMA,
   },
   required: ['userTranscript', 'aiReplyEn', 'aiReplyVi', 'replyHints'],
@@ -453,7 +453,7 @@ export function buildConversationTurnPrompt(params: {
 }): string {
   const { history, userText, isStart, isAudio, displayName } = params;
   const recentHistory = history
-    .slice(-8)
+    .slice(-6)
     .map((m) => `${m.role === 'user' ? 'Learner' : 'AI'}: ${m.englishText}`)
     .join('\n');
 
@@ -471,16 +471,177 @@ export function buildConversationTurnPrompt(params: {
 
   if (isAudio) {
     parts.push(
-      'Listen carefully to the attached audio from the learner. 1) Transcribe faithfully in userTranscript (even if pronunciation is imperfect or mixes Vietnamese; if silent/noise-only write "[Chưa nghe rõ tiếng]"). 2) Score their actual spoken English honestly in pronunciation (overallScore, accuracyScore, fluencyScore, intonationScore, summaryVi, and wordFeedback for each English word spoken — noting final consonants /s/ /t/ /d/ /k/, /θ/ /ð/, word stress; if audio is silent or unintelligible noise, score 0-15). 3) Offer naturalRewrite + brief Vietnamese coachingTip. 4) Reply naturally in aiReplyEn + aiReplyVi + 3 replyHints.'
+      'Listen to the attached audio. 1) Transcribe faithfully in userTranscript (if silent write "[Chưa nghe rõ tiếng]"). 2) Score spoken English in pronunciation (overallScore, accuracyScore, fluencyScore, intonationScore, short summaryVi, wordFeedback up to 12 key words noting ending sounds /s/ /t/ /d/ /k/ & stress; if silent score 0-15). 3) Give concise naturalRewrite + 1-sentence Vietnamese coachingTip. 4) Reply briefly (1-2 sentences) in aiReplyEn + aiReplyVi + 3 short replyHints.'
     );
   } else {
-    parts.push(`Learner just typed: "${userText ?? ''}"`);
+    parts.push(`Learner said: "${userText ?? ''}"`);
     parts.push(
-      'Set pronunciation to null (no audio). Respond naturally in character, give naturalRewrite + brief Vietnamese coachingTip if their phrasing can sound more native, translate your reply to Vietnamese, and provide 3 helpful replyHints.'
+      'Reply naturally in 1-2 crisp sentences (aiReplyEn + aiReplyVi), concise naturalRewrite + 1-sentence Vietnamese coachingTip if improvable, and 3 short replyHints.'
     );
   }
 
   return parts.join('\n\n');
+}
+
+/**
+ * Generates an instant (<1ms) personalized, natural native opening turn for built-in scenarios
+ * so learners never wait 5-8 seconds on an LLM round-trip just to hear the first greeting.
+ */
+export function buildInstantScenarioOpening(params: {
+  scenario: Scenario;
+  persona: AiPersona;
+  displayName?: string;
+  englishLevel?: EnglishLevel;
+  hobbies?: string[];
+  jobField?: string;
+}): TutorTurnOutput {
+  const name = sanitizePromptField(params.displayName, 30) || 'there';
+  const greetingName = name === 'Bạn' || name === 'bạn' ? 'there' : name;
+  const firstHobby = sanitizePromptField(params.hobbies?.[0], 30);
+  const safeJob = sanitizePromptField(params.jobField, 40);
+  const isUk = params.persona.accent === 'UK';
+  const isAu = params.persona.accent === 'AU';
+  const hello = isAu ? 'Hey' : isUk ? 'Hi' : 'Hey';
+
+  const openings: Record<string, Omit<TutorTurnOutput, 'userTranscript' | 'naturalRewrite' | 'pronunciation'>> = {
+    'daily-coffee-shop': {
+      aiReplyEn: `${hello} ${greetingName}! Welcome in. What can I get started for you today — coffee or something cold?`,
+      aiReplyVi: `Chào ${name}! Mời bạn vào quán. Hôm nay bạn muốn gọi gì nào — cà phê nóng hay đồ uống lạnh?`,
+      coachingTip:
+        'Mẹo nhỏ: Hãy trả lời tự nhiên 1 câu ngắn (hoặc bấm vào gợi ý bên dưới để tập đọc theo).',
+      replyHints: [
+        { en: 'Can I get an iced latte, please?', vi: 'Cho mình một ly latte đá nhé?', phonetic: 'ken ai gét ân ai-st lá-tê, p-li-z' },
+        { en: "I'd love a hot americano, medium size.", vi: 'Mình muốn một ly americano nóng, cỡ vừa.', phonetic: 'aid lav ơ hót ơ-me-ri-ca-nô, mi-đi-ầm sai-z' },
+        { en: 'What do you recommend today?', vi: 'Hôm nay quán có món gì ngon bạn gợi ý không?', phonetic: 'uắt đu du re-cơ-men tu-đây?' },
+      ],
+    },
+    'daily-small-talk': {
+      aiReplyEn: firstHobby
+        ? `${hello} ${greetingName}! Nice to meet you — I'm ${params.persona.name}. How's your day going, still finding time for ${firstHobby}?`
+        : `${hello} ${greetingName}! So nice to meet you — I'm ${params.persona.name}. How's your day going so far?`,
+      aiReplyVi: firstHobby
+        ? `Chào ${name}! Rất vui được gặp bạn — mình là ${params.persona.name}. Hôm nay của bạn thế nào, vẫn dành thời gian cho ${firstHobby} chứ?`
+        : `Chào ${name}! Rất vui được gặp bạn — mình là ${params.persona.name}. Hôm nay của bạn thế nào rồi?`,
+      coachingTip: 'Cứ nói thoải mái như trò chuyện cùng bạn bè, chậm một chút cũng hoàn toàn ổn nhé!',
+      replyHints: [
+        { en: "I'm doing great, thanks! How about you?", vi: 'Mình rất ổn, cảm ơn bạn! Còn bạn thì sao?', phonetic: 'am đu-ing g-rây-t, thenks! hao ơ-bao du?' },
+        { en: 'Pretty busy today, honestly, but glad to chat!', vi: 'Hôm nay hơi bận chút nhưng rất vui được trò chuyện!', phonetic: 'pờ-rít-ti bí-di tu-đây, ó-nìst-li!' },
+        { en: "It's been a chill day so far.", vi: 'Hôm nay khá nhẹ nhàng thư thái.', phonetic: 'ít-s bin ơ chiu đây sâu pha.' },
+      ],
+    },
+    'daily-weekend': {
+      aiReplyEn: `${hello} ${greetingName}! Happy almost-weekend! Got any fun plans or movies lined up?`,
+      aiReplyVi: `Chào ${name}! Sắp đến cuối tuần rồi! Bạn có kế hoạch vui hay bộ phim nào định xem chưa?`,
+      coachingTip: 'Dùng "I\'m planning to..." hoặc "I might..." nghe rất tự nhiên khi nói về dự định cuối tuần.',
+      replyHints: [
+        { en: "I'm planning to relax and watch a movie.", vi: 'Mình định nghỉ ngơi và xem một bộ phim.', phonetic: 'am p-len-ning tu ri-léc en uắt-ch ơ mu-vi' },
+        { en: 'I might grab coffee with some friends.', vi: 'Chắc mình sẽ đi cà phê với vài người bạn.', phonetic: 'ai mai-t g-rép có-phi uýt săm ph-ren-z' },
+        { en: 'Nothing big yet — what about you?', vi: 'Chưa có kế hoạch lớn nào — còn bạn thì sao?', phonetic: 'ná-thinh bích dét — uắt ơ-bao du?' },
+      ],
+    },
+    'business-intro': {
+      aiReplyEn: safeJob
+        ? `${hello} ${greetingName}, great to connect! I'm ${params.persona.name}. I heard you work in ${safeJob} — what does your day-to-day look like?`
+        : `${hello} ${greetingName}, great to meet you! I'm ${params.persona.name}. Could you tell me a bit about what you do?`,
+      aiReplyVi: safeJob
+        ? `Chào ${name}, rất vui được kết nối! Mình là ${params.persona.name}. Nghe nói bạn làm mảng ${safeJob} — công việc hàng ngày của bạn thế nào?`
+        : `Chào ${name}, rất vui được gặp bạn! Mình là ${params.persona.name}. Bạn giới thiệu ngắn về công việc của mình nhé?`,
+      coachingTip: 'Mở đầu công sở ngắn gọn bằng "I work as a..." hoặc "I\'m responsible for..." rất chuyên nghiệp.',
+      replyHints: [
+        { en: "Nice to meet you! I'm currently working in tech.", vi: 'Rất vui được gặp bạn! Hiện mình đang làm trong ngành công nghệ.', phonetic: 'nai-s tu mít du! am cơ-rơnt-li uơ-king in téc' },
+        { en: "Thanks for having me! I focus mostly on daily operations.", vi: 'Cảm ơn bạn! Mình tập trung chính vào vận hành hàng ngày.', phonetic: 'thenks pho hé-vinh mi! ai phô-cớt mâu-s-li...' },
+        { en: 'Great to connect! Let me give you a quick intro.', vi: 'Rất vui được kết nối! Để mình giới thiệu nhanh nhé.', phonetic: 'g-rây-t tu cơ-néc! lét mi gív du ơ quýc in-trô' },
+      ],
+    },
+    'business-standup': {
+      aiReplyEn: `Morning ${greetingName}! Ready for our quick standup? What did you wrap up yesterday, and what's on your plate today?`,
+      aiReplyVi: `Chào buổi sáng ${name}! Sẵn sàng họp nhanh chưa? Hôm qua bạn hoàn thành gì và hôm nay ưu tiên việc nào?`,
+      coachingTip: 'Cấu trúc họp Standup gọn nhất: "Yesterday I finished... Today I\'m working on..."',
+      replyHints: [
+        { en: "Yesterday I finished the report. Today I'm starting a new task.", vi: 'Hôm qua mình xong báo cáo. Hôm nay mình bắt đầu đầu việc mới.', phonetic: 'yét-tơ-đây ai phí-nít đơ ri-pót...' },
+        { en: "I'm still working on the update, no blockers so far.", vi: 'Mình vẫn đang làm phần cập nhật, hiện không có vướng mắc gì.', phonetic: 'am s-tiu uơ-king on đơ áp-đết, nâu b-lóc-cơz' },
+        { en: 'Everything is on track, just need a quick review later.', vi: 'Mọi thứ đúng tiến độ, lát nữa nhờ bạn xem nhanh giúp nhé.', phonetic: 'e-vri-thinh iz on t-réc...' },
+      ],
+    },
+    'business-interview': {
+      aiReplyEn: `Hi ${greetingName}, thanks so much for joining today! I'm ${params.persona.name}. To kick things off, could you tell me a little about yourself?`,
+      aiReplyVi: `Chào ${name}, cảm ơn bạn đã tham gia hôm nay! Mình là ${params.persona.name}. Để mở đầu, bạn giới thiệu đôi nét về bản thân nhé?`,
+      coachingTip: 'Trả lời phỏng vấn tự tin trong 2 câu: công việc/kinh nghiệm hiện tại + điều bạn hào hứng nhất.',
+      replyHints: [
+        { en: "Thank you for the opportunity! I have two years of experience.", vi: 'Cảm ơn anh/chị đã trao cơ hội! Mình có hai năm kinh nghiệm.', phonetic: 'thenk du pho đi óp-pơ-tiu-ni-ti!' },
+        { en: "I'm excited to be here. I enjoy solving practical problems.", vi: 'Mình rất hào hứng có mặt hôm nay. Mình thích giải quyết bài toán thực tế.', phonetic: 'am íc-sai-tịt tu bi hia...' },
+        { en: 'Sure! I currently work as a specialist and love learning fast.', vi: 'Chắc chắn rồi! Hiện mình đang làm chuyên viên và học hỏi rất nhanh.', phonetic: 'sua! ai cơ-rơnt-li uớc ez ơ s-pe-sơ-lít' },
+      ],
+    },
+    'business-presentation': {
+      aiReplyEn: `Hey ${greetingName}, thanks for setting this up! Whenever you're ready, walk me through your main idea in a couple of sentences.`,
+      aiReplyVi: `Chào ${name}, cảm ơn bạn đã hẹn buổi này! Khi nào sẵn sàng, bạn trình bày nhanh ý tưởng chính trong vài câu nhé.`,
+      coachingTip: 'Dùng "The main goal is to..." giúp người nghe nắm ngay trọng tâm thuyết trình.',
+      replyHints: [
+        { en: 'The main goal is to save our team time every week.', vi: 'Mục tiêu chính là tiết kiệm thời gian cho cả nhóm mỗi tuần.', phonetic: 'đơ mên gâu iz tu sê-v ao-ơ tim tai-m' },
+        { en: 'I have a quick proposal to improve our workflow.', vi: 'Mình có một đề xuất nhỏ giúp cải thiện quy trình làm việc.', phonetic: 'ai hév ơ quýc p-rơ-pô-dồ...' },
+        { en: 'Let me share two key points first.', vi: 'Để mình chia sẻ hai ý chính trước nhé.', phonetic: 'lét mi sea tu ki poi-nts phớt' },
+      ],
+    },
+    'travel-airport': {
+      aiReplyEn: `Hello! Welcome to the check-in counter. May I see your passport and where are you flying to today?`,
+      aiReplyVi: `Xin chào! Chào mừng đến quầy làm thủ tục. Cho tôi xem hộ chiếu và hôm nay bạn bay đi đâu nhỉ?`,
+      coachingTip: 'Ở sân bay chỉ cần trả lời ngắn rõ: điểm đến + loại ghế bạn muốn (window/aisle seat).',
+      replyHints: [
+        { en: "Here's my passport. I'm flying to Singapore today.", vi: 'Đây là hộ chiếu của tôi. Hôm nay tôi bay đi Singapore.', phonetic: 'hia-z mai pát-s-pót. am ph-lai-inh tu Sin-ga-po' },
+        { en: 'Could I have a window seat, please?', vi: 'Cho tôi xin ghế gần cửa sổ được không?', phonetic: 'cút ai hév ơ uin-đâu sít, p-li-z?' },
+        { en: 'I just have one carry-on bag.', vi: 'Tôi chỉ có một hành lý xách tay thôi.', phonetic: 'ai chớt hév uăn ke-ri-on béc' },
+      ],
+    },
+    'travel-restaurant': {
+      aiReplyEn: `Good evening! Welcome in — right this way. Would you like to start with something to drink while you look at the menu?`,
+      aiReplyVi: `Chào buổi tối! Mời bạn vào bàn. Bạn có muốn gọi đồ uống trước trong lúc xem thực đơn không?`,
+      coachingTip: 'Cụm "Could I get..." hoặc "Just water for now, please" dùng được ở mọi nhà hàng nước ngoài.',
+      replyHints: [
+        { en: 'Just still water for now, please.', vi: 'Tạm thời cho mình nước lọc trước nhé.', phonetic: 'chớt s-tiu uó-tơ pho nao, p-li-z' },
+        { en: 'Could I get an orange juice, please?', vi: 'Cho mình một ly nước cam nhé?', phonetic: 'cút ai gét ân ó-rin-ch chu-s, p-li-z?' },
+        { en: "What's your most popular dish here?", vi: 'Món nào nổi tiếng nhất ở nhà hàng mình vậy?', phonetic: 'uắt-s do mâu-st pó-piu-lơ đít hia?' },
+      ],
+    },
+    'travel-hotel': {
+      aiReplyEn: `Welcome to the hotel! Do you have a reservation under your name today?`,
+      aiReplyVi: `Chào mừng quý khách đến khách sạn! Hôm nay bạn có đặt phòng trước theo tên không?`,
+      coachingTip: 'Câu cửa miệng khi check-in khách sạn: "Yes, I have a reservation under..."',
+      replyHints: [
+        { en: `Yes, I have a reservation under ${greetingName}.`, vi: `Có, tôi có đặt phòng dưới tên ${name}.`, phonetic: 'yes, ai hév ơ re-dơ-vây-sần ăn-đơ...' },
+        { en: 'Yes, for two nights. Is breakfast included?', vi: 'Có, mình đặt hai đêm. Đã bao gồm bữa sáng chưa nhỉ?', phonetic: 'yes, pho tu nai-ts. iz b-réc-phớt in-c-lu-địt?' },
+        { en: 'Could I also get the Wi-Fi password?', vi: 'Cho mình xin luôn mật khẩu Wi-Fi nhé?', phonetic: 'cút ai o-sâu gét đơ uai-phai pát-uớt?' },
+      ],
+    },
+    'free-talk-custom': {
+      aiReplyEn: `${hello} ${greetingName}! Good to hear your voice. What's on your mind today — anything fun happening?`,
+      aiReplyVi: `Chào ${name}! Rất vui được nghe giọng bạn. Hôm nay bạn muốn tâm sự hay bàn về chuyện gì nào?`,
+      coachingTip: 'Chế độ tự do: bạn muốn nói chủ đề gì cũng được, cứ bấm Micro và nói tự nhiên nhé!',
+      replyHints: [
+        { en: 'I had an interesting day at work today.', vi: 'Hôm nay mình có một ngày đi làm khá thú vị.', phonetic: 'ai hét ân in-tơ-rét-tinh đây ét uớc' },
+        { en: 'Let’s talk about travel and dream destinations!', vi: 'Mình nói chuyện về du lịch và điểm đến mơ ước nhé!', phonetic: 'lét-s tóc ơ-bao t-re-vồ!' },
+        { en: 'Just wanted to practice speaking English for ten minutes.', vi: 'Mình chỉ muốn luyện nói tiếng Anh mười phút thôi.', phonetic: 'chớt uón-tịt tu p-réc-tít s-pí-kinh' },
+      ],
+    },
+  };
+
+  const picked = openings[params.scenario.id] ?? {
+    aiReplyEn: `${hello} ${greetingName}! Welcome to "${params.scenario.titleEn}". Ready to jump right in?`,
+    aiReplyVi: `Chào ${name}! Chào mừng đến tình huống "${params.scenario.titleVi}". Sẵn sàng bắt đầu luôn nhé?`,
+    coachingTip: 'Hãy trả lời 1–2 câu ngắn tự nhiên hoặc bấm câu gợi ý bên dưới.',
+    replyHints: [
+      { en: "Yes, I'm ready! Let's get started.", vi: 'Vâng, mình sẵn sàng rồi! Bắt đầu nhé.', phonetic: 'yes, am re-đi! lét-s gét s-tá-tịt' },
+      { en: 'Sure! Could we start a bit slow?', vi: 'Chắc chắn rồi! Mình nói chậm chút được không?', phonetic: 'sua! cút uy s-tát ơ bít s-lâu?' },
+      { en: 'Sounds great — go ahead!', vi: 'Nghe hay đấy — mời bạn bắt đầu trước!', phonetic: 'sao-z g-rây-t — gâu ơ-hét!' },
+    ],
+  };
+
+  return {
+    userTranscript: '[Bắt đầu cuộc gọi]',
+    naturalRewrite: null,
+    pronunciation: null,
+    ...picked,
+  };
 }
 
 export function parseTutorTurnOutput(rawText: string): TutorTurnOutput {

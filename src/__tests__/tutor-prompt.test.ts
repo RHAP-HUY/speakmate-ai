@@ -4,6 +4,7 @@ import {
   buildConversationReportPrompt,
   buildConversationTurnPrompt,
   buildFallbackConversationReport,
+  buildInstantScenarioOpening,
   buildPronunciationPracticePrompt,
   buildTutorSystemInstruction,
   parseConversationReport,
@@ -12,6 +13,8 @@ import {
   parseTutorTurnOutput,
   sanitizePromptField,
   serializeConversationReport,
+  TUTOR_RESPONSE_SCHEMA,
+  TUTOR_TEXT_RESPONSE_SCHEMA,
 } from '@/lib/tutor-prompt';
 
 describe('tutor-prompt', () => {
@@ -246,5 +249,25 @@ describe('tutor-prompt', () => {
     );
     expect(parsed.replyHints).toHaveLength(3);
     expect(parsed.replyHints[0].en.length).toBeGreaterThan(0);
+  });
+
+  it('builds instant personalized native openings for all built-in scenarios and keeps text schema lean', () => {
+    for (const sc of SCENARIOS) {
+      const opening = buildInstantScenarioOpening({
+        scenario: sc,
+        persona: AI_PERSONAS[0],
+        displayName: 'Huy',
+        englishLevel: 'A2-B1',
+        hobbies: ['Cà phê'],
+        jobField: 'IT',
+      });
+      expect(opening.aiReplyEn.length).toBeGreaterThan(10);
+      expect(opening.aiReplyVi.length).toBeGreaterThan(10);
+      expect(opening.replyHints).toHaveLength(3);
+      expect(opening.pronunciation).toBeNull();
+    }
+
+    expect(TUTOR_TEXT_RESPONSE_SCHEMA.properties).not.toHaveProperty('pronunciation');
+    expect(TUTOR_RESPONSE_SCHEMA.properties).toHaveProperty('pronunciation');
   });
 });
