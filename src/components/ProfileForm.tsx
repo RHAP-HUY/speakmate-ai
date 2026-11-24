@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Loader2, Plus, Sparkles, X } from 'lucide-react';
+import { Check, Loader2, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { JOB_SUGGESTIONS, HOBBY_SUGGESTIONS } from '@/lib/scenarios';
 import type {
