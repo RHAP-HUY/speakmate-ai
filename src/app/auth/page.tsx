@@ -490,8 +490,21 @@ function AuthPageInner() {
         </div>
       </main>
 
-      <footer className="text-center text-xs text-[#78716C]">
-        Dữ liệu cá nhân chỉ dùng để lưu tiến trình học tập của riêng bạn.
+      <footer className="text-center text-xs text-[#78716C] space-y-1.5">
+        <p>Dữ liệu cá nhân chỉ dùng để lưu tiến trình học tập của riêng bạn.</p>
+        <div className="flex items-center justify-center gap-4">
+          <Link href="/privacy" className="hover:text-[#1C1917] underline">
+            Chính sách quyền riêng tư
+          </Link>
+          <span>·</span>
+          <Link href="/terms" className="hover:text-[#1C1917] underline">
+            Điều khoản sử dụng
+          </Link>
+          <span>·</span>
+          <Link href="/placement" className="hover:text-[#1C1917] underline">
+            Kiểm tra trình độ CEFR
+          </Link>
+        </div>
       </footer>
     </div>
   );

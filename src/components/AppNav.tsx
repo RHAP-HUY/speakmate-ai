@@ -7,6 +7,7 @@ import {
   Gamepad2,
   LogOut,
   PhoneCall,
+  Search,
   Settings,
   Trophy,
   Volume2,
@@ -16,6 +17,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { GemSvg, StreakFlameSvg } from '@/components/BrandArt';
+import { QuickSearchModal } from '@/components/QuickSearchModal';
 import { stopVoicePlayback } from '@/lib/audio';
 import {
   DATA_UPDATED_EVENT,
@@ -61,9 +63,21 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
   const [liveProfile, setLiveProfile] = useState<UserProfile | null>(profile);
   const [sessionInfo, setSessionInfo] = useState<AuthSessionInfo | null>(null);
   const [muted, setMuted] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState<DriveSyncStatus>(() =>
     getDriveSyncStatus()
   );
+
+  useEffect(() => {
+    function onGlobalKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener('keydown', onGlobalKeyDown);
+    return () => window.removeEventListener('keydown', onGlobalKeyDown);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -160,6 +174,9 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
             <a href="#bai-hoc-thu" className="hover:text-[#1C1917] transition">
               Học thử nhanh
             </a>
+            <Link href="/placement" className="hover:text-[#1C1917] transition">
+              Kiểm tra CEFR
+            </Link>
             <a href="#lo-trinh" className="hover:text-[#1C1917] transition">
               Chương trình 4 chặng
             </a>
@@ -244,7 +261,24 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
           </div>
 
           {/* Right: Calm Progress Counters & Profile */}
-          <div className="flex items-center gap-2 sm:gap-3 tabular-nums">
+          <div className="flex items-center gap-2 sm:gap-2.5 tabular-nums">
+            <button
+              type="button"
+              onClick={() => {
+                playTapSound();
+                setSearchOpen(true);
+              }}
+              title="Tìm nhanh bài học & tình huống (Ctrl+K)"
+              aria-label="Tìm kiếm nhanh"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#E7E2D8] bg-white px-2.5 py-1 text-xs font-medium text-[#57534E] hover:border-[#A8A29E] hover:text-[#1C1917] transition cursor-pointer"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span className="hidden xl:inline">Tìm nhanh</span>
+              <kbd className="hidden xl:inline font-mono text-[10px] text-[#78716C]">
+                ⌘K
+              </kbd>
+            </button>
+
             {xpBoostOn && (
               <span className="hidden sm:inline-flex items-center rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900">
                 2x XP
@@ -375,6 +409,11 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
           })}
         </div>
       </nav>
+
+      <QuickSearchModal
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
     </>
   );
 }

@@ -63,12 +63,33 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'SpeakMate',
+    url: 'https://speakmate-ai-nu.vercel.app',
+    applicationCategory: 'EducationalApplication',
+    operatingSystem: 'Web, iOS, Android',
+    inLanguage: ['vi', 'en'],
+    description:
+      'Nền tảng rèn phản xạ giao tiếp tiếng Anh qua hội thoại thực tế, kiểm tra định vị trình độ CEFR, phân tích phát âm IPA và ôn tập ngắt quãng SRS.',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'VND',
+    },
+  };
+
   return (
     <html
       lang="vi"
       className={`${beVietnamPro.variable} ${newsreader.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full text-[#1C1917] flex flex-col selection:bg-[#14532D]/15 selection:text-[#14532D]">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         {children}
         <ServiceWorkerRegister />
       </body>

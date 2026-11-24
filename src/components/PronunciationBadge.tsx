@@ -85,7 +85,7 @@ export function PronunciationBadge({
         isDark
           ? 'border-[#38312C] bg-[#26221E] text-[#E7E2D8]'
           : 'border-[#E7E2D8] bg-white text-[#1C1917]'
-      }`}
+        }`}
     >
       <button
         type="button"
@@ -94,17 +94,15 @@ export function PronunciationBadge({
       >
         <div className="flex flex-wrap items-center gap-2">
           <span
-            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-bold ${
-              isDark ? tone.pillDark : tone.pillLight
-            }`}
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-bold ${isDark ? tone.pillDark : tone.pillLight
+              }`}
           >
             <Mic className="h-3 w-3" />
             Phát âm: {assessment.overallScore}/100
           </span>
           <span
-            className={`text-[11px] ${
-              isDark ? 'text-slate-400' : 'text-slate-500'
-            }`}
+            className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'
+              }`}
           >
             Rõ âm {assessment.accuracyScore} · Trôi chảy {assessment.fluencyScore} · Ngữ điệu {assessment.intonationScore}
           </span>
@@ -120,9 +118,8 @@ export function PronunciationBadge({
 
       {expanded && (
         <div
-          className={`mt-2.5 space-y-2.5 border-t pt-2.5 ${
-            isDark ? 'border-slate-800' : 'border-slate-100'
-          }`}
+          className={`mt-2.5 space-y-2.5 border-t pt-2.5 ${isDark ? 'border-slate-800' : 'border-slate-100'
+            }`}
         >
           {/* 3 mini bars */}
           <div className="grid grid-cols-3 gap-2">
@@ -139,9 +136,8 @@ export function PronunciationBadge({
                   <span className="font-bold">{item.val}</span>
                 </div>
                 <div
-                  className={`h-1.5 w-full overflow-hidden rounded-full ${
-                    isDark ? 'bg-slate-800' : 'bg-slate-100'
-                  }`}
+                  className={`h-1.5 w-full overflow-hidden rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-100'
+                    }`}
                 >
                   <div
                     className={`h-full rounded-full ${getScoreTone(item.val).bar}`}
@@ -176,24 +172,22 @@ export function PronunciationBadge({
           {/* Specific tips for words needing improvement */}
           {improveWords.length > 0 && (
             <div
-              className={`space-y-1 rounded-xl px-2.5 py-2 text-[11px] ${
-                isDark
+              className={`space-y-1 rounded-xl px-2.5 py-2 text-[11px] ${isDark
                   ? 'bg-slate-950/80 text-slate-300'
                   : 'bg-slate-50 text-slate-700'
-              }`}
+                }`}
             >
               {improveWords.slice(0, 4).map((w, idx) => (
                 <div key={`${w.word}-tip-${idx}`} className="flex flex-wrap items-baseline gap-1.5">
                   <span
-                    className={`font-bold ${
-                      w.status === 'missing'
+                    className={`font-bold ${w.status === 'missing'
                         ? isDark
                           ? 'text-rose-300'
                           : 'text-rose-700'
                         : isDark
                           ? 'text-amber-300'
                           : 'text-amber-700'
-                    }`}
+                      }`}
                   >
                     {w.word}
                   </span>
@@ -209,9 +203,8 @@ export function PronunciationBadge({
           )}
 
           <p
-            className={`text-[11px] leading-relaxed ${
-              isDark ? 'text-slate-300' : 'text-slate-600'
-            }`}
+            className={`text-[11px] leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'
+              }`}
           >
             {assessment.summaryVi}
           </p>

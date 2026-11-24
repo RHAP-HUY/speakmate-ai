@@ -161,6 +161,8 @@ export interface ConversationRecord {
   endedAt?: string | null;
 }
 
+export type SrsReviewGrade = 'again' | 'hard' | 'good' | 'easy';
+
 export interface SavedPhrase {
   id: string;
   englishPhrase: string;
@@ -171,6 +173,11 @@ export interface SavedPhrase {
   accent: ConcreteAccent;
   masteryLevel: 0 | 1 | 2 | 3;
   createdAt: string;
+  nextReviewAt?: string | null;
+  lastReviewedAt?: string | null;
+  intervalDays?: number;
+  easeFactor?: number;
+  reviewCount?: number;
 }
 
 export interface DailyStat {

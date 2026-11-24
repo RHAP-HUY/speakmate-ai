@@ -266,8 +266,8 @@ export function StreakCalendar({
                 <span className="mt-1 flex items-center justify-center text-[10px] leading-none">
                   {(cell.status === 'studied' ||
                     cell.status === 'today-done') && (
-                    <Check className="h-3 w-3 stroke-[2.6]" />
-                  )}
+                      <Check className="h-3 w-3 stroke-[2.6]" />
+                    )}
                   {cell.status === 'frozen' && (
                     <Shield className="h-3 w-3 stroke-[2.2]" />
                   )}
@@ -306,7 +306,7 @@ export function StreakCalendar({
         <div className="rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             {selectedCell.status === 'studied' ||
-            selectedCell.status === 'today-done' ? (
+              selectedCell.status === 'today-done' ? (
               <StreakFlameSvg active className="h-6 w-6 shrink-0" />
             ) : selectedCell.status === 'frozen' ? (
               <ShieldFreezeSvg className="h-6 w-6 shrink-0" />
@@ -324,7 +324,7 @@ export function StreakCalendar({
               </div>
               <div className="text-xs text-[#57534E] mt-0.5">
                 {selectedCell.status === 'studied' ||
-                selectedCell.status === 'today-done'
+                  selectedCell.status === 'today-done'
                   ? `Hoàn thành ${selectedCell.lessonsCompleted} bài học · Đã giữ chuỗi.`
                   : selectedCell.status === 'frozen'
                     ? 'Đã dùng Khiên bảo vệ chuỗi cho ngày này.'

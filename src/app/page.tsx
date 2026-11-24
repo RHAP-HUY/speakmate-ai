@@ -41,7 +41,9 @@ import {
   getCurrentProfile,
   getDailyStats,
   getTodayLocalDate,
+  listSavedPhrases,
 } from '@/lib/data-store';
+import { getPhraseReviewSummary } from '@/lib/spaced-repetition';
 import {
   computeStrictStreak,
   DAILY_QUEST_DEFS,
@@ -518,6 +520,7 @@ export default function HomePage() {
 
   // Authenticated state
   const [activeUnitIdx, setActiveUnitIdx] = useState(0);
+  const [duePhraseCount, setDuePhraseCount] = useState(0);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('auto');
   const [showScenarioDrawer, setShowScenarioDrawer] = useState(false);
   const [customRoleplayInput, setCustomRoleplayInput] = useState('');
@@ -543,9 +546,13 @@ export default function HomePage() {
       }
 
       if (isAuth) {
-        const daily = await getDailyStats(90);
+        const [daily, savedPhrases] = await Promise.all([
+          getDailyStats(90),
+          listSavedPhrases(),
+        ]);
         if (!active) return;
         setStats(daily);
+        setDuePhraseCount(getPhraseReviewSummary(savedPhrases).dueCount);
       }
 
       setLoading(false);
@@ -707,11 +714,17 @@ export default function HomePage() {
                     Bắt đầu học miễn phí
                     <ArrowRight className="h-4 w-4" />
                   </Link>
-                  <a
-                    href="#bai-hoc-thu"
+                  <Link
+                    href="/placement"
                     className="btn-duo btn-duo-white px-5 py-3.5 text-sm"
                   >
-                    Làm thử 1 câu (30 giây)
+                    Kiểm tra trình độ CEFR (2 phút)
+                  </Link>
+                  <a
+                    href="#bai-hoc-thu"
+                    className="text-sm font-medium text-[#57534E] hover:text-[#1C1917] underline px-2 py-2"
+                  >
+                    Làm thử 1 câu ↓
                   </a>
                 </div>
 
@@ -958,10 +971,10 @@ export default function HomePage() {
                   </h2>
                 </div>
                 <Link
-                  href="/auth"
+                  href="/placement"
                   className="text-sm font-semibold text-[#14532D] hover:underline shrink-0"
                 >
-                  Thiết lập lộ trình theo trình độ của bạn →
+                  Định vị trình độ CEFR để chọn chặng phù hợp →
                 </Link>
               </div>
 
@@ -1034,15 +1047,27 @@ export default function HomePage() {
             </div>
 
             <div className="sm:col-span-4 space-y-2 text-xs">
-              <div className="font-semibold text-[#1C1917]">Tài khoản &amp; Dữ liệu</div>
+              <div className="font-semibold text-[#1C1917]">Tài khoản &amp; Pháp lý</div>
               <ul className="space-y-1.5 text-[#57534E]">
                 <li>
-                  <Link href="/auth" className="hover:text-[#1C1917]">
-                    Đăng nhập bằng Google
+                  <Link href="/placement" className="hover:text-[#1C1917]">
+                    Kiểm tra định vị trình độ CEFR (A1–C1)
                   </Link>
                 </li>
-                <li>Đồng bộ tiến trình qua Google Drive</li>
-                <li>Hỗ trợ hoạt động ngoại tuyến (PWA)</li>
+                <li>
+                  <Link href="/auth" className="hover:text-[#1C1917]">
+                    Đăng nhập &amp; đồng bộ Google Drive
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="hover:text-[#1C1917]">
+                    Chính sách quyền riêng tư
+                  </Link>
+                  {' · '}
+                  <Link href="/terms" className="hover:text-[#1C1917]">
+                    Điều khoản sử dụng
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
@@ -1321,6 +1346,26 @@ export default function HomePage() {
         )}
       </div>
 
+      {/* 3.5 Spaced Repetition Due Reminder */}
+      {duePhraseCount > 0 && (
+        <div className="border-t border-[#E7E2D8] pt-5 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-semibold text-[#1C1917]">
+              Ôn tập ngắt quãng (SRS)
+            </div>
+            <div className="text-[11px] text-[#57534E] mt-0.5 tabular-nums">
+              Có <strong className="text-[#C2410C]">{duePhraseCount}</strong> mẫu câu đến lịch ôn hôm nay
+            </div>
+          </div>
+          <Link
+            href="/phrases"
+            className="text-xs font-semibold text-[#14532D] hover:underline shrink-0"
+          >
+            Ôn ngay →
+          </Link>
+        </div>
+      )}
+
       {/* 4. League & Cloud Footer */}
       <div className="border-t border-[#E7E2D8] pt-5 space-y-3 tabular-nums">
         <div className="flex items-center justify-between gap-2">
@@ -1328,7 +1373,7 @@ export default function HomePage() {
             <LeagueTrophySvg tier={league.tier} className="h-7 w-7 shrink-0" />
             <div className="min-w-0">
               <div className="text-xs font-semibold text-[#1C1917] truncate">
-                {league.nameVi} · Cấp {levelInfo.level}
+                {league.nameVi} · Cấp {levelInfo.level} ({profile.englishLevel})
               </div>
               <div className="text-[11px] text-[#78716C]">
                 {profile.xp} XP tích lũy
@@ -1350,9 +1395,14 @@ export default function HomePage() {
               ? 'Đã kết nối lưu trữ Google Drive'
               : 'Đang lưu cục bộ trên trình duyệt'}
           </span>
-          <Link href="/settings" className="underline hover:text-[#1C1917]">
-            Thiết lập
-          </Link>
+          <div className="flex items-center gap-2.5">
+            <Link href="/placement" className="underline hover:text-[#1C1917]">
+              Đo CEFR
+            </Link>
+            <Link href="/settings" className="underline hover:text-[#1C1917]">
+              Thiết lập
+            </Link>
+          </div>
         </div>
       </div>
     </div>

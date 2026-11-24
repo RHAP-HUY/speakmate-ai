@@ -50,6 +50,13 @@ function mergePhrases(localPhrases: SavedPhrase[], remotePhrases: SavedPhrase[])
       byKey.set(key, { ...item });
       continue;
     }
+    const itemRevMs = parseIsoMs(item.lastReviewedAt);
+    const prevRevMs = parseIsoMs(prev.lastReviewedAt);
+    const preferItemSrs =
+      itemRevMs > prevRevMs ||
+      (itemRevMs === prevRevMs && (item.reviewCount ?? 0) >= (prev.reviewCount ?? 0));
+    const srsSource = preferItemSrs ? item : prev;
+
     byKey.set(key, {
       ...prev,
       ...item,
@@ -61,6 +68,11 @@ function mergePhrases(localPhrases: SavedPhrase[], remotePhrases: SavedPhrase[])
         parseIsoMs(item.createdAt) >= parseIsoMs(prev.createdAt)
           ? item.createdAt
           : prev.createdAt,
+      reviewCount: Math.max(prev.reviewCount ?? 0, item.reviewCount ?? 0),
+      intervalDays: srsSource.intervalDays ?? prev.intervalDays ?? item.intervalDays,
+      easeFactor: srsSource.easeFactor ?? prev.easeFactor ?? item.easeFactor,
+      lastReviewedAt: srsSource.lastReviewedAt ?? prev.lastReviewedAt ?? item.lastReviewedAt ?? null,
+      nextReviewAt: srsSource.nextReviewAt ?? prev.nextReviewAt ?? item.nextReviewAt ?? null,
     });
   }
 

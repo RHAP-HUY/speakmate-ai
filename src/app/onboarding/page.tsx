@@ -9,10 +9,12 @@ import {
   Plus,
   X,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { NovaCompanion } from '@/components/BrandArt';
 import { getCurrentProfile, saveProfile } from '@/lib/data-store';
+import { PLACEMENT_RESULT_STORAGE_KEY } from '@/lib/placement-test';
 import { HOBBY_SUGGESTIONS, JOB_SUGGESTIONS } from '@/lib/scenarios';
 import { playCorrectSound, playTapSound } from '@/lib/sound-fx';
 import type {
@@ -117,11 +119,38 @@ export default function OnboardingPage() {
       setStorageMode(res.storageMode);
       setNativeLanguage(p.nativeLanguage || 'vi');
       setPreferredAccent(p.preferredAccent || 'US');
-      setEnglishLevel(p.englishLevel || 'A0-A1');
+      let initLevel: EnglishLevel = p.englishLevel || 'A0-A1';
+      let initSpeed: number = p.preferredSpeed || 0.85;
+      if (!p.onboardingCompleted) {
+        try {
+          const rawPlacement = window.localStorage.getItem(
+            PLACEMENT_RESULT_STORAGE_KEY
+          );
+          if (rawPlacement) {
+            const parsed = JSON.parse(rawPlacement) as {
+              recommendedLevel?: EnglishLevel;
+              recommendedSpeed?: number;
+            };
+            if (
+              parsed.recommendedLevel === 'A0-A1' ||
+              parsed.recommendedLevel === 'A2-B1' ||
+              parsed.recommendedLevel === 'B2+'
+            ) {
+              initLevel = parsed.recommendedLevel;
+            }
+            if (typeof parsed.recommendedSpeed === 'number') {
+              initSpeed = parsed.recommendedSpeed;
+            }
+          }
+        } catch {
+          // ignore invalid cached placement
+        }
+      }
+      setEnglishLevel(initLevel);
       setHobbies(p.hobbies || []);
       setJobField(p.jobField || '');
       setDisplayName(p.displayName || '');
-      setPreferredSpeed(p.preferredSpeed || 0.85);
+      setPreferredSpeed(initSpeed);
       setDailyGoalMinutes(p.dailyGoalMinutes || 15);
       setLoading(false);
     }
@@ -326,9 +355,17 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#57534E] mb-2.5">
-                Trình độ tiếng Anh hiện tại
-              </label>
+              <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2.5">
+                <label className="block text-xs font-semibold text-[#57534E]">
+                  Trình độ tiếng Anh hiện tại
+                </label>
+                <Link
+                  href="/placement"
+                  className="text-xs font-semibold text-[#14532D] hover:underline"
+                >
+                  Chưa chắc trình độ? Kiểm tra CEFR 2 phút →
+                </Link>
+              </div>
               <div className="grid gap-2.5 sm:grid-cols-3">
                 {LEVELS.map((lvl) => {
                   const selected = englishLevel === lvl.value;

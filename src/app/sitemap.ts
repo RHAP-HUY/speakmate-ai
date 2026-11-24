@@ -12,10 +12,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: `${base}/auth`,
+      url: `${base}/placement`,
       lastModified: now,
       changeFrequency: 'weekly',
-      priority: 0.8,
+      priority: 0.9,
     },
     {
       url: `${base}/play`,
@@ -24,10 +24,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${base}/auth`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
       url: `${base}/leaderboard`,
       lastModified: now,
       changeFrequency: 'daily',
       priority: 0.8,
+    },
+    {
+      url: `${base}/privacy`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${base}/terms`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.5,
     },
   ];
 }

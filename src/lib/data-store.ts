@@ -9,6 +9,7 @@ import {
   SHOP_REWARDS,
   STREAK_MILESTONES,
 } from '@/lib/gamification';
+import { scheduleNextPhraseReview } from '@/lib/spaced-repetition';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import type {
@@ -22,6 +23,7 @@ import type {
   LessonRewardSummary,
   NativeLanguage,
   SavedPhrase,
+  SrsReviewGrade,
   StorageBackendMode,
   TopicCategory,
   TutorMessage,
@@ -1460,7 +1462,7 @@ export async function purchaseShopReward(itemId: string): Promise<UserProfile> {
   }
 
   if (profile.gems < item.costGems) {
-    throw new Error(`Bạn cần ${item.costGems} 💎 để đổi vật phẩm này.`);
+    throw new Error(`Bạn cần ${item.costGems} Ngọc để đổi vật phẩm này.`);
   }
 
   if (item.type === 'freeze') {
@@ -1548,7 +1550,7 @@ export async function applyStreakFreezeForYesterday(): Promise<{
   if (!profile) throw new Error('Vui lòng đăng nhập.');
   if (profile.streakFreezes < 1) {
     throw new Error(
-      'Bạn đã hết Khiên Bảo Vệ Chuỗi. Hãy đổi thêm trong Kho quà bằng Ngọc 💎!'
+      'Bạn đã hết Khiên Bảo Vệ Chuỗi. Hãy đổi thêm trong mục phần thưởng bằng Ngọc.'
     );
   }
 
@@ -1890,6 +1892,45 @@ export async function updatePhraseMastery(
     .from('saved_phrases')
     .update({ mastery_level: masteryLevel })
     .eq('id', id);
+}
+
+export async function reviewSavedPhrase(
+  id: string,
+  grade: SrsReviewGrade
+): Promise<SavedPhrase | null> {
+  const session = await getAuthSessionInfo();
+
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    const existing = readLocalJson<SavedPhrase[]>(keys.phrases, []);
+    let updatedItem: SavedPhrase | null = null;
+    const nextList = existing.map((p) => {
+      if (p.id !== id) return p;
+      updatedItem = scheduleNextPhraseReview(p, grade);
+      return updatedItem;
+    });
+    writeLocalJson(keys.phrases, nextList);
+    if (session.provider === 'google' && session.authenticated) {
+      void syncGoogleDriveIfActive(session);
+    }
+    return updatedItem;
+  }
+
+  const all = await listSavedPhrases();
+  const target = all.find((p) => p.id === id);
+  if (!target) return null;
+  const scheduled = scheduleNextPhraseReview(target, grade);
+  const supabase = createSupabaseBrowserClient()!;
+  await supabase
+    .from('saved_phrases')
+    .update({ mastery_level: scheduled.masteryLevel })
+    .eq('id', id);
+  return scheduled;
 }
 
 export async function deletePhrase(id: string): Promise<void> {
