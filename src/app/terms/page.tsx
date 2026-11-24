@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { NovaCompanion } from '@/components/BrandArt';
 
 export const metadata: Metadata = {
-  title: 'Điều khoản Sử dụng — SpeakMate',
+  title: 'Điều khoản sử dụng',
   description:
     'Điều khoản sử dụng dịch vụ rèn luyện giao tiếp tiếng Anh trực tuyến SpeakMate.',
   alternates: { canonical: '/terms' },

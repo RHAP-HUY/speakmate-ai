@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { NovaCompanion } from '@/components/BrandArt';
 
 export const metadata: Metadata = {
-  title: 'Chính sách Quyền riêng tư — SpeakMate',
+  title: 'Chính sách quyền riêng tư',
   description:
     'Chính sách bảo vệ quyền riêng tư, phạm vi sử dụng Google OAuth / Google Drive và quyền kiểm soát dữ liệu của người học trên SpeakMate.',
   alternates: { canonical: '/privacy' },
