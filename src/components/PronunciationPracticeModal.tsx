@@ -325,60 +325,60 @@ function PronunciationPracticeModalInner({
       role="dialog"
       aria-modal="true"
       aria-label="Luyện đọc và chấm điểm phát âm"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#1C1917]/70 p-4 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 text-slate-900 shadow-2xl space-y-4"
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-[#E7E2D8] bg-[#FBF9F5] p-5 sm:p-6 text-[#1C1917] shadow-2xl space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="font-mono text-[11px] font-semibold text-blue-700">
-              CHẤM ĐIỂM PHÁT ÂM · GIỌNG {persona.accent}
-            </div>
-            <h2 className="mt-1 text-lg font-bold tracking-tight text-zinc-950">
-              Luyện đọc theo giọng bản xứ
+            <p className="text-xs font-medium text-[#78716C]">
+              Luyện phát âm cùng {persona.name} · Giọng {persona.accent}
+            </p>
+            <h2 className="mt-0.5 font-serif-display text-xl font-semibold tracking-tight text-[#1C1917]">
+              Đọc mẫu câu &amp; nhận phân tích âm vị
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 cursor-pointer"
+            className="rounded-lg p-1.5 text-[#78716C] hover:bg-[#F3EFE6] hover:text-[#1C1917] cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Target Sentence Box */}
-        <div className="rounded-xl border border-zinc-200 bg-[#FAF9F6] p-4 space-y-2">
-          <p className="text-base sm:text-lg font-bold text-zinc-950 leading-snug">
+        <div className="rounded-xl border border-[#E7E2D8] bg-white p-4 space-y-2">
+          <p className="font-serif-display text-lg sm:text-xl font-semibold text-[#1C1917] leading-snug">
             “{sentence}”
           </p>
           {target.phonetic && (
-            <p className="font-mono text-xs text-blue-700">
+            <p className="font-mono text-xs text-[#78716C]">
               /{target.phonetic}/
             </p>
           )}
           {target.vietnamese && (
-            <p className="text-xs text-zinc-600">{target.vietnamese}</p>
+            <p className="text-xs text-[#57534E]">{target.vietnamese}</p>
           )}
 
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <button
               type="button"
               onClick={() => playSample(0.88)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#FBF9F5] border border-[#E7E2D8] px-3 py-1.5 text-xs font-semibold text-[#14532D] hover:bg-[#F3EFE6] cursor-pointer"
             >
-              <Volume2 className="h-3.5 w-3.5 text-blue-700" />
+              <Volume2 className="h-3.5 w-3.5 text-[#14532D]" />
               Nghe mẫu ({persona.name})
             </button>
             <button
               type="button"
               onClick={() => playSample(0.72)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-[#E7E2D8] px-3 py-1.5 text-xs font-medium text-[#57534E] hover:bg-[#FBF9F5] cursor-pointer"
             >
               Nghe chậm 0.72x
             </button>
@@ -386,7 +386,7 @@ function PronunciationPracticeModalInner({
               <button
                 type="button"
                 onClick={playUserRecording}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] px-3 py-1.5 text-xs font-semibold text-[#14532D] hover:bg-[#D1FAE5] cursor-pointer"
               >
                 <Headphones className="h-3.5 w-3.5" />
                 Nghe giọng bạn
@@ -407,21 +407,21 @@ function PronunciationPracticeModalInner({
                 void startPracticeRecording();
               }
             }}
-            className={`inline-flex items-center gap-2.5 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition disabled:opacity-60 cursor-pointer ${
+            className={`inline-flex items-center gap-2.5 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-xs transition disabled:opacity-60 cursor-pointer ${
               status === 'recording'
-                ? 'bg-rose-600 hover:bg-rose-700'
-                : 'bg-zinc-900 hover:bg-zinc-800'
+                ? 'bg-[#C2410C] hover:bg-[#9A3412]'
+                : 'bg-[#14532D] hover:bg-[#166534]'
             }`}
           >
             {status === 'scoring' ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                AI đang phân tích từng âm...
+                Đang phân tích từng âm...
               </>
             ) : status === 'recording' ? (
               <>
                 <MicOff className="h-4 w-4 animate-pulse" />
-                Dừng & Chấm điểm
+                Dừng &amp; Chấm điểm
                 <span
                   className="ml-1 inline-block h-2.5 rounded-full bg-white/90 transition-all"
                   style={{ width: `${Math.max(10, micLevel * 0.45)}px` }}
@@ -438,7 +438,7 @@ function PronunciationPracticeModalInner({
               </>
             )}
           </button>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-[#78716C]">
             {status === 'recording'
               ? 'Đang thu âm... Đọc xong câu hãy bấm Dừng & Chấm điểm'
               : 'Nghe mẫu trước rồi đọc to rõ ràng như đang nói chuyện thật'}
@@ -455,7 +455,7 @@ function PronunciationPracticeModalInner({
                   const blob = lastAudioBlobRef.current;
                   if (blob) void submitAudioForScoring(blob);
                 }}
-                className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-indigo-700 cursor-pointer shrink-0"
+                className="inline-flex items-center gap-1 rounded-lg bg-[#14532D] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#166534] cursor-pointer shrink-0"
               >
                 <RotateCcw className="h-3 w-3" />
                 Chấm lại bản vừa ghi
@@ -573,7 +573,7 @@ function PronunciationPracticeModalInner({
                       {w.word}
                     </span>
                     {w.ipa && (
-                      <span className="font-mono text-[11px] text-blue-700">
+                      <span className="font-mono text-[11px] text-[#14532D]">
                         /{w.ipa.replace(/^\/|\/$/g, '')}/
                       </span>
                     )}
@@ -585,11 +585,11 @@ function PronunciationPracticeModalInner({
 
             {/* Summary & linking tip */}
             <div className="space-y-2 text-xs">
-              <p className="text-slate-700 leading-relaxed">
+              <p className="text-[#44403C] leading-relaxed">
                 <strong>Nhận xét:</strong> {result.summaryVi}
               </p>
               {result.linkingTipVi && (
-                <div className="rounded-xl bg-blue-50/70 border border-blue-200 px-3 py-2 text-blue-950">
+                <div className="rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] px-3 py-2 text-[#14532D]">
                   <strong>Nối âm &amp; ngữ điệu:</strong> {result.linkingTipVi}
                 </div>
               )}

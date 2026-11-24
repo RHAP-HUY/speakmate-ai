@@ -1,12 +1,19 @@
 import type { Metadata, Viewport } from 'next';
-import { Be_Vietnam_Pro, Geist_Mono } from 'next/font/google';
+import { Be_Vietnam_Pro, Geist_Mono, Newsreader } from 'next/font/google';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import './globals.css';
 
 const beVietnamPro = Be_Vietnam_Pro({
   variable: '--font-be-vietnam',
   subsets: ['latin', 'vietnamese'],
-  weight: ['400', '500', '600', '700', '800', '900'],
+  weight: ['400', '500', '600', '700'],
+});
+
+const newsreader = Newsreader({
+  variable: '--font-serif-editorial',
+  subsets: ['latin', 'vietnamese'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
 });
 
 const geistMono = Geist_Mono({
@@ -15,16 +22,16 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: '#18181B',
+  themeColor: '#14532D',
   width: 'device-width',
   initialScale: 1,
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://speakmate-ai-nu.vercel.app'),
-  title: 'SpeakMate — Luyện phản xạ nói tiếng Anh thực tế mỗi ngày',
+  title: 'SpeakMate — Luyện nói tiếng Anh tự nhiên qua hội thoại thực tế',
   description:
-    'Nền tảng luyện giao tiếp tiếng Anh thực chiến: phản xạ ngữ cảnh, hội thoại trực tiếp chấm phát âm từng âm tiết, sổ mẫu câu SRS và đồng bộ Google Drive 5TB.',
+    'Rèn phản xạ giao tiếp tiếng Anh mỗi ngày cùng 6 giọng đọc bản xứ, phân tích phát âm IPA từng âm tiết, sổ mẫu câu và đồng bộ Google Drive.',
   applicationName: 'SpeakMate',
   alternates: {
     canonical: '/',
@@ -35,9 +42,9 @@ export const metadata: Metadata = {
     title: 'SpeakMate',
   },
   openGraph: {
-    title: 'SpeakMate — Luyện phản xạ nói tiếng Anh thực tế mỗi ngày',
+    title: 'SpeakMate — Luyện nói tiếng Anh tự nhiên qua hội thoại thực tế',
     description:
-      'Lộ trình luyện phản xạ 2 phút, hội thoại trực tiếp chấm phát âm IPA từng từ, lịch giữ chuỗi và đồng bộ tự động trên Google Drive 5TB.',
+      'Bài tập phản xạ ngắn 2 phút, hội thoại nhập vai cùng 6 giọng bản xứ, phân tích phát âm từng âm tiết và đồng bộ tự động trên Google Drive.',
     type: 'website',
     locale: 'vi_VN',
     siteName: 'SpeakMate',
@@ -45,9 +52,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SpeakMate — Luyện phản xạ nói tiếng Anh thực tế mỗi ngày',
+    title: 'SpeakMate — Luyện nói tiếng Anh tự nhiên qua hội thoại thực tế',
     description:
-      'Luyện nghe hiểu, phản xạ câu bản xứ, hội thoại chấm phát âm từng từ và đồng bộ Google Drive 5TB.',
+      'Luyện nghe hiểu, phản xạ câu bản xứ, hội thoại chấm phát âm IPA từng từ và đồng bộ Google Drive.',
   },
 };
 
@@ -59,9 +66,9 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${beVietnamPro.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${beVietnamPro.variable} ${newsreader.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full text-zinc-900 flex flex-col selection:bg-blue-100 selection:text-blue-900">
+      <body className="min-h-full text-[#1C1917] flex flex-col selection:bg-[#14532D]/15 selection:text-[#14532D]">
         {children}
         <ServiceWorkerRegister />
       </body>

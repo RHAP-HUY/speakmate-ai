@@ -29,6 +29,7 @@ import {
   NovaCompanion,
   StreakFlameSvg,
   TreasureChestSvg,
+  TutorAvatar,
 } from '@/components/BrandArt';
 import {
   CelebrationModal,
@@ -947,9 +948,9 @@ function PlayPageInner() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
-        <NovaCompanion mood="excited" className="h-18 w-18 animate-gentle-float" />
-        <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FBF9F5]">
+        <NovaCompanion mood="excited" className="h-12 w-12" />
+        <Loader2 className="h-5 w-5 animate-spin text-[#78716C]" />
       </div>
     );
   }
@@ -962,7 +963,7 @@ function PlayPageInner() {
   const currentBuild = buildItems[buildIdx];
   const currentPron = pronItems[pronIdx];
 
-  // ACTIVE DISTRACTION-FREE AURORA LESSON SCREEN
+  // ACTIVE DISTRACTION-FREE EDITORIAL PRACTICE SCREEN
   if (
     mode === 'speed' ||
     mode === 'listen' ||
@@ -985,9 +986,9 @@ function PlayPageInner() {
               100;
 
     return (
-      <div className="min-h-screen bg-mesh-light flex flex-col">
-        <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-slate-200/80">
-          <div className="mx-auto max-w-3xl px-4 sm:px-6 py-4 flex items-center gap-4">
+      <div className="min-h-screen bg-[#FBF9F5] flex flex-col text-[#1C1917]">
+        <header className="sticky top-0 z-20 bg-[#FBF9F5]/95 backdrop-blur-md border-b border-[#E7E2D8]">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 py-3.5 flex items-center gap-4">
             <button
               type="button"
               onClick={() => {
@@ -996,21 +997,21 @@ function PlayPageInner() {
                 stopMedia();
                 setMode('lobby');
               }}
-              aria-label="Thoát màn chơi"
-              className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer"
+              aria-label="Thoát bài tập"
+              className="rounded-xl p-2 text-[#78716C] hover:bg-[#F3EFE6] hover:text-[#1C1917] transition cursor-pointer"
             >
-              <X className="h-6 w-6 stroke-[2.6]" />
+              <X className="h-5 w-5" />
             </button>
 
-            <div className="flex-1 h-2.5 rounded-full bg-zinc-200 overflow-hidden">
+            <div className="flex-1 h-2 rounded-full bg-[#E7E2D8] overflow-hidden">
               <div
-                className="h-full rounded-full bg-zinc-900 transition-all duration-300"
+                className="h-full rounded-full bg-[#14532D] transition-all duration-300"
                 style={{ width: `${Math.max(6, progressPct)}%` }}
               />
             </div>
 
             {boostActive && (
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-[#FDBA74] bg-[#FFF7ED] px-2.5 py-1 text-[11px] font-semibold text-[#9A3412]">
                 2x XP
               </span>
             )}
@@ -1018,15 +1019,15 @@ function PlayPageInner() {
             {mode === 'speed' && (
               <div className="flex items-center gap-2 text-xs font-semibold tabular-nums">
                 {combo >= 2 && (
-                  <span className="rounded-lg bg-amber-100 border border-amber-300 px-2 py-0.5 text-amber-900">
-                    Combo x{combo}
+                  <span className="rounded-lg bg-[#FFF7ED] border border-[#FDBA74] px-2 py-0.5 text-[#9A3412]">
+                    Chuỗi đúng x{combo}
                   </span>
                 )}
                 <span
-                  className={`inline-flex items-center gap-1 rounded-xl border-2 px-2.5 py-1 ${
+                  className={`inline-flex items-center gap-1 rounded-xl border px-2.5 py-1 ${
                     timeLeft <= 5
-                      ? 'border-rose-300 bg-rose-50 text-rose-600'
-                      : 'border-slate-200 bg-slate-50 text-slate-700'
+                      ? 'border-rose-300 bg-rose-50 text-rose-700'
+                      : 'border-[#E7E2D8] bg-white text-[#57534E]'
                   }`}
                 >
                   <Timer className="h-3.5 w-3.5" />
@@ -1036,10 +1037,10 @@ function PlayPageInner() {
                   {Array.from({ length: 3 }).map((_, i) => (
                     <Heart
                       key={i}
-                      className={`h-5 w-5 ${
+                      className={`h-4 w-4 ${
                         i < hearts
                           ? 'fill-rose-500 text-rose-500'
-                          : 'text-slate-200 fill-slate-200'
+                          : 'text-[#D6D0C4] fill-[#D6D0C4]'
                       }`}
                     />
                   ))}
@@ -1050,24 +1051,24 @@ function PlayPageInner() {
             {mode === 'listen' && (
               <div className="flex items-center gap-2 text-xs font-semibold tabular-nums">
                 {combo >= 2 && (
-                  <span className="rounded-lg bg-amber-100 border border-amber-300 px-2 py-0.5 text-amber-900">
-                    Combo x{combo}
+                  <span className="rounded-lg bg-[#FFF7ED] border border-[#FDBA74] px-2 py-0.5 text-[#9A3412]">
+                    Chuỗi đúng x{combo}
                   </span>
                 )}
-                <span className="font-mono text-zinc-700">
+                <span className="font-mono text-[#57534E]">
                   {listenIdx + 1}/{listenItems.length}
                 </span>
               </div>
             )}
 
             {mode === 'build' && (
-              <span className="text-xs font-black text-violet-600">
+              <span className="font-mono text-xs font-semibold text-[#57534E] tabular-nums">
                 {buildIdx + 1}/{buildItems.length}
               </span>
             )}
 
             {mode === 'pronounce' && (
-              <span className="text-xs font-black text-emerald-600">
+              <span className="font-mono text-xs font-semibold text-[#14532D] tabular-nums">
                 Câu {pronIdx + 1}/{pronItems.length}
               </span>
             )}
@@ -1075,45 +1076,41 @@ function PlayPageInner() {
         </header>
 
         <main className="flex-1 mx-auto w-full max-w-2xl px-4 sm:px-6 py-6 sm:py-10 flex flex-col justify-center">
-          {/* GAME 1 & 5: SPEED MATCH / AI CUSTOM QUIZ */}
+          {/* GAME 1 & 5: SPEED MATCH / ADAPTIVE CUSTOM QUIZ */}
           {mode === 'speed' && currentSpeed && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <NovaCompanion
-                  mood={
-                    selectedOption === currentSpeed.correctEn
-                      ? 'excited'
-                      : 'happy'
-                  }
-                  className="hidden sm:block h-20 w-20 shrink-0"
+                <TutorAvatar
+                  personaId={persona.id}
+                  className="hidden sm:block h-14 w-14 shrink-0 ring-1 ring-[#E7E2D8]"
                 />
                 <div className="flex-1 space-y-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-1 text-xs font-extrabold text-indigo-700">
+                  <p className="text-xs font-medium text-[#78716C]">
                     {speedRoundTitle} · Câu {speedIdx + 1}/{speedItems.length} ·{' '}
                     {currentSpeed.contextVi}
-                  </span>
-                  <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">
+                  </p>
+                  <h1 className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917] leading-snug">
                     {currentSpeed.promptVi}
                   </h1>
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {currentSpeed.shuffledOptions.map((opt, idx) => {
                   const isPicked = selectedOption === opt;
                   const isCorrectOpt = opt === currentSpeed.correctEn;
                   let cardCls =
-                    'border-slate-200 border-b-4 bg-white text-slate-800 hover:bg-indigo-50/40 hover:border-indigo-300 active:translate-y-[2px]';
+                    'border-[#E7E2D8] bg-white text-[#1C1917] hover:border-[#A8A29E] hover:bg-[#FBF9F5]';
                   if (selectedOption !== null) {
                     if (isCorrectOpt) {
                       cardCls =
-                        'border-emerald-500 border-b-4 bg-emerald-50 text-emerald-900';
+                        'border-[#14532D] bg-[#ECFDF5] text-[#14532D]';
                     } else if (isPicked && !isCorrectOpt) {
                       cardCls =
-                        'border-rose-500 border-b-4 bg-rose-50 text-rose-800';
+                        'border-rose-400 bg-rose-50 text-rose-800';
                     } else {
                       cardCls =
-                        'border-slate-200 bg-slate-50 text-slate-400 opacity-60';
+                        'border-[#E7E2D8] bg-[#FBF9F5] text-[#A8A29E] opacity-65';
                     }
                   }
 
@@ -1123,29 +1120,31 @@ function PlayPageInner() {
                       type="button"
                       disabled={selectedOption !== null}
                       onClick={() => handleSelectSpeedOption(opt)}
-                      className={`flex w-full items-center justify-between gap-3 rounded-2xl border-2 px-4 py-4 text-left text-sm sm:text-base font-extrabold transition cursor-pointer ${cardCls}`}
+                      className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-4 text-left transition cursor-pointer ${cardCls}`}
                     >
-                      <span className="flex items-center gap-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-current/20 bg-white/80 text-xs font-black">
+                      <span className="flex items-center gap-3.5">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-current/20 bg-white/80 font-mono text-xs font-semibold">
                           {idx + 1}
                         </span>
-                        <span>{opt}</span>
+                        <span className="font-serif-display text-base sm:text-lg font-medium">
+                          {opt}
+                        </span>
                       </span>
                       {selectedOption !== null && isCorrectOpt && (
-                        <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
+                        <CheckCircle2 className="h-5 w-5 shrink-0 text-[#14532D]" />
                       )}
                       {selectedOption !== null && isPicked && !isCorrectOpt && (
-                        <XCircle className="h-6 w-6 shrink-0 text-rose-500" />
+                        <XCircle className="h-5 w-5 shrink-0 text-rose-600" />
                       )}
                     </button>
                   );
                 })}
               </div>
 
-              <p className="hidden sm:block text-center text-[11px] font-bold text-slate-400">
-                Mẹo bàn phím: nhấn <kbd className="rounded border px-1.5 py-0.5">1</kbd>–
-                <kbd className="rounded border px-1.5 py-0.5">4</kbd> để chọn nhanh ·{' '}
-                <kbd className="rounded border px-1.5 py-0.5">Enter</kbd> để sang câu tiếp
+              <p className="hidden sm:block text-center text-[11px] text-[#78716C]">
+                Phím tắt: nhấn <kbd className="rounded border border-[#D6D0C4] bg-white px-1.5 py-0.5">1</kbd>–
+                <kbd className="rounded border border-[#D6D0C4] bg-white px-1.5 py-0.5">4</kbd> để chọn ·{' '}
+                <kbd className="rounded border border-[#D6D0C4] bg-white px-1.5 py-0.5">Enter</kbd> để sang câu tiếp
               </p>
             </div>
           )}
@@ -1153,20 +1152,20 @@ function PlayPageInner() {
           {/* GAME 2: LISTENING COMPREHENSION */}
           {mode === 'listen' && currentListen && (
             <div className="space-y-6">
-              <div className="card-duo-elevated p-6 text-center space-y-4">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FAF9F6] border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700">
-                  <Headphones className="h-3.5 w-3.5 text-blue-700" />
-                  {currentListen.contextVi}
-                </span>
-                <h1 className="text-xl sm:text-2xl font-bold text-zinc-950">
+              <div className="rounded-2xl border border-[#E7E2D8] bg-white p-6 text-center space-y-4">
+                <div className="flex items-center justify-center gap-2 text-xs font-medium text-[#78716C]">
+                  <Headphones className="h-3.5 w-3.5 text-[#14532D]" />
+                  <span>{currentListen.contextVi}</span>
+                </div>
+                <h1 className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917]">
                   {currentListen.questionVi}
                 </h1>
 
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
                   <button
                     type="button"
                     onClick={() => speakText(currentListen.spokenEn, 0.9)}
-                    className="btn-duo btn-duo-primary px-6 py-3 text-sm"
+                    className="btn-duo btn-duo-green px-6 py-3 text-sm"
                   >
                     <Volume2 className="h-4 w-4" />
                     Nghe giọng {persona.name} ({persona.accent})
@@ -1181,11 +1180,11 @@ function PlayPageInner() {
                 </div>
 
                 {showListenScript ? (
-                  <div className="rounded-xl border border-zinc-200 bg-[#FAF9F6] p-3.5 text-left space-y-1">
-                    <div className="text-sm font-bold text-zinc-950">
+                  <div className="rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] p-3.5 text-left space-y-1">
+                    <div className="font-serif-display text-base font-semibold text-[#1C1917]">
                       “{currentListen.spokenEn}”
                     </div>
-                    <div className="font-mono text-xs text-blue-700">
+                    <div className="font-mono text-xs text-[#78716C]">
                       /{currentListen.phonetic}/
                     </div>
                   </div>
@@ -1193,29 +1192,29 @@ function PlayPageInner() {
                   <button
                     type="button"
                     onClick={() => setShowListenScript(true)}
-                    className="text-xs font-semibold text-blue-700 hover:underline cursor-pointer"
+                    className="text-xs font-semibold text-[#14532D] hover:underline cursor-pointer"
                   >
                     Hiển thị nội dung câu tiếng Anh
                   </button>
                 )}
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {currentListen.shuffledOptionsVi.map((optVi, idx) => {
                   const isPicked = listenSelected === optVi;
                   const isCorrectOpt = optVi === currentListen.correctAnswerVi;
                   let cardCls =
-                    'border-slate-200 border-b-4 bg-white text-slate-800 hover:bg-indigo-50/40 hover:border-indigo-300 active:translate-y-[2px]';
+                    'border-[#E7E2D8] bg-white text-[#1C1917] hover:border-[#A8A29E] hover:bg-[#FBF9F5]';
                   if (listenSelected !== null) {
                     if (isCorrectOpt) {
                       cardCls =
-                        'border-emerald-500 border-b-4 bg-emerald-50 text-emerald-900';
+                        'border-[#14532D] bg-[#ECFDF5] text-[#14532D]';
                     } else if (isPicked && !isCorrectOpt) {
                       cardCls =
-                        'border-rose-500 border-b-4 bg-rose-50 text-rose-800';
+                        'border-rose-400 bg-rose-50 text-rose-800';
                     } else {
                       cardCls =
-                        'border-slate-200 bg-slate-50 text-slate-400 opacity-60';
+                        'border-[#E7E2D8] bg-[#FBF9F5] text-[#A8A29E] opacity-65';
                     }
                   }
 
@@ -1225,30 +1224,30 @@ function PlayPageInner() {
                       type="button"
                       disabled={listenSelected !== null}
                       onClick={() => handleSelectListenOption(optVi)}
-                      className={`flex w-full items-center justify-between gap-3 rounded-2xl border-2 px-4 py-4 text-left text-sm font-extrabold transition cursor-pointer ${cardCls}`}
+                      className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-4 text-left text-sm font-semibold transition cursor-pointer ${cardCls}`}
                     >
                       <span className="flex items-center gap-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-current/20 bg-white/80 text-xs font-black">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-current/20 bg-white/80 font-mono text-xs font-semibold">
                           {idx + 1}
                         </span>
                         <span>{optVi}</span>
                       </span>
                       {listenSelected !== null && isCorrectOpt && (
-                        <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
+                        <CheckCircle2 className="h-5 w-5 shrink-0 text-[#14532D]" />
                       )}
                       {listenSelected !== null && isPicked && !isCorrectOpt && (
-                        <XCircle className="h-6 w-6 shrink-0 text-rose-500" />
+                        <XCircle className="h-5 w-5 shrink-0 text-rose-600" />
                       )}
                     </button>
                   );
                 })}
               </div>
 
-              <p className="hidden sm:block text-center text-[11px] font-bold text-slate-400">
-                Phím tắt: <kbd className="rounded border px-1.5 py-0.5">R</kbd> nghe lại ·{' '}
-                <kbd className="rounded border px-1.5 py-0.5">1</kbd>–
-                <kbd className="rounded border px-1.5 py-0.5">4</kbd> chọn đáp án ·{' '}
-                <kbd className="rounded border px-1.5 py-0.5">Enter</kbd> tiếp tục
+              <p className="hidden sm:block text-center text-[11px] text-[#78716C]">
+                Phím tắt: <kbd className="rounded border border-[#D6D0C4] bg-white px-1.5 py-0.5">R</kbd> nghe lại ·{' '}
+                <kbd className="rounded border border-[#D6D0C4] bg-white px-1.5 py-0.5">1</kbd>–
+                <kbd className="rounded border border-[#D6D0C4] bg-white px-1.5 py-0.5">4</kbd> chọn đáp án ·{' '}
+                <kbd className="rounded border border-[#D6D0C4] bg-white px-1.5 py-0.5">Enter</kbd> tiếp tục
               </p>
             </div>
           )}
@@ -1256,18 +1255,18 @@ function PlayPageInner() {
           {/* GAME 3: SENTENCE BUILD */}
           {mode === 'build' && currentBuild && (
             <div className="space-y-6">
-              <div className="card-duo-elevated p-5 space-y-2.5">
-                <div className="font-mono text-[11px] font-semibold text-blue-700">
-                  GHÉP CẤU TRÚC CÂU · GIỌNG {persona.name.toUpperCase()} ({persona.accent})
+              <div className="rounded-2xl border border-[#E7E2D8] bg-white p-5 sm:p-6 space-y-2.5">
+                <div className="text-xs font-medium text-[#78716C]">
+                  Ghép cấu trúc câu · Giọng {persona.name} ({persona.accent})
                 </div>
-                <p className="text-base sm:text-lg font-bold text-zinc-950">
+                <p className="font-serif-display text-xl sm:text-2xl font-semibold text-[#1C1917]">
                   “{currentBuild.meaningVi}”
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => speakText(currentBuild.sentenceEn, 0.88)}
-                    className="btn-duo btn-duo-primary px-4 py-2 text-xs"
+                    className="btn-duo btn-duo-green px-4 py-2 text-xs"
                   >
                     <Volume2 className="h-4 w-4" />
                     Nghe mẫu
@@ -1282,9 +1281,9 @@ function PlayPageInner() {
                 </div>
               </div>
 
-              <div className="min-h-24 rounded-2xl border-2 border-dashed border-indigo-200 bg-white/80 p-4 flex flex-wrap items-center gap-2.5">
+              <div className="min-h-24 rounded-2xl border border-dashed border-[#A8A29E] bg-white p-4 flex flex-wrap items-center gap-2">
                 {chosenTiles.length === 0 ? (
-                  <span className="w-full text-center text-xs font-bold text-slate-400">
+                  <span className="w-full text-center text-xs text-[#78716C]">
                     Chạm vào các thẻ từ bên dưới để xếp thành câu chuẩn bản xứ...
                   </span>
                 ) : (
@@ -1294,7 +1293,7 @@ function PlayPageInner() {
                       type="button"
                       disabled={buildChecked !== 'idle'}
                       onClick={() => handleRemoveWordTile(tile)}
-                      className="rounded-xl border-2 border-indigo-300 border-b-4 bg-indigo-50 px-3.5 py-2 text-sm font-black text-indigo-700 active:translate-y-[2px] transition cursor-pointer"
+                      className="rounded-xl border border-[#14532D] bg-[#ECFDF5] px-3.5 py-2 font-serif-display text-base font-medium text-[#14532D] transition cursor-pointer"
                     >
                       {tile.word}
                     </button>
@@ -1302,14 +1301,14 @@ function PlayPageInner() {
                 )}
               </div>
 
-              <div className="flex flex-wrap justify-center gap-2.5">
+              <div className="flex flex-wrap justify-center gap-2">
                 {availableTiles.map((tile) => (
                   <button
                     key={tile.id}
                     type="button"
                     disabled={buildChecked !== 'idle'}
                     onClick={() => handlePickWordTile(tile)}
-                    className="rounded-xl border-2 border-slate-200 border-b-4 bg-white px-4 py-2.5 text-sm font-extrabold text-slate-800 hover:border-indigo-300 hover:bg-indigo-50/40 active:translate-y-[2px] transition cursor-pointer"
+                    className="rounded-xl border border-[#E7E2D8] bg-white px-4 py-2.5 font-serif-display text-base font-medium text-[#1C1917] hover:border-[#14532D] hover:bg-[#FBF9F5] transition cursor-pointer"
                   >
                     {tile.word}
                   </button>
@@ -1330,7 +1329,7 @@ function PlayPageInner() {
                     type="button"
                     disabled={chosenTiles.length === 0}
                     onClick={handleCheckBuildSentence}
-                    className="btn-duo btn-duo-primary flex-1 py-3.5 text-sm uppercase tracking-wide"
+                    className="btn-duo btn-duo-green flex-1 py-3.5 text-sm"
                   >
                     Kiểm tra đáp án
                   </button>
@@ -1342,21 +1341,21 @@ function PlayPageInner() {
           {/* GAME 4: PRONUNCIATION ARENA */}
           {mode === 'pronounce' && currentPron && (
             <div className="space-y-6">
-              <div className="card-duo-elevated p-6 text-center space-y-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FAF9F6] border border-zinc-200 px-3.5 py-1 text-xs font-semibold text-emerald-700">
+              <div className="rounded-2xl border border-[#E7E2D8] bg-white p-6 text-center space-y-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FBF9F5] border border-[#E7E2D8] px-3.5 py-1 text-xs font-semibold text-[#14532D]">
                   <Mic className="h-3.5 w-3.5" />
                   Đọc to câu mẫu · Giọng {persona.accent}
                 </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-950">
+                <h1 className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917]">
                   “{currentPron.sentence}”
                 </h1>
-                <p className="font-mono text-sm text-blue-700">
+                <p className="font-mono text-sm text-[#78716C]">
                   /{currentPron.phonetic}/
                 </p>
-                <p className="text-sm text-zinc-600">
+                <p className="text-sm text-[#57534E]">
                   {currentPron.vietnamese}
                 </p>
-                <p className="inline-block rounded-lg bg-[#FAF9F6] border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700">
+                <p className="inline-block rounded-lg bg-[#FBF9F5] border border-[#E7E2D8] px-3 py-1.5 text-xs text-[#57534E]">
                   Lưu ý phát âm: {currentPron.focusTipVi}
                 </p>
 
@@ -1364,7 +1363,7 @@ function PlayPageInner() {
                   <button
                     type="button"
                     onClick={() => speakText(currentPron.sentence, 0.88)}
-                    className="btn-duo btn-duo-primary px-4 py-2 text-xs"
+                    className="btn-duo btn-duo-green px-4 py-2 text-xs"
                   >
                     <Volume2 className="h-4 w-4" />
                     Nghe mẫu
@@ -1390,16 +1389,16 @@ function PlayPageInner() {
                       void startArenaRecording();
                     }
                   }}
-                  className={`btn-duo px-8 py-4 text-sm uppercase tracking-wide ${
+                  className={`btn-duo px-8 py-4 text-sm ${
                     pronStatus === 'recording'
-                      ? 'bg-[#FF4B4B] text-white border-2 border-[#FF4B4B] shadow-[0_4px_0_#D93636]'
+                      ? 'btn-duo-orange'
                       : 'btn-duo-green'
                   }`}
                 >
                   {pronStatus === 'scoring' ? (
                     <>
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      AI đang chấm từng từ...
+                      Đang phân tích từng từ...
                     </>
                   ) : pronStatus === 'recording' ? (
                     <>
@@ -1413,23 +1412,23 @@ function PlayPageInner() {
                   ) : (
                     <>
                       <Mic className="h-5 w-5" />
-                      {pronResult ? 'Đọc lại phá kỷ lục' : 'Bấm Micro để đọc'}
+                      {pronResult ? 'Đọc lại để nâng điểm' : 'Bấm Micro để đọc'}
                     </>
                   )}
                 </button>
               </div>
 
               {pronError && (
-                <div className="rounded-2xl border-2 border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700 text-center">
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 text-center">
                   {pronError}
                 </div>
               )}
 
               {pronResult && (
-                <div className="card-duo p-5 space-y-4">
+                <div className="rounded-2xl border border-[#E7E2D8] bg-white p-5 space-y-4">
                   <div className="flex items-center gap-3.5">
                     <div
-                      className={`flex h-14 w-14 flex-col items-center justify-center rounded-2xl border-2 font-black ${
+                      className={`flex h-14 w-14 flex-col items-center justify-center rounded-2xl border font-bold ${
                         getScoreTone(pronResult.overallScore).pillLight
                       }`}
                     >
@@ -1439,10 +1438,10 @@ function PlayPageInner() {
                       <span className="text-[10px]">/100</span>
                     </div>
                     <div>
-                      <div className="text-base font-black text-slate-900">
+                      <div className="font-serif-display text-lg font-semibold text-[#1C1917]">
                         {getScoreTone(pronResult.overallScore).label}
                       </div>
-                      <div className="text-xs font-medium text-slate-600">
+                      <div className="text-xs text-[#57534E]">
                         {pronResult.summaryVi}
                       </div>
                     </div>
@@ -1452,9 +1451,9 @@ function PlayPageInner() {
                     {pronResult.wordFeedback.map((w, i) => (
                       <span
                         key={`${w.word}-${i}`}
-                        className={`rounded-xl border-2 px-3 py-1 text-xs font-extrabold ${
+                        className={`rounded-xl border px-3 py-1 text-xs font-semibold ${
                           w.status === 'good'
-                            ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                            ? 'border-[#A7F3D0] bg-[#ECFDF5] text-[#14532D]'
                             : w.status === 'improve'
                               ? 'border-amber-300 bg-amber-50 text-amber-900'
                               : 'border-rose-300 bg-rose-50 text-rose-800 line-through'
@@ -1468,7 +1467,7 @@ function PlayPageInner() {
                   <button
                     type="button"
                     onClick={handleNextPronChallenge}
-                    className="btn-duo btn-duo-green w-full py-3.5 text-sm uppercase tracking-wide"
+                    className="btn-duo btn-duo-green w-full py-3.5 text-sm"
                   >
                     {pronIdx + 1 >= pronItems.length
                       ? 'Hoàn thành & Xem kết quả'
@@ -1483,9 +1482,9 @@ function PlayPageInner() {
         {/* SLIDE-UP BOTTOM FEEDBACK DRAWERS */}
         {mode === 'speed' && currentSpeed && selectedOption !== null && (
           <footer
-            className={`sticky bottom-0 border-t-2 px-4 py-5 ${
+            className={`sticky bottom-0 border-t px-4 py-5 ${
               selectedOption === currentSpeed.correctEn
-                ? 'border-emerald-200 bg-emerald-50'
+                ? 'border-[#A7F3D0] bg-[#ECFDF5]'
                 : 'border-rose-200 bg-rose-50'
             }`}
           >
@@ -1493,10 +1492,10 @@ function PlayPageInner() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-base font-black ${
+                    className={`font-serif-display text-lg font-semibold ${
                       selectedOption === currentSpeed.correctEn
-                        ? 'text-emerald-700'
-                        : 'text-rose-700'
+                        ? 'text-[#14532D]'
+                        : 'text-rose-800'
                     }`}
                   >
                     {selectedOption === currentSpeed.correctEn
@@ -1508,13 +1507,13 @@ function PlayPageInner() {
                   <button
                     type="button"
                     onClick={() => speakText(currentSpeed.correctEn, 0.85)}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white border border-zinc-200 px-2.5 py-1 text-xs font-semibold text-zinc-800 cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-lg bg-white border border-[#E7E2D8] px-2.5 py-1 text-xs font-semibold text-[#1C1917] cursor-pointer"
                   >
                     <Volume2 className="h-3.5 w-3.5" />
                     Nghe
                   </button>
                 </div>
-                <div className="text-xs font-medium text-zinc-700">
+                <div className="text-xs text-[#44403C]">
                   /{currentSpeed.phonetic}/ — {currentSpeed.tipVi}
                 </div>
               </div>
@@ -1538,16 +1537,16 @@ function PlayPageInner() {
           <footer
             className={`sticky bottom-0 border-t px-4 py-5 ${
               listenSelected === currentListen.correctAnswerVi
-                ? 'border-emerald-200 bg-emerald-50'
+                ? 'border-[#A7F3D0] bg-[#ECFDF5]'
                 : 'border-rose-200 bg-rose-50'
             }`}
           >
             <div className="mx-auto max-w-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div
-                  className={`text-base font-bold ${
+                  className={`font-serif-display text-lg font-semibold ${
                     listenSelected === currentListen.correctAnswerVi
-                      ? 'text-emerald-800'
+                      ? 'text-[#14532D]'
                       : 'text-rose-800'
                   }`}
                 >
@@ -1555,7 +1554,7 @@ function PlayPageInner() {
                     ? 'Nghe hiểu chính xác'
                     : 'Ý chính đúng là: ' + currentListen.correctAnswerVi}
                 </div>
-                <div className="text-xs text-zinc-700">
+                <div className="text-xs text-[#44403C]">
                   {currentListen.tipVi}
                 </div>
               </div>
@@ -1579,16 +1578,16 @@ function PlayPageInner() {
           <footer
             className={`sticky bottom-0 border-t px-4 py-5 ${
               buildChecked === 'correct'
-                ? 'border-emerald-200 bg-emerald-50'
+                ? 'border-[#A7F3D0] bg-[#ECFDF5]'
                 : 'border-rose-200 bg-rose-50'
             }`}
           >
             <div className="mx-auto max-w-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div
-                  className={`text-base font-bold ${
+                  className={`font-serif-display text-lg font-semibold ${
                     buildChecked === 'correct'
-                      ? 'text-emerald-800'
+                      ? 'text-[#14532D]'
                       : 'text-rose-800'
                   }`}
                 >
@@ -1596,7 +1595,7 @@ function PlayPageInner() {
                     ? 'Trật tự câu hoàn toàn chính xác'
                     : `Câu chuẩn: "${currentBuild.sentenceEn}"`}
                 </div>
-                <div className="text-xs text-zinc-700">
+                <div className="text-xs text-[#44403C]">
                   /{currentBuild.phonetic}/ — {currentBuild.tipVi}
                 </div>
               </div>
@@ -1624,66 +1623,64 @@ function PlayPageInner() {
     <AppShell profile={profile} authenticated={authenticated}>
       {mode === 'lobby' && (
         <>
-          <section className="card-duo-elevated p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-              <div className="space-y-1.5 max-w-xl">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-[11px] font-semibold tracking-wider text-blue-700">
-                    PHÒNG LUYỆN PHẢN XẠ · 5 CHẾ ĐỘ THỰC HÀNH
+          <section className="flex flex-col md:flex-row md:items-end justify-between gap-5 border-b border-[#E7E2D8] pb-6">
+            <div className="space-y-1.5 max-w-xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-[#78716C]">
+                  Thực hành phản xạ ngắn · 2–3 phút mỗi bài
+                </span>
+                {boostActive && (
+                  <span className="rounded-md bg-[#FFF7ED] border border-[#FDBA74] px-2 py-0.5 text-[11px] font-semibold text-[#9A3412] tabular-nums">
+                    Đang bật 2x XP ({boostMins}p)
                   </span>
-                  {boostActive && (
-                    <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900 tabular-nums">
-                      Đang bật 2x XP ({boostMins}p)
-                    </span>
-                  )}
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950">
-                  Rèn phản xạ nghe – nói trong 2 phút mỗi bài
-                </h1>
-                <p className="text-xs sm:text-sm text-zinc-600">
-                  {studiedToday
-                    ? `Hôm nay bạn đã duy trì chuỗi ${profile.streakDays} ngày học liên tiếp. Tiếp tục luyện thêm để tích lũy điểm kinh nghiệm.`
-                    : 'Hoàn thành trọn vẹn 1 bài bất kỳ bên dưới để tính giữ chuỗi ngày học hôm nay.'}
-                </p>
+                )}
               </div>
+              <h1 className="font-serif-display text-3xl sm:text-4xl font-semibold tracking-tight text-[#1C1917]">
+                Rèn phản xạ nghe – nói hàng ngày
+              </h1>
+              <p className="text-sm text-[#57534E]">
+                {studiedToday
+                  ? `Hôm nay bạn đã duy trì chuỗi ${profile.streakDays} ngày học liên tiếp. Tiếp tục thực hành thêm để tích lũy điểm kinh nghiệm.`
+                  : 'Hoàn thành trọn vẹn 1 bài thực hành bất kỳ bên dưới để tính giữ chuỗi ngày học hôm nay.'}
+              </p>
+            </div>
 
-              <div className="shrink-0 rounded-xl bg-[#FAF9F6] border border-zinc-200 p-4 min-w-56 space-y-2 tabular-nums">
-                <div className="flex items-center justify-between text-xs font-bold text-zinc-900">
-                  <span>Cấp {levelInfo.level}</span>
-                  <span>{profile.xp} XP</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-zinc-200 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-zinc-900"
-                    style={{ width: `${Math.max(6, levelInfo.progressPct)}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-zinc-600 pt-0.5">
-                  <span className="inline-flex items-center gap-1">
-                    <StreakFlameSvg active={profile.streakDays > 0} className="h-3.5 w-3.5" />
-                    {profile.streakDays} ngày
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <GemSvg className="h-3.5 w-3.5" />
-                    {profile.gems}
-                  </span>
-                </div>
+            <div className="shrink-0 rounded-2xl bg-[#F3EFE6]/80 border border-[#E7E2D8] p-4 min-w-56 space-y-2 tabular-nums">
+              <div className="flex items-center justify-between text-xs font-semibold text-[#1C1917]">
+                <span>Cấp {levelInfo.level}</span>
+                <span>{profile.xp} XP</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-[#E7E2D8] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#14532D]"
+                  style={{ width: `${Math.max(6, levelInfo.progressPct)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-[#57534E] pt-0.5">
+                <span className="inline-flex items-center gap-1">
+                  <StreakFlameSvg active={profile.streakDays > 0} className="h-3.5 w-3.5" />
+                  {profile.streakDays} ngày
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <GemSvg className="h-3.5 w-3.5" />
+                  {profile.gems} Ngọc
+                </span>
               </div>
             </div>
           </section>
 
           {/* ADAPTIVE CUSTOM QUIZ CARD */}
-          <section className="card-duo-elevated p-5 sm:p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-[#FAF9F6] text-zinc-800">
+          <section className="rounded-2xl border border-[#E7E2D8] bg-white p-5 sm:p-6 space-y-4">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] text-[#14532D]">
                 <Wand2 className="h-5 w-5 stroke-[1.9]" />
               </div>
               <div>
-                <div className="font-mono text-[11px] font-semibold text-blue-700">
-                  BÀI TẬP THÍCH ỨNG THEO CHỦ ĐỀ
-                </div>
-                <h2 className="text-base font-bold text-zinc-950">
-                  Tự biên soạn 5 câu hỏi phản xạ sát với công việc hoặc sở thích riêng
+                <p className="text-xs font-medium text-[#78716C]">
+                  Bài tập biên soạn riêng theo chủ đề
+                </p>
+                <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
+                  Tạo 5 câu hỏi phản xạ sát với công việc hoặc mối quan tâm của bạn
                 </h2>
               </div>
             </div>
@@ -1704,17 +1701,17 @@ function PlayPageInner() {
                 placeholder={`Để trống để dùng hồ sơ của bạn (${
                   profile.hobbies.slice(0, 2).join(', ') || 'Đời sống'
                 }) hoặc nhập chủ đề...`}
-                className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 focus:border-zinc-900 focus:outline-none"
+                className="flex-1 rounded-xl border border-[#D6D0C4] bg-[#FBF9F5] px-4 py-2.5 text-sm text-[#1C1917] focus:border-[#14532D] focus:bg-white focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={generatingAiQuiz}
-                className="btn-duo btn-duo-primary px-5 py-2.5 text-sm shrink-0"
+                className="btn-duo btn-duo-green px-5 py-2.5 text-sm shrink-0"
               >
                 {generatingAiQuiz ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang tạo bộ câu hỏi...
+                    Đang biên soạn...
                   </>
                 ) : (
                   <>
@@ -1733,10 +1730,13 @@ function PlayPageInner() {
           </section>
 
           {/* Voice Persona Accent Bar */}
-          <div className="card-duo px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-            <span className="text-xs font-semibold text-zinc-700">
-              Giọng đọc mẫu trong bài:
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E7E2D8] bg-[#F3EFE6]/60 px-4 py-3">
+            <div className="flex items-center gap-2.5">
+              <TutorAvatar personaId={persona.id} className="h-8 w-8" />
+              <span className="text-xs font-medium text-[#57534E]">
+                Người đọc mẫu trong bài: <strong className="text-[#1C1917]">{persona.name}</strong>
+              </span>
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {AI_PERSONAS.map((p) => (
                 <button
@@ -1748,8 +1748,8 @@ function PlayPageInner() {
                   }}
                   className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                     persona.id === p.id
-                      ? 'border-zinc-900 bg-zinc-900 text-white'
-                      : 'border-zinc-200 bg-[#FAF9F6] text-zinc-700 hover:border-zinc-400'
+                      ? 'border-[#14532D] bg-[#14532D] text-white'
+                      : 'border-[#E7E2D8] bg-white text-[#57534E] hover:border-[#A8A29E]'
                   }`}
                 >
                   {p.name} · {p.accent}
@@ -1761,27 +1761,27 @@ function PlayPageInner() {
           {/* 4 Core Practice Mode Cards */}
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Mode 1 */}
-            <div className="card-duo-elevated p-6 flex flex-col justify-between space-y-5">
+            <div className="rounded-2xl border border-[#E7E2D8] bg-white p-6 flex flex-col justify-between space-y-5">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-[#FAF9F6] text-zinc-900">
-                    <Zap className="h-5 w-5 stroke-[2]" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] text-[#C2410C]">
+                    <Zap className="h-5 w-5 stroke-[1.9]" />
                   </div>
-                  <span className="font-mono rounded-md bg-[#FAF9F6] border border-zinc-200 px-2.5 py-1 text-[11px] font-medium text-zinc-600 tabular-nums">
+                  <span className="rounded-md bg-[#FBF9F5] border border-[#E7E2D8] px-2.5 py-1 text-[11px] font-medium text-[#78716C] tabular-nums">
                     2 phút · 5 câu
                   </span>
                 </div>
-                <h2 className="text-lg font-bold text-zinc-950">
+                <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
                   Phản xạ câu bản xứ 15 giây
                 </h2>
-                <p className="text-xs text-zinc-600 leading-relaxed">
-                  Chọn nhanh cách diễn đạt tự nhiên nhất theo ngữ cảnh giao tiếp, tránh lỗi dịch từng từ từ tiếng Việt.
+                <p className="text-xs text-[#57534E] leading-relaxed">
+                  Chọn nhanh cách diễn đạt tự nhiên nhất theo ngữ cảnh giao tiếp, tránh thói quen dịch từng từ từ tiếng Việt.
                 </p>
-                <div className="flex flex-wrap gap-1.5 font-mono text-[11px] text-zinc-600 tabular-nums">
-                  <span className="rounded bg-[#FAF9F6] border border-zinc-200 px-2 py-0.5">
+                <div className="flex flex-wrap gap-1.5 text-[11px] text-[#78716C] tabular-nums">
+                  <span className="rounded bg-[#FBF9F5] border border-[#E7E2D8] px-2 py-0.5">
                     +65–130 XP
                   </span>
-                  <span className="rounded bg-[#FAF9F6] border border-zinc-200 px-2 py-0.5">
+                  <span className="rounded bg-[#FBF9F5] border border-[#E7E2D8] px-2 py-0.5">
                     +20 Ngọc
                   </span>
                 </div>
@@ -1794,33 +1794,33 @@ function PlayPageInner() {
                 }}
                 className="btn-duo btn-duo-primary w-full py-3 text-sm"
               >
-                Bắt đầu luyện tập
+                Bắt đầu bài tập
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
 
             {/* Mode 2 */}
-            <div className="card-duo-elevated p-6 flex flex-col justify-between space-y-5">
+            <div className="rounded-2xl border border-[#E7E2D8] bg-white p-6 flex flex-col justify-between space-y-5">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-[#FAF9F6] text-blue-700">
-                    <Headphones className="h-5 w-5 stroke-[2]" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] text-[#14532D]">
+                    <Headphones className="h-5 w-5 stroke-[1.9]" />
                   </div>
-                  <span className="font-mono rounded-md bg-[#FAF9F6] border border-zinc-200 px-2.5 py-1 text-[11px] font-medium text-zinc-600 tabular-nums">
+                  <span className="rounded-md bg-[#FBF9F5] border border-[#E7E2D8] px-2.5 py-1 text-[11px] font-medium text-[#78716C] tabular-nums">
                     2 phút · 5 tình huống
                   </span>
                 </div>
-                <h2 className="text-lg font-bold text-zinc-950">
+                <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
                   Nghe hiểu ngữ cảnh bản xứ
                 </h2>
-                <p className="text-xs text-zinc-600 leading-relaxed">
+                <p className="text-xs text-[#57534E] leading-relaxed">
                   Nghe câu nói thực tế tại quán cà phê, phòng họp, sân bay và nhà hàng để nắm bắt ý chính xác.
                 </p>
-                <div className="flex flex-wrap gap-1.5 font-mono text-[11px] text-zinc-600 tabular-nums">
-                  <span className="rounded bg-[#FAF9F6] border border-zinc-200 px-2 py-0.5">
+                <div className="flex flex-wrap gap-1.5 text-[11px] text-[#78716C] tabular-nums">
+                  <span className="rounded bg-[#FBF9F5] border border-[#E7E2D8] px-2 py-0.5">
                     +70–130 XP
                   </span>
-                  <span className="rounded bg-[#FAF9F6] border border-zinc-200 px-2 py-0.5">
+                  <span className="rounded bg-[#FBF9F5] border border-[#E7E2D8] px-2 py-0.5">
                     +25 Ngọc
                   </span>
                 </div>
@@ -1831,7 +1831,7 @@ function PlayPageInner() {
                   playTapSound();
                   launchListeningChallenge(persona);
                 }}
-                className="btn-duo btn-duo-blue w-full py-3 text-sm"
+                className="btn-duo btn-duo-green w-full py-3 text-sm"
               >
                 Bắt đầu luyện nghe
                 <ArrowRight className="h-4 w-4" />
@@ -1839,27 +1839,27 @@ function PlayPageInner() {
             </div>
 
             {/* Mode 3 */}
-            <div className="card-duo-elevated p-6 flex flex-col justify-between space-y-5">
+            <div className="rounded-2xl border border-[#E7E2D8] bg-white p-6 flex flex-col justify-between space-y-5">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-[#FAF9F6] text-zinc-900">
-                    <Puzzle className="h-5 w-5 stroke-[2]" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] text-[#1C1917]">
+                    <Puzzle className="h-5 w-5 stroke-[1.9]" />
                   </div>
-                  <span className="font-mono rounded-md bg-[#FAF9F6] border border-zinc-200 px-2.5 py-1 text-[11px] font-medium text-zinc-600 tabular-nums">
+                  <span className="rounded-md bg-[#FBF9F5] border border-[#E7E2D8] px-2.5 py-1 text-[11px] font-medium text-[#78716C] tabular-nums">
                     3 phút · 5 câu
                   </span>
                 </div>
-                <h2 className="text-lg font-bold text-zinc-950">
+                <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
                   Nghe &amp; sắp xếp cấu trúc câu
                 </h2>
-                <p className="text-xs text-zinc-600 leading-relaxed">
+                <p className="text-xs text-[#57534E] leading-relaxed">
                   Nghe câu mẫu rồi sắp xếp các từ theo đúng trật tự ngữ pháp tự nhiên của người bản xứ.
                 </p>
-                <div className="flex flex-wrap gap-1.5 font-mono text-[11px] text-zinc-600 tabular-nums">
-                  <span className="rounded bg-[#FAF9F6] border border-zinc-200 px-2 py-0.5">
+                <div className="flex flex-wrap gap-1.5 text-[11px] text-[#78716C] tabular-nums">
+                  <span className="rounded bg-[#FBF9F5] border border-[#E7E2D8] px-2 py-0.5">
                     +75–115 XP
                   </span>
-                  <span className="rounded bg-[#FAF9F6] border border-zinc-200 px-2 py-0.5">
+                  <span className="rounded bg-[#FBF9F5] border border-[#E7E2D8] px-2 py-0.5">
                     +25 Ngọc
                   </span>
                 </div>
@@ -1878,27 +1878,27 @@ function PlayPageInner() {
             </div>
 
             {/* Mode 4 */}
-            <div className="card-duo-elevated p-6 flex flex-col justify-between space-y-5">
+            <div className="rounded-2xl border border-[#E7E2D8] bg-white p-6 flex flex-col justify-between space-y-5">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-[#FAF9F6] text-emerald-700">
-                    <Mic className="h-5 w-5 stroke-[2]" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] text-[#14532D]">
+                    <Mic className="h-5 w-5 stroke-[1.9]" />
                   </div>
-                  <span className="font-mono rounded-md bg-[#FAF9F6] border border-zinc-200 px-2.5 py-1 text-[11px] font-medium text-zinc-600 tabular-nums">
+                  <span className="rounded-md bg-[#FBF9F5] border border-[#E7E2D8] px-2.5 py-1 text-[11px] font-medium text-[#78716C] tabular-nums">
                     Chấm âm · 3 câu
                   </span>
                 </div>
-                <h2 className="text-lg font-bold text-zinc-950">
-                  Luyện phát âm &amp; chấm điểm IPA
+                <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
+                  Luyện phát âm &amp; nhận xét âm vị
                 </h2>
-                <p className="text-xs text-zinc-600 leading-relaxed">
+                <p className="text-xs text-[#57534E] leading-relaxed">
                   Đọc thành tiếng 3 câu giao tiếp thông dụng, nhận phân tích độ rõ âm, nối âm và trọng âm từ (0–100).
                 </p>
-                <div className="flex flex-wrap gap-1.5 font-mono text-[11px] text-zinc-600 tabular-nums">
-                  <span className="rounded bg-[#FAF9F6] border border-zinc-200 px-2 py-0.5">
+                <div className="flex flex-wrap gap-1.5 text-[11px] text-[#78716C] tabular-nums">
+                  <span className="rounded bg-[#FBF9F5] border border-[#E7E2D8] px-2 py-0.5">
                     +90–130 XP
                   </span>
-                  <span className="rounded bg-[#FAF9F6] border border-zinc-200 px-2 py-0.5">
+                  <span className="rounded bg-[#FBF9F5] border border-[#E7E2D8] px-2 py-0.5">
                     +30 Ngọc
                   </span>
                 </div>
@@ -1911,24 +1911,24 @@ function PlayPageInner() {
                 }}
                 className="btn-duo btn-duo-green w-full py-3 text-sm"
               >
-                Bắt đầu chấm phát âm
+                Bắt đầu luyện phát âm
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </div>
 
           {/* Voice Call Banner */}
-          <div className="card-duo p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="rounded-2xl border border-[#E7E2D8] bg-[#F3EFE6]/75 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-[#FAF9F6] text-zinc-900">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E7E2D8] bg-white text-[#14532D]">
                 <PhoneCall className="h-5 w-5 stroke-[1.9]" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-zinc-950">
+                <h3 className="font-serif-display text-lg font-semibold text-[#1C1917]">
                   Thực hành hội thoại hai chiều theo tình huống
                 </h3>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  Trò chuyện trực tiếp từ 3 lượt nói trở lên để giữ chuỗi ngày học và nhận báo cáo 4 kỹ năng.
+                <p className="text-xs text-[#57534E] mt-0.5">
+                  Trò chuyện trực tiếp từ 3 lượt nói trở lên cùng {persona.name} để giữ chuỗi ngày học và nhận sổ nhận xét.
                 </p>
               </div>
             </div>
@@ -1945,70 +1945,70 @@ function PlayPageInner() {
 
       {/* VICTORY SUMMARY SCREEN */}
       {mode === 'victory' && (
-        <div className="mx-auto max-w-lg card-duo-elevated p-6 sm:p-8 text-center space-y-5 animate-pop-in">
+        <div className="mx-auto max-w-lg rounded-2xl border border-[#E7E2D8] bg-white p-6 sm:p-8 text-center space-y-5 animate-pop-in">
           {savingVictory ? (
             <div className="py-12 flex flex-col items-center gap-3">
-              <NovaCompanion mood="excited" className="h-14 w-14" />
-              <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
-              <p className="text-sm font-medium text-zinc-600">
+              <NovaCompanion mood="excited" className="h-12 w-12" />
+              <Loader2 className="h-5 w-5 animate-spin text-[#78716C]" />
+              <p className="text-sm font-medium text-[#57534E]">
                 Đang lưu kết quả và đồng bộ lên Google Drive 5TB...
               </p>
             </div>
           ) : (
             <>
-              <div className="mx-auto flex h-16 w-16 items-center justify-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center">
                 <NovaCompanion
                   mood={victoryReward?.lessonCompleted ? 'proud' : 'happy'}
-                  className="h-16 w-16"
+                  className="h-14 w-14"
                 />
               </div>
 
               <div>
                 <div className="flex flex-wrap items-center justify-center gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#FAF9F6] border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#FBF9F5] border border-[#E7E2D8] px-3 py-1 text-xs font-semibold text-[#57534E]">
                     {victoryMeta?.gameTitle}
                   </span>
                   {boostActive && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF7ED] border border-[#FDBA74] px-2.5 py-1 text-xs font-semibold text-[#9A3412]">
                       Đã áp dụng 2x XP
                     </span>
                   )}
                 </div>
-                <h2 className="mt-2.5 text-2xl font-bold tracking-tight text-zinc-950">
+                <h2 className="mt-2.5 font-serif-display text-2xl sm:text-3xl font-semibold tracking-tight text-[#1C1917]">
                   {victoryReward?.lessonCompleted
-                    ? 'Hoàn thành bài luyện tập'
+                    ? 'Hoàn thành bài thực hành'
                     : 'Chưa đạt ngưỡng hoàn thành bài'}
                 </h2>
-                <p className="mt-1 text-sm text-zinc-600 tabular-nums">
+                <p className="mt-1 text-sm text-[#57534E] tabular-nums">
                   {victoryMeta?.scoreText}
                 </p>
               </div>
 
               {victoryReward && (
                 <div className="grid grid-cols-3 gap-2.5 tabular-nums">
-                  <div className="rounded-xl border border-zinc-200 bg-[#FAF9F6] p-3">
-                    <div className="text-lg font-bold text-amber-700">
+                  <div className="rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] p-3">
+                    <div className="font-serif-display text-lg font-semibold text-[#C2410C]">
                       +{victoryReward.xpEarned}
                     </div>
-                    <div className="text-[11px] font-medium text-zinc-500">
+                    <div className="text-[11px] font-medium text-[#78716C]">
                       XP
                     </div>
                   </div>
-                  <div className="rounded-xl border border-zinc-200 bg-[#FAF9F6] p-3 flex flex-col items-center">
-                    <div className="flex items-center gap-1 text-lg font-bold text-blue-700">
+                  <div className="rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] p-3 flex flex-col items-center">
+                    <div className="flex items-center gap-1 font-serif-display text-lg font-semibold text-[#14532D]">
                       +{victoryReward.gemsEarned}
                       <GemSvg className="h-4 w-4" />
                     </div>
-                    <div className="text-[11px] font-medium text-zinc-500">
+                    <div className="text-[11px] font-medium text-[#78716C]">
                       Ngọc
                     </div>
                   </div>
-                  <div className="rounded-xl border border-zinc-200 bg-[#FAF9F6] p-3 flex flex-col items-center">
-                    <div className="flex items-center gap-1 text-lg font-bold text-zinc-900">
+                  <div className="rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] p-3 flex flex-col items-center">
+                    <div className="flex items-center gap-1 font-serif-display text-lg font-semibold text-[#1C1917]">
                       <StreakFlameSvg active className="h-4 w-4" />
                       {victoryReward.streakDays}
                     </div>
-                    <div className="text-[11px] font-medium text-zinc-500">
+                    <div className="text-[11px] font-medium text-[#78716C]">
                       Chuỗi ngày
                     </div>
                   </div>
@@ -2018,15 +2018,15 @@ function PlayPageInner() {
               <div
                 className={`rounded-xl border px-4 py-3 text-xs font-medium ${
                   victoryReward?.lessonCompleted
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                    : 'border-amber-200 bg-amber-50 text-amber-900'
+                    ? 'border-[#A7F3D0] bg-[#ECFDF5] text-[#14532D]'
+                    : 'border-[#FDBA74] bg-[#FFF7ED] text-[#9A3412]'
                 }`}
               >
                 {victoryMeta?.extraTip}
               </div>
 
               {victoryReward?.leveledUp && (
-                <div className="rounded-xl bg-zinc-900 px-4 py-3 text-xs font-semibold text-white flex items-center justify-center gap-2">
+                <div className="rounded-xl bg-[#14532D] px-4 py-3 text-xs font-semibold text-white flex items-center justify-center gap-2">
                   Chúc mừng bạn đã lên Cấp {victoryReward.newLevel}
                 </div>
               )}
@@ -2037,15 +2037,15 @@ function PlayPageInner() {
                   .map((days) => (
                     <div
                       key={days}
-                      className="rounded-xl border border-amber-300 bg-amber-50/70 p-4 space-y-3"
+                      className="rounded-xl border border-[#FDBA74] bg-[#FFF7ED]/70 p-4 space-y-3"
                     >
                       <div className="flex items-center justify-center gap-2.5">
                         <TreasureChestSvg state="ready" className="h-9 w-9" />
                         <div className="text-left">
-                          <div className="text-sm font-bold text-zinc-950">
+                          <div className="font-serif-display text-base font-semibold text-[#1C1917]">
                             Đạt cột mốc chuỗi {days} ngày
                           </div>
-                          <div className="text-xs text-zinc-600">
+                          <div className="text-xs text-[#57534E]">
                             Nhận thêm XP, Ngọc tích lũy và danh hiệu mới.
                           </div>
                         </div>
@@ -2073,20 +2073,20 @@ function PlayPageInner() {
                   }}
                   className="btn-duo btn-duo-white flex-1 py-3 text-xs"
                 >
-                  <Trophy className="h-4 w-4 text-zinc-500" />
-                  Chọn chế độ khác
+                  <Trophy className="h-4 w-4 text-[#78716C]" />
+                  Bài tập khác
                 </button>
                 <Link
                   href="/leaderboard"
                   className="btn-duo btn-duo-white flex-1 py-3 text-xs"
                 >
-                  Bảng xếp hạng
+                  Xếp hạng
                 </Link>
                 <Link
                   href="/"
-                  className="btn-duo btn-duo-primary flex-1 py-3 text-xs"
+                  className="btn-duo btn-duo-green flex-1 py-3 text-xs"
                 >
-                  Về lộ trình học →
+                  Về lộ trình →
                 </Link>
               </div>
             </>
@@ -2106,9 +2106,9 @@ export default function PlayPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
-          <NovaCompanion mood="excited" className="h-18 w-18 animate-gentle-float" />
-          <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+        <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FBF9F5]">
+          <NovaCompanion mood="excited" className="h-12 w-12" />
+          <Loader2 className="h-5 w-5 animate-spin text-[#78716C]" />
         </div>
       }
     >

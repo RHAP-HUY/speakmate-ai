@@ -2,16 +2,11 @@
 
 import {
   CheckCircle2,
-  Cloud,
   Download,
   ExternalLink,
-  HardDrive,
-  KeyRound,
   Loader2,
   LogOut,
   RefreshCw,
-  ShieldCheck,
-  Sparkles,
   Trash2,
   Upload,
 } from 'lucide-react';
@@ -19,7 +14,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
-import { NovaCompanion } from '@/components/BrandArt';
 import { ProfileForm } from '@/components/ProfileForm';
 import {
   exportLocalProgressBackup,
@@ -108,7 +102,7 @@ export default function SettingsPage() {
     setKeyError(null);
     setKeyMessage(null);
     if (!personalInput.trim()) {
-      setKeyError('Hãy dán Gemini API Key cá nhân của bạn vào ô trước khi kiểm tra.');
+      setKeyError('Vui lòng dán khóa API cá nhân vào ô trước khi kiểm tra.');
       return;
     }
     setKeyActionLoading(true);
@@ -119,10 +113,10 @@ export default function SettingsPage() {
         body: JSON.stringify({ action: 'test', personalKey: personalInput.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Key không hợp lệ.');
-      setKeyMessage(`Key hợp lệ (${data.keyHint})! Bạn có thể bấm Lưu cài đặt Key.`);
+      if (!res.ok) throw new Error(data.error || 'Khóa không hợp lệ.');
+      setKeyMessage(`Khóa hợp lệ (${data.keyHint}). Bạn có thể bấm Lưu khóa cá nhân.`);
     } catch (err) {
-      setKeyError(err instanceof Error ? err.message : 'Kiểm tra Key thất bại.');
+      setKeyError(err instanceof Error ? err.message : 'Kiểm tra khóa thất bại.');
     } finally {
       setKeyActionLoading(false);
     }
@@ -145,7 +139,7 @@ export default function SettingsPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Không thể lưu cấu hình API Key.');
+      if (!res.ok) throw new Error(data.error || 'Không thể lưu cấu hình khóa API.');
 
       if (cleaned && !data.storedOnServer) {
         setLocalPersonalKey(cleaned);
@@ -163,8 +157,8 @@ export default function SettingsPage() {
       setKeyMessage(
         data.warning ||
           (targetMode === 'personal'
-            ? 'Đã chuyển sang dùng Gemini API Key cá nhân của bạn.'
-            : 'Đã chuyển sang dùng API Key dùng chung của hệ thống.')
+            ? 'Đã chuyển sang sử dụng khóa Gemini cá nhân của bạn.'
+            : 'Đã chuyển sang sử dụng nguồn kết nối chung của hệ thống.')
       );
     } catch (err) {
       setKeyError(err instanceof Error ? err.message : 'Lưu thất bại.');
@@ -192,7 +186,7 @@ export default function SettingsPage() {
         hasPersonalKey: false,
         personalKeyHint: null,
       }));
-      setKeyMessage('Đã xóa API Key cá nhân và quay về chế độ dùng chung.');
+      setKeyMessage('Đã gỡ khóa cá nhân và quay về chế độ mặc định.');
     } finally {
       setKeyActionLoading(false);
     }
@@ -200,9 +194,8 @@ export default function SettingsPage() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-mesh-light">
-        <NovaCompanion mood="happy" className="h-18 w-18 animate-gentle-float" />
-        <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+      <div className="min-h-screen flex items-center justify-center bg-[#FBF9F5]">
+        <Loader2 className="h-5 w-5 animate-spin text-[#78716C]" />
       </div>
     );
   }
@@ -213,37 +206,31 @@ export default function SettingsPage() {
       authenticated={authenticated}
       maxWidthClass="max-w-3xl"
     >
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
-          Hồ sơ, Đồng bộ Drive 5TB &amp; API Key
+      <div className="pb-4 border-b border-[#E7E2D8] space-y-1">
+        <p className="font-serif-display italic text-sm text-[#C2410C]">
+          Tài khoản &amp; Tùy chỉnh cá nhân
+        </p>
+        <h1 className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917]">
+          Hồ sơ học tập &amp; Đồng bộ dữ liệu
         </h1>
-        <p className="text-sm font-medium text-slate-500 mt-1">
-          Tùy chỉnh cá nhân hóa học tập, đồng bộ tài khoản Google và quản lý nguồn Gemini AI.
+        <p className="text-sm text-[#57534E]">
+          Quản lý mục tiêu hàng ngày, tài khoản Google Drive và tệp sao lưu tiến trình.
         </p>
       </div>
 
-      {/* Google Drive 5TB Cloud Sync Card */}
+      {/* Cloud Sync & Backup */}
       <section className="card-duo-elevated p-6 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-              {sessionInfo?.provider === 'google' ? (
-                <HardDrive className="h-5 w-5 text-emerald-600" />
-              ) : (
-                <Cloud className="h-5 w-5 text-indigo-600" />
-              )}
-              Lưu trữ Google Drive 5TB &amp; Đồng bộ Tài khoản
+          <div className="space-y-1 max-w-lg">
+            <h2 className="text-base font-semibold text-[#1C1917]">
+              Đồng bộ qua Google Drive &amp; Sao lưu tệp
             </h2>
-            <p className="text-xs font-medium text-slate-500 mt-1">
+            <p className="text-xs text-[#57534E] leading-relaxed">
               {sessionInfo?.provider === 'google' && sessionInfo.user
-                ? `Đang đăng nhập Google (${sessionInfo.user.email}) · Chế độ: ${
-                    sessionInfo.storageMode === 'google-drive-owner'
-                      ? 'Kho Drive 5TB trung tâm'
-                      : 'Google Drive của tài khoản'
-                  }. Mọi tiến độ tự động lưu lên Drive.`
+                ? `Đang kết nối với tài khoản ${sessionInfo.user.email}. Mọi tiến trình học, chuỗi ngày và sổ câu tự động cập nhật lên Google Drive.`
                 : sessionInfo?.provider === 'supabase' && sessionInfo.user
                   ? `Đang đồng bộ đám mây (${sessionInfo.user.email}).`
-                  : 'Đang lưu cục bộ trên máy này. Đăng nhập Google để lưu và khôi phục tự động qua mọi thiết bị.'}
+                  : 'Hiện đang lưu trên trình duyệt này. Đăng nhập Google để tự động khôi phục dữ liệu khi chuyển sang điện thoại hoặc máy tính khác.'}
             </p>
           </div>
 
@@ -252,19 +239,18 @@ export default function SettingsPage() {
               href="/onboarding"
               className="btn-duo btn-duo-white px-3.5 py-2 text-xs"
             >
-              <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
-              Chọn lại Ngôn ngữ &amp; Sở thích
+              Thiết lập lại lộ trình
             </Link>
             <Link
               href="/auth"
-              className="btn-duo btn-duo-blue px-3.5 py-2 text-xs"
+              className="btn-duo btn-duo-primary px-3.5 py-2 text-xs"
             >
-              Google / Apple →
+              Tài khoản Google →
             </Link>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 pt-1">
+        <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-[#E7E2D8]">
           {sessionInfo?.provider === 'google' && sessionInfo.authenticated && (
             <button
               type="button"
@@ -276,16 +262,16 @@ export default function SettingsPage() {
                 setSyncingDrive(false);
                 setBackupNotice(
                   res.ok
-                    ? 'Đã đồng bộ toàn bộ hồ sơ, lịch chuỗi, XP và nhật ký hội thoại lên Google Drive 5TB.'
-                    : `Lỗi đồng bộ Drive: ${res.error}`
+                    ? 'Đã đồng bộ toàn bộ hồ sơ, lịch chuỗi và nhật ký hội thoại lên Google Drive.'
+                    : `Không thể đồng bộ lúc này: ${res.error}`
                 );
               }}
-              className="btn-duo btn-duo-green px-4 py-2.5 text-xs"
+              className="btn-duo btn-duo-primary px-4 py-2 text-xs"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${syncingDrive ? 'animate-spin' : ''}`}
               />
-              {syncingDrive ? 'Đang đồng bộ...' : 'Đồng bộ ngay lên Drive'}
+              {syncingDrive ? 'Đang đồng bộ...' : 'Đồng bộ ngay'}
             </button>
           )}
 
@@ -300,18 +286,16 @@ export default function SettingsPage() {
               a.download = `speakmate-backup-${new Date().toISOString().slice(0, 10)}.json`;
               a.click();
               URL.revokeObjectURL(url);
-              setBackupNotice(
-                'Đã tải tệp sao lưu toàn bộ chuỗi học, XP, sổ tay & lịch sử!'
-              );
+              setBackupNotice('Đã tải tệp sao lưu (.json) về máy của bạn.');
             }}
-            className="btn-duo btn-duo-white px-3.5 py-2.5 text-xs"
+            className="btn-duo btn-duo-white px-3.5 py-2 text-xs"
           >
             <Download className="h-3.5 w-3.5" />
-            Xuất sao lưu (.json)
+            Tải bản sao lưu (.json)
           </button>
 
-          <label className="btn-duo btn-duo-white px-3.5 py-2.5 text-xs">
-            <Upload className="h-3.5 w-3.5 text-[#1CB0F6]" />
+          <label className="btn-duo btn-duo-white px-3.5 py-2 text-xs">
+            <Upload className="h-3.5 w-3.5" />
             Khôi phục từ tệp
             <input
               type="file"
@@ -325,9 +309,7 @@ export default function SettingsPage() {
                   importLocalProgressBackup(text);
                   const { profile: reloaded } = await getCurrentProfile();
                   if (reloaded) setProfile(reloaded);
-                  setBackupNotice(
-                    'Đã khôi phục thành công toàn bộ dữ liệu học!'
-                  );
+                  setBackupNotice('Đã khôi phục toàn bộ tiến trình học tập.');
                 } catch {
                   setBackupNotice(
                     'Tệp sao lưu không hợp lệ, vui lòng chọn đúng tệp .json.'
@@ -345,7 +327,7 @@ export default function SettingsPage() {
                 router.push('/auth');
                 router.refresh();
               }}
-              className="inline-flex items-center gap-1.5 rounded-xl border-2 border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-extrabold text-rose-700 hover:bg-rose-100 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100 cursor-pointer"
             >
               <LogOut className="h-3.5 w-3.5" />
               Đăng xuất
@@ -354,16 +336,16 @@ export default function SettingsPage() {
         </div>
 
         {backupNotice && (
-          <div className="rounded-xl border-2 border-emerald-200 bg-[#F1FDE8] px-3.5 py-2.5 text-xs font-extrabold text-[#3B8702]">
+          <div className="rounded-xl border border-[#14532D]/25 bg-[#14532D]/[0.05] px-3.5 py-2.5 text-xs font-medium text-[#14532D]">
             {backupNotice}
           </div>
         )}
       </section>
 
-      {/* Profile Form Card */}
+      {/* Profile Form */}
       <section className="card-duo-elevated p-6">
-        <h2 className="text-base font-black text-slate-900 mb-4">
-          Thông tin học viên (Đồng bộ mọi thiết bị)
+        <h2 className="font-serif-display text-xl font-semibold text-[#1C1917] mb-5">
+          Thông tin cá nhân hóa nội dung học
         </h2>
         <ProfileForm
           initialProfile={profile}
@@ -375,20 +357,19 @@ export default function SettingsPage() {
         />
       </section>
 
-      {/* Gemini API Key Card */}
+      {/* API Key Configuration */}
       <section className="card-duo-elevated p-6 space-y-4">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <KeyRound className="h-5 w-5 text-[#1CB0F6]" />
-              Nguồn Google Gemini API Key
+            <h2 className="text-base font-semibold text-[#1C1917]">
+              Cấu hình kết nối mô hình giọng nói &amp; ngôn ngữ
             </h2>
-            <p className="text-xs font-medium text-slate-500 mt-1">
-              Dùng chung Pool Key hệ thống hoặc gắn Key cá nhân riêng từng tài khoản.
+            <p className="text-xs text-[#57534E] mt-0.5">
+              Sử dụng hạn mức mặc định của hệ thống hoặc gắn khóa Gemini API riêng nếu bạn muốn dùng hạn mức độc lập.
             </p>
           </div>
-          <span className="rounded-xl border-2 border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black text-slate-700">
-            Pool hệ thống: {keyStatus.sharedPoolCount} key
+          <span className="font-mono text-[11px] text-[#78716C] tabular-nums">
+            Hệ thống: {keyStatus.sharedPoolCount} khóa sẵn sàng
           </span>
         </div>
 
@@ -397,22 +378,22 @@ export default function SettingsPage() {
             type="button"
             onClick={() => void handleSaveKeySettings('system')}
             disabled={keyActionLoading}
-            className={`rounded-2xl border-2 p-4 text-left transition cursor-pointer ${
+            className={`rounded-xl border p-4 text-left transition cursor-pointer ${
               keyStatus.apiKeyMode === 'system'
-                ? 'border-[#1CB0F6] bg-[#DDF4FF]/50'
-                : 'border-slate-200 bg-white hover:border-slate-300'
+                ? 'border-[#14532D] bg-[#14532D]/[0.04]'
+                : 'border-[#E7E2D8] bg-white hover:border-[#D6CFC2]'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-black text-slate-900">
-                Dùng API hệ thống
+              <span className="text-sm font-semibold text-[#1C1917]">
+                Dùng kết nối hệ thống (Khuyên dùng)
               </span>
               {keyStatus.apiKeyMode === 'system' && (
-                <CheckCircle2 className="h-5 w-5 text-[#1899D6]" />
+                <CheckCircle2 className="h-4 w-4 text-[#14532D]" />
               )}
             </div>
-            <p className="mt-1 text-xs font-medium text-slate-600">
-              Tự động xoay vòng qua {Math.max(1, keyStatus.sharedPoolCount)} key trên server. Không cần cài gì thêm.
+            <p className="mt-1 text-xs text-[#57534E]">
+              Hoạt động ngay lập tức, không cần thiết lập thêm.
             </p>
           </button>
 
@@ -421,42 +402,41 @@ export default function SettingsPage() {
             onClick={() =>
               setKeyStatus((prev) => ({ ...prev, apiKeyMode: 'personal' }))
             }
-            className={`rounded-2xl border-2 p-4 text-left transition cursor-pointer ${
+            className={`rounded-xl border p-4 text-left transition cursor-pointer ${
               keyStatus.apiKeyMode === 'personal'
-                ? 'border-[#1CB0F6] bg-[#DDF4FF]/50'
-                : 'border-slate-200 bg-white hover:border-slate-300'
+                ? 'border-[#14532D] bg-[#14532D]/[0.04]'
+                : 'border-[#E7E2D8] bg-white hover:border-[#D6CFC2]'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-black text-slate-900">
-                Dùng API Key cá nhân
+              <span className="text-sm font-semibold text-[#1C1917]">
+                Dùng khóa Gemini cá nhân
               </span>
               {keyStatus.apiKeyMode === 'personal' && (
-                <CheckCircle2 className="h-5 w-5 text-[#1899D6]" />
+                <CheckCircle2 className="h-4 w-4 text-[#14532D]" />
               )}
             </div>
-            <p className="mt-1 text-xs font-medium text-slate-600">
-              Dùng hạn mức riêng của bạn, không lo giới hạn khi nhiều người dùng cùng lúc.
+            <p className="mt-1 text-xs text-[#57534E]">
+              Dùng hạn mức riêng của bạn, được mã hóa AES-256-GCM trên máy chủ.
             </p>
           </button>
         </div>
 
         {keyStatus.apiKeyMode === 'personal' && (
-          <div className="rounded-2xl border-2 border-slate-200 bg-[#F7F9FC] p-4 space-y-3">
+          <div className="rounded-xl border border-[#E7E2D8] bg-[#FBF9F5] p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-extrabold text-slate-700 flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              <span className="font-medium text-[#1C1917]">
                 {keyStatus.personalKeyHint
-                  ? `Đã lưu Key: ${keyStatus.personalKeyHint}`
-                  : 'Nhập Gemini API Key miễn phí của bạn'}
+                  ? `Khóa đang lưu: ${keyStatus.personalKeyHint}`
+                  : 'Nhập khóa Gemini API của bạn'}
               </span>
               <a
                 href="https://aistudio.google.com/apikey"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 font-extrabold text-[#1899D6] hover:underline"
+                className="inline-flex items-center gap-1 font-medium text-[#14532D] hover:underline"
               >
-                Lấy Key miễn phí
+                Lấy khóa tại Google AI Studio
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
@@ -465,8 +445,8 @@ export default function SettingsPage() {
               type="password"
               value={personalInput}
               onChange={(e) => setPersonalInput(e.target.value)}
-              placeholder="Dán AIza... vào đây để thêm hoặc thay Key mới"
-              className="w-full rounded-xl border-2 border-slate-200 bg-white px-3.5 py-2.5 text-sm font-mono focus:border-[#1CB0F6] focus:outline-none"
+              placeholder="AIza..."
+              className="w-full rounded-xl border border-[#D6CFC2] bg-white px-3.5 py-2.5 text-sm font-mono focus:border-[#14532D] focus:outline-none"
             />
 
             <div className="flex flex-wrap gap-2">
@@ -476,25 +456,25 @@ export default function SettingsPage() {
                 disabled={keyActionLoading}
                 className="btn-duo btn-duo-white px-4 py-2 text-xs"
               >
-                Kiểm tra Key
+                Kiểm tra khóa
               </button>
               <button
                 type="button"
                 onClick={() => void handleSaveKeySettings('personal')}
                 disabled={keyActionLoading}
-                className="btn-duo btn-duo-green px-4 py-2 text-xs"
+                className="btn-duo btn-duo-primary px-4 py-2 text-xs"
               >
-                Lưu Key cá nhân
+                Lưu khóa cá nhân
               </button>
               {keyStatus.hasPersonalKey && (
                 <button
                   type="button"
                   onClick={handleDeletePersonalKey}
                   disabled={keyActionLoading}
-                  className="inline-flex items-center gap-1 rounded-xl border-2 border-rose-200 bg-rose-50 px-3 py-2 text-xs font-extrabold text-rose-700 hover:bg-rose-100 cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100 cursor-pointer"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  Xóa Key
+                  Gỡ khóa
                 </button>
               )}
             </div>
@@ -502,12 +482,12 @@ export default function SettingsPage() {
         )}
 
         {keyError && (
-          <div className="rounded-xl border-2 border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-bold text-rose-700">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700">
             {keyError}
           </div>
         )}
         {keyMessage && (
-          <div className="rounded-xl border-2 border-emerald-200 bg-[#F1FDE8] px-3.5 py-2.5 text-xs font-extrabold text-[#3B8702]">
+          <div className="rounded-xl border border-[#14532D]/25 bg-[#14532D]/[0.05] px-3.5 py-2.5 text-xs font-medium text-[#14532D]">
             {keyMessage}
           </div>
         )}

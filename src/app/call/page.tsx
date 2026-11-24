@@ -6,21 +6,23 @@ import {
   Check,
   Eye,
   EyeOff,
-  Flame,
   Loader2,
   Mic,
   MicOff,
   PhoneOff,
   RotateCcw,
   Send,
-  Sparkles,
   Volume2,
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { NovaCompanion } from '@/components/BrandArt';
+import {
+  GemSvg,
+  StreakFlameSvg,
+  TutorAvatar,
+} from '@/components/BrandArt';
 import { CallReportView } from '@/components/CallReportView';
 import { PronunciationBadge } from '@/components/PronunciationBadge';
 import {
@@ -716,49 +718,50 @@ function CallStudioInner() {
       : null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-white">
+    <div className="min-h-screen flex flex-col bg-[#1C1917] text-[#FBF9F5]">
       {/* Top Call Bar */}
-      <header className="sticky top-0 z-20 border-b border-slate-800 bg-slate-900/95 backdrop-blur-md px-4 py-3">
+      <header className="sticky top-0 z-20 border-b border-[#36302B] bg-[#24201D]/95 backdrop-blur-md px-4 py-3">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div
-              className={`relative flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${persona.gradient} text-lg font-bold shadow-md`}
-            >
-              {persona.flag}
+            <div className="relative shrink-0">
+              <TutorAvatar
+                personaId={persona.id}
+                className="h-11 w-11 ring-1 ring-[#443C36]"
+              />
               {(phase === 'speaking' || phase === 'recording') && (
-                <span className="absolute -inset-1 rounded-2xl border-2 border-cyan-400/70 animate-voice-pulse" />
+                <span className="absolute -inset-1 rounded-full border-2 border-[#FDBA74]/80 animate-voice-pulse" />
               )}
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-sm font-bold text-white">
+                <h1 className="font-serif-display text-base font-semibold text-[#FBF9F5]">
                   {persona.name} · {scenario.titleVi}
                 </h1>
-                <span className="rounded-full bg-slate-800 px-2 py-0.5 font-mono text-[11px] text-cyan-300">
+                <span className="rounded-full bg-[#1C1917] border border-[#36302B] px-2.5 py-0.5 font-mono text-[11px] text-[#FDE68A] tabular-nums">
                   {formatTimer(elapsedSeconds)}
                 </span>
                 {lastTurnMeta && (
                   <span
                     title={`Model: ${lastTurnMeta.modelUsed}`}
-                    className="hidden sm:inline-flex items-center gap-1 rounded-full bg-slate-800/90 border border-slate-700 px-2 py-0.5 font-mono text-[10px] text-emerald-300"
+                    className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#1C1917] border border-[#36302B] px-2 py-0.5 font-mono text-[10px] text-[#A7F3D0] tabular-nums"
                   >
                     <Zap className="h-2.5 w-2.5" />
                     {(lastTurnMeta.latencyMs / 1000).toFixed(1)}s
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400">
-                {phase === 'initializing' && 'Đang kết nối cuộc gọi...'}
+              <p className="text-xs text-[#A8A29E]">
+                {phase === 'initializing' && 'Đang mở phòng hội thoại...'}
                 {phase === 'idle' &&
                   (micMode === 'handsfree'
-                    ? 'Sẵn sàng — Hãy nói hoặc bấm Mic'
-                    : 'Sẵn sàng — Bấm Mic (hoặc phím Space) để nói')}
-                {phase === 'recording' && 'Đang nghe bạn nói...'}
+                    ? 'Sẵn sàng — Hãy nói tự nhiên hoặc bấm Micro'
+                    : 'Sẵn sàng — Bấm Micro (hoặc phím Space) để trả lời')}
+                {phase === 'recording' && 'Đang lắng nghe bạn nói...'}
                 {phase === 'thinking' &&
-                  `${persona.name} đang chấm phát âm & phản hồi...`}
+                  `${persona.name} đang nghe âm vị & chuẩn bị câu phản hồi...`}
                 {phase === 'speaking' &&
-                  `${persona.name} đang nói (${persona.accentLabel})...`}
-                {phase === 'ended' && 'Cuộc gọi đã kết thúc'}
+                  `${persona.name} đang trao đổi (${persona.accentLabel})...`}
+                {phase === 'ended' && 'Buổi hội thoại đã hoàn tất'}
               </p>
             </div>
           </div>
@@ -768,8 +771,8 @@ function CallStudioInner() {
             <select
               value={persona.id}
               onChange={(e) => handleChangePersona(e.target.value)}
-              aria-label="Đổi giọng AI"
-              className="rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-200 focus:outline-none"
+              aria-label="Đổi người hướng dẫn"
+              className="rounded-xl border border-[#36302B] bg-[#1C1917] px-2.5 py-1.5 text-xs font-medium text-[#E7E2D8] focus:outline-none"
             >
               {AI_PERSONAS.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -779,16 +782,17 @@ function CallStudioInner() {
             </select>
 
             {/* Speed selector */}
-            <div className="flex items-center rounded-xl border border-slate-700 bg-slate-800 p-0.5">
+            <div className="flex items-center rounded-xl border border-[#36302B] bg-[#1C1917] p-0.5 tabular-nums">
               {[0.75, 0.85, 1.0, 1.1].map((spd) => (
                 <button
                   key={spd}
                   type="button"
                   onClick={() => setSpeed(spd)}
-                  className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${Math.abs(speed - spd) < 0.03
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-300 hover:text-white'
-                    }`}
+                  className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                    Math.abs(speed - spd) < 0.03
+                      ? 'bg-[#14532D] text-white'
+                      : 'text-[#A8A29E] hover:text-white'
+                  }`}
                 >
                   {spd}x
                 </button>
@@ -799,16 +803,16 @@ function CallStudioInner() {
             <button
               type="button"
               onClick={() => setShowVietnamese((v) => !v)}
-              className="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl border border-[#36302B] bg-[#1C1917] px-2.5 py-1.5 text-xs font-medium text-[#E7E2D8] hover:bg-[#2E2925] cursor-pointer"
             >
               {showVietnamese ? (
                 <>
-                  <Eye className="h-3.5 w-3.5 text-cyan-400" />
+                  <Eye className="h-3.5 w-3.5 text-[#FDBA74]" />
                   <span className="hidden sm:inline">Song ngữ</span>
                 </>
               ) : (
                 <>
-                  <EyeOff className="h-3.5 w-3.5 text-slate-400" />
+                  <EyeOff className="h-3.5 w-3.5 text-[#78716C]" />
                   <span className="hidden sm:inline">Ẩn dịch</span>
                 </>
               )}
@@ -818,7 +822,7 @@ function CallStudioInner() {
               type="button"
               onClick={() => void handleEndCall()}
               disabled={phase === 'ended'}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800 disabled:opacity-50 transition cursor-pointer"
             >
               <PhoneOff className="h-3.5 w-3.5" />
               Kết thúc
@@ -829,30 +833,31 @@ function CallStudioInner() {
         {/* Strict Lesson Quest Progress Bar for Keeping Streak */}
         <div className="mx-auto mt-2.5 max-w-5xl">
           <div
-            className={`flex items-center justify-between gap-3 rounded-xl px-3 py-1.5 text-[11px] font-bold border ${userTurns >= MIN_CALL_TURNS_FOR_LESSON
-              ? 'border-emerald-500/40 bg-emerald-950/60 text-emerald-300'
-              : 'border-slate-800 bg-slate-950/70 text-slate-300'
-              }`}
+            className={`flex items-center justify-between gap-3 rounded-xl px-3.5 py-1.5 text-[11px] font-medium border ${
+              userTurns >= MIN_CALL_TURNS_FOR_LESSON
+                ? 'border-[#166534] bg-[#14532D]/45 text-[#D1FAE5]'
+                : 'border-[#36302B] bg-[#1C1917]/80 text-[#D6D0C4]'
+            }`}
           >
             <span className="inline-flex items-center gap-1.5">
-              <Flame
-                className={`h-3.5 w-3.5 ${userTurns >= MIN_CALL_TURNS_FOR_LESSON
-                  ? 'text-amber-400 fill-amber-400'
-                  : 'text-slate-400'
-                  }`}
+              <StreakFlameSvg
+                active={userTurns >= MIN_CALL_TURNS_FOR_LESSON}
+                className="h-3.5 w-3.5 shrink-0"
               />
               {userTurns >= MIN_CALL_TURNS_FOR_LESSON
-                ? 'Đã hoàn thành nhiệm vụ bài học — Chuỗi hôm nay đã được giữ (+60 XP · +15 Ngọc)'
-                : `Nhiệm vụ giữ chuỗi: Nói thêm ${MIN_CALL_TURNS_FOR_LESSON - userTurns
-                } lượt nữa để hoàn thành 1 bài học`}
+                ? 'Đã hoàn thành mục tiêu buổi hội thoại — Chuỗi hôm nay đã được giữ (+60 XP · +15 Ngọc)'
+                : `Để giữ chuỗi ngày học: trao đổi thêm ${
+                    MIN_CALL_TURNS_FOR_LESSON - userTurns
+                  } lượt nói nữa cùng ${persona.name}`}
             </span>
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="hidden sm:block h-1.5 w-24 overflow-hidden rounded-full bg-slate-800">
+            <div className="flex items-center gap-2 shrink-0 tabular-nums">
+              <div className="hidden sm:block h-1.5 w-24 overflow-hidden rounded-full bg-[#36302B]">
                 <div
-                  className={`h-full rounded-full transition-all duration-300 ${userTurns >= MIN_CALL_TURNS_FOR_LESSON
-                    ? 'bg-emerald-400'
-                    : 'bg-gradient-to-r from-amber-400 to-orange-500'
-                    }`}
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    userTurns >= MIN_CALL_TURNS_FOR_LESSON
+                      ? 'bg-[#34D399]'
+                      : 'bg-[#C2410C]'
+                  }`}
                   style={{
                     width: `${Math.min(
                       100,
@@ -870,16 +875,16 @@ function CallStudioInner() {
       </header>
 
       {/* Main Conversation Stream */}
-      <main className="mx-auto flex-1 w-full max-w-4xl px-4 py-5 space-y-4 overflow-y-auto">
+      <main className="mx-auto flex-1 w-full max-w-4xl px-4 py-6 space-y-5 overflow-y-auto">
         {messages.length === 0 && phase === 'initializing' && (
-          <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
-            <NovaCompanion
-              mood="excited"
-              className="h-24 w-24 animate-gentle-float drop-shadow-[0_14px_24px_rgba(99,102,241,0.45)]"
+          <div className="flex flex-col items-center justify-center py-20 text-center space-y-3.5">
+            <TutorAvatar
+              personaId={persona.id}
+              className="h-20 w-20 ring-2 ring-[#443C36]"
             />
-            <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
-            <p className="text-sm font-semibold text-slate-200">
-              {persona.name} &amp; Nova đang kết nối cuộc gọi cho {profile?.displayName || 'bạn'}...
+            <Loader2 className="h-5 w-5 animate-spin text-[#FDBA74]" />
+            <p className="font-serif-display text-lg font-medium text-[#FBF9F5]">
+              {persona.name} đang chuẩn bị tình huống cho {profile?.displayName || 'bạn'}...
             </p>
           </div>
         )}
@@ -897,17 +902,25 @@ function CallStudioInner() {
           return (
             <div
               key={msg.id}
-              className={`flex flex-col ${isUser ? 'items-end' : 'items-start'
-                }`}
+              className={`flex flex-col ${
+                isUser ? 'items-end' : 'items-start'
+              }`}
             >
               <div
-                className={`max-w-[92%] sm:max-w-[82%] rounded-2xl px-4 py-3 ${isUser
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-900 border border-slate-800 text-slate-100'
-                  }`}
+                className={`max-w-[92%] sm:max-w-[82%] rounded-2xl px-4 py-3.5 ${
+                  isUser
+                    ? 'bg-[#14532D] text-[#FBF9F5]'
+                    : 'bg-[#26221E] border border-[#38312C] text-[#FBF9F5]'
+                }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-sm sm:text-base font-medium leading-relaxed">
+                  <p
+                    className={
+                      isUser
+                        ? 'text-sm sm:text-base font-medium leading-relaxed'
+                        : 'font-serif-display text-base sm:text-[18px] leading-relaxed'
+                    }
+                  >
                     {msg.englishText}
                   </p>
                   {!isUser && (
@@ -916,7 +929,7 @@ function CallStudioInner() {
                         type="button"
                         onClick={() => void speakAiSentence(msg.englishText)}
                         title="Nghe lại"
-                        className="rounded-lg bg-slate-800 p-1.5 text-cyan-300 hover:bg-slate-700 cursor-pointer"
+                        className="rounded-lg bg-[#1C1917] border border-[#38312C] p-1.5 text-[#FDE68A] hover:bg-[#322C27] cursor-pointer"
                       >
                         <Volume2 className="h-4 w-4" />
                       </button>
@@ -926,7 +939,7 @@ function CallStudioInner() {
                           void speakAiSentence(msg.englishText, 0.72)
                         }
                         title="Nghe chậm 0.72x"
-                        className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-semibold text-amber-300 hover:bg-slate-700 cursor-pointer"
+                        className="rounded-lg bg-[#1C1917] border border-[#38312C] px-2 py-1 text-[11px] font-medium text-[#E7E2D8] hover:bg-[#322C27] cursor-pointer"
                       >
                         Chậm
                       </button>
@@ -935,13 +948,13 @@ function CallStudioInner() {
                 </div>
 
                 {!isUser && showVietnamese && msg.vietnameseTranslation && (
-                  <p className="mt-1.5 border-t border-slate-800 pt-1.5 text-xs text-slate-300">
+                  <p className="mt-2 border-t border-[#38312C] pt-2 text-xs text-[#A8A29E] leading-relaxed">
                     {msg.vietnameseTranslation}
                   </p>
                 )}
 
                 {!isUser && (
-                  <div className="mt-2 flex flex-wrap items-center justify-end gap-3">
+                  <div className="mt-2.5 flex flex-wrap items-center justify-end gap-3.5">
                     <button
                       type="button"
                       onClick={() =>
@@ -950,10 +963,10 @@ function CallStudioInner() {
                           vietnamese: msg.vietnameseTranslation,
                         })
                       }
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-cyan-300 hover:text-cyan-200 cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-[#FDBA74] hover:text-[#FED7AA] cursor-pointer"
                     >
                       <Mic className="h-3 w-3" />
-                      Đọc nhại & Chấm điểm
+                      Đọc nhại &amp; chấm âm
                     </button>
                     {msg.vietnameseTranslation && (
                       <button
@@ -964,11 +977,11 @@ function CallStudioInner() {
                             msg.vietnameseTranslation || ''
                           )
                         }
-                        className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-cyan-300 cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[11px] text-[#A8A29E] hover:text-[#FBF9F5] cursor-pointer"
                       >
                         {isSavedAi ? (
                           <>
-                            <Check className="h-3 w-3 text-emerald-400" />
+                            <Check className="h-3 w-3 text-[#34D399]" />
                             Đã lưu câu
                           </>
                         ) : (
@@ -983,8 +996,8 @@ function CallStudioInner() {
                 )}
 
                 {msg.coachingTip && (
-                  <div className="mt-2 rounded-xl bg-slate-800/80 px-3 py-2 text-xs text-amber-200">
-                    Góp ý: {msg.coachingTip}
+                  <div className="mt-2.5 rounded-xl bg-[#1C1917] border border-[#38312C] px-3 py-2 text-xs text-[#FDE68A]">
+                    Góp ý diễn đạt: {msg.coachingTip}
                   </div>
                 )}
               </div>
@@ -1000,11 +1013,10 @@ function CallStudioInner() {
 
               {/* Native phrasing upgrade card for user turns */}
               {isUser && msg.naturalRewrite && (
-                <div className="mt-1.5 max-w-[92%] sm:max-w-[82%] rounded-2xl border border-emerald-500/30 bg-emerald-950/60 px-3.5 py-2.5 text-xs">
+                <div className="mt-1.5 max-w-[92%] sm:max-w-[82%] rounded-2xl border border-[#166534] bg-[#14532D]/35 px-4 py-3 text-xs">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                    <span className="inline-flex items-center gap-1 font-bold text-emerald-300">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Cách người bản xứ nói tự nhiên hơn:
+                    <span className="font-semibold text-[#A7F3D0]">
+                      Cách người bản xứ diễn đạt tự nhiên hơn:
                     </span>
                     <div className="flex flex-wrap items-center gap-1.5">
                       <button
@@ -1012,7 +1024,7 @@ function CallStudioInner() {
                         onClick={() =>
                           void speakAiSentence(msg.naturalRewrite || '')
                         }
-                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-900/70 px-2 py-0.5 text-[11px] font-semibold text-emerald-200 hover:bg-emerald-800 cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-lg bg-[#1C1917]/80 border border-[#38312C] px-2 py-0.5 text-[11px] font-medium text-[#E7E2D8] hover:bg-[#2E2925] cursor-pointer"
                       >
                         <Volume2 className="h-3 w-3" />
                         Nghe mẫu
@@ -1025,7 +1037,7 @@ function CallStudioInner() {
                             vietnamese: `Nâng cấp từ: "${msg.englishText}"`,
                           })
                         }
-                        className="inline-flex items-center gap-1 rounded-lg bg-cyan-900/80 px-2 py-0.5 text-[11px] font-semibold text-cyan-200 hover:bg-cyan-800 cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-lg bg-[#1C1917]/80 border border-[#38312C] px-2 py-0.5 text-[11px] font-medium text-[#FDBA74] hover:bg-[#2E2925] cursor-pointer"
                       >
                         <Mic className="h-3 w-3" />
                         Đọc thử
@@ -1038,7 +1050,7 @@ function CallStudioInner() {
                             msg.englishText
                           )
                         }
-                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-900/70 px-2 py-0.5 text-[11px] font-semibold text-emerald-200 hover:bg-emerald-800 cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-lg bg-[#1C1917]/80 border border-[#38312C] px-2 py-0.5 text-[11px] font-medium text-[#A7F3D0] hover:bg-[#2E2925] cursor-pointer"
                       >
                         {isSavedRewrite ? (
                           <Check className="h-3 w-3" />
@@ -1049,7 +1061,7 @@ function CallStudioInner() {
                       </button>
                     </div>
                   </div>
-                  <p className="text-sm font-semibold text-white">
+                  <p className="font-serif-display text-base font-medium text-[#FBF9F5]">
                     “{msg.naturalRewrite}”
                   </p>
                 </div>
@@ -1059,10 +1071,10 @@ function CallStudioInner() {
         })}
 
         {phase === 'thinking' && (
-          <div className="flex items-center gap-2 text-xs text-cyan-300 pl-2">
+          <div className="flex items-center gap-2 text-xs text-[#FDBA74] pl-2">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span>
-              {persona.name} đang nghe, chấm phát âm và chuẩn bị câu trả lời...
+              {persona.name} đang phân tích phát âm và chuẩn bị câu trả lời...
             </span>
           </div>
         )}
@@ -1079,7 +1091,7 @@ function CallStudioInner() {
                     void sendTurn(retryPayload);
                   }
                 }}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-3 py-1.5 text-[11px] font-extrabold text-white transition cursor-pointer shrink-0"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#C2410C] hover:bg-[#9A3412] px-3 py-1.5 text-[11px] font-semibold text-white transition cursor-pointer shrink-0"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Thử lại lượt vừa rồi
@@ -1093,31 +1105,31 @@ function CallStudioInner() {
 
       {/* Bottom Smart Reply Hints + Mic Dock */}
       {phase !== 'ended' && (
-        <footer className="sticky bottom-0 z-20 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md px-4 py-3">
+        <footer className="sticky bottom-0 z-20 border-t border-[#36302B] bg-[#24201D]/95 backdrop-blur-md px-4 py-3.5">
           <div className="mx-auto max-w-4xl space-y-3">
             {/* 3 Reply Hints for A0-A1 support */}
             {replyHints.length > 0 && (
               <div>
-                <div className="text-[11px] font-semibold text-slate-400 mb-1.5">
+                <div className="text-[11px] font-medium text-[#A8A29E] mb-1.5">
                   Gợi ý câu trả lời (nghe mẫu, đọc thử chấm âm hoặc gửi nhanh):
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {replyHints.map((hint, idx) => (
                     <div
                       key={`${idx}-${hint.en}`}
-                      className="flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-950/90 p-2.5"
+                      className="flex flex-col justify-between rounded-xl border border-[#38312C] bg-[#1C1917] p-2.5"
                     >
                       <div>
-                        <div className="text-xs font-semibold text-white">
+                        <div className="font-serif-display text-sm font-medium text-[#FBF9F5]">
                           {hint.en}
                         </div>
                         {hint.phonetic && (
-                          <div className="text-[11px] text-cyan-300/90 mt-0.5">
+                          <div className="font-mono text-[11px] text-[#FDE68A]/85 mt-0.5">
                             /{hint.phonetic}/
                           </div>
                         )}
                         {showVietnamese && (
-                          <div className="text-[11px] text-slate-400 mt-0.5">
+                          <div className="text-[11px] text-[#A8A29E] mt-0.5">
                             {hint.vi}
                           </div>
                         )}
@@ -1126,9 +1138,9 @@ function CallStudioInner() {
                         <button
                           type="button"
                           onClick={() => void speakAiSentence(hint.en, 0.8)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-medium text-cyan-300 hover:bg-slate-700 cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-lg bg-[#26221E] border border-[#38312C] px-2 py-1 text-[11px] font-medium text-[#E7E2D8] hover:bg-[#322C27] cursor-pointer"
                         >
-                          <Volume2 className="h-3 w-3" />
+                          <Volume2 className="h-3 w-3 text-[#FDBA74]" />
                           Nghe
                         </button>
                         <button
@@ -1140,7 +1152,7 @@ function CallStudioInner() {
                               phonetic: hint.phonetic,
                             })
                           }
-                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-900/70 px-2 py-1 text-[11px] font-medium text-emerald-200 hover:bg-emerald-800 cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-lg bg-[#26221E] border border-[#38312C] px-2 py-1 text-[11px] font-medium text-[#A7F3D0] hover:bg-[#322C27] cursor-pointer"
                         >
                           <Mic className="h-3 w-3" />
                           Đọc thử
@@ -1149,7 +1161,7 @@ function CallStudioInner() {
                           type="button"
                           disabled={phase === 'thinking'}
                           onClick={() => void handleSendText(hint.en)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-indigo-600/80 px-2 py-1 text-[11px] font-medium text-white hover:bg-indigo-600 disabled:opacity-50 cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-lg bg-[#14532D] px-2 py-1 text-[11px] font-semibold text-white hover:bg-[#166534] disabled:opacity-50 cursor-pointer"
                         >
                           Dùng câu
                         </button>
@@ -1169,12 +1181,13 @@ function CallStudioInner() {
                   onClick={() =>
                     setMicMode((m) => (m === 'tap' ? 'handsfree' : 'tap'))
                   }
-                  className={`rounded-xl border px-3 py-2.5 text-xs font-semibold transition cursor-pointer ${micMode === 'handsfree'
-                    ? 'border-cyan-500 bg-cyan-950/70 text-cyan-300'
-                    : 'border-slate-700 bg-slate-800 text-slate-300'
-                    }`}
+                  className={`rounded-xl border px-3 py-2.5 text-xs font-medium transition cursor-pointer ${
+                    micMode === 'handsfree'
+                      ? 'border-[#FDBA74]/60 bg-[#C2410C]/20 text-[#FED7AA]'
+                      : 'border-[#38312C] bg-[#1C1917] text-[#D6D0C4]'
+                  }`}
                 >
-                  {micMode === 'handsfree' ? 'Rảnh tay (Auto)' : 'Chạm để nói'}
+                  {micMode === 'handsfree' ? 'Rảnh tay (Tự động)' : 'Chạm để nói'}
                 </button>
 
                 {/* Primary Mic Button */}
@@ -1188,15 +1201,16 @@ function CallStudioInner() {
                       void startRecording();
                     }
                   }}
-                  className={`relative flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold shadow-md transition disabled:opacity-50 cursor-pointer ${phase === 'recording'
-                    ? 'bg-rose-600 text-white hover:bg-rose-700'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
+                  className={`relative flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold shadow-sm transition disabled:opacity-50 cursor-pointer ${
+                    phase === 'recording'
+                      ? 'bg-rose-600 text-white hover:bg-rose-700'
+                      : 'bg-[#C2410C] text-white hover:bg-[#9A3412]'
+                  }`}
                 >
                   {phase === 'recording' ? (
                     <>
                       <MicOff className="h-4 w-4 animate-pulse" />
-                      <span>Dừng & Gửi</span>
+                      <span>Dừng &amp; Gửi</span>
                       <span
                         className="ml-1 inline-block h-2.5 rounded-full bg-white/80 transition-all"
                         style={{ width: `${Math.max(8, micLevel * 0.4)}px` }}
@@ -1224,13 +1238,13 @@ function CallStudioInner() {
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   placeholder="Hoặc gõ tiếng Anh / Việt nếu đang ở nơi ồn..."
-                  className="flex-1 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white placeholder-slate-400 focus:border-cyan-500 focus:outline-none"
+                  className="flex-1 rounded-xl border border-[#38312C] bg-[#1C1917] px-3.5 py-2.5 text-sm text-[#FBF9F5] placeholder-[#78716C] focus:border-[#FDBA74] focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={!textInput.trim() || phase === 'thinking'}
                   aria-label="Gửi tin nhắn"
-                  className="rounded-xl bg-slate-800 p-2.5 text-cyan-400 hover:bg-slate-700 disabled:opacity-40 cursor-pointer"
+                  className="rounded-xl bg-[#14532D] p-2.5 text-white hover:bg-[#166534] disabled:opacity-40 cursor-pointer"
                 >
                   <Send className="h-4 w-4" />
                 </button>
@@ -1251,41 +1265,42 @@ function CallStudioInner() {
       {/* Post-Call Evaluation Report Modal */}
       {phase === 'ended' && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-xs">
-          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-5 sm:p-6 shadow-2xl space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl border border-[#38312C] bg-[#24201D] p-5 sm:p-6 shadow-2xl space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#38312C] pb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-2xl">
-                  🎉
-                </div>
+                <TutorAvatar
+                  personaId={persona.id}
+                  className="h-12 w-12 shrink-0 ring-1 ring-[#443C36]"
+                />
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-white">
-                    Báo cáo Đánh giá Sau Cuộc Gọi
+                  <h2 className="font-serif-display text-xl sm:text-2xl font-semibold text-[#FBF9F5]">
+                    Nhận xét sau buổi hội thoại
                   </h2>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-[#A8A29E]">
                     {scenario.titleVi} · cùng {persona.name} ({persona.accent})
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs">
-                <div className="rounded-xl bg-slate-800 px-3 py-1.5 text-center">
-                  <div className="font-bold text-cyan-400">
+              <div className="flex items-center gap-2 text-xs tabular-nums">
+                <div className="rounded-xl bg-[#1C1917] border border-[#38312C] px-3 py-1.5 text-center">
+                  <div className="font-semibold text-[#FDE68A]">
                     {formatTimer(elapsedSeconds)}
                   </div>
-                  <div className="text-[10px] text-slate-400">Thời lượng</div>
+                  <div className="text-[10px] text-[#A8A29E]">Thời lượng</div>
                 </div>
-                <div className="rounded-xl bg-slate-800 px-3 py-1.5 text-center">
-                  <div className="font-bold text-emerald-400">
+                <div className="rounded-xl bg-[#1C1917] border border-[#38312C] px-3 py-1.5 text-center">
+                  <div className="font-semibold text-[#A7F3D0]">
                     {userTurns} lượt
                   </div>
-                  <div className="text-[10px] text-slate-400">Bạn đã nói</div>
+                  <div className="text-[10px] text-[#A8A29E]">Bạn đã nói</div>
                 </div>
                 {avgPronunciation !== null && (
-                  <div className="rounded-xl bg-slate-800 px-3 py-1.5 text-center">
-                    <div className="font-bold text-amber-300">
+                  <div className="rounded-xl bg-[#1C1917] border border-[#38312C] px-3 py-1.5 text-center">
+                    <div className="font-semibold text-[#FDBA74]">
                       {avgPronunciation}/100
                     </div>
-                    <div className="text-[10px] text-slate-400">TB Phát âm</div>
+                    <div className="text-[10px] text-[#A8A29E]">TB Phát âm</div>
                   </div>
                 )}
               </div>
@@ -1294,25 +1309,30 @@ function CallStudioInner() {
             {/* Strict Streak & XP Reward Banner */}
             {callReward && (
               <div
-                className={`rounded-2xl border p-3.5 text-xs space-y-2 ${callReward.lessonCompleted
-                  ? 'border-emerald-500/40 bg-emerald-950/50 text-emerald-100'
-                  : 'border-amber-500/40 bg-amber-950/40 text-amber-100'
-                  }`}
+                className={`rounded-2xl border p-3.5 text-xs space-y-2 ${
+                  callReward.lessonCompleted
+                    ? 'border-[#166534] bg-[#14532D]/40 text-[#ECFDF5]'
+                    : 'border-[#9A3412]/60 bg-[#431407]/50 text-[#FED7AA]'
+                }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-extrabold flex items-center gap-1.5">
-                    <Flame className="h-4 w-4 text-amber-400" />
+                  <span className="font-semibold flex items-center gap-1.5">
+                    <StreakFlameSvg
+                      active={callReward.lessonCompleted}
+                      className="h-4 w-4 shrink-0"
+                    />
                     {callReward.lessonCompleted
-                      ? `Hoàn thành 1 bài học — Đã giữ chuỗi ${callReward.streakDays} ngày! 🔥`
-                      : `Chưa đủ ${MIN_CALL_TURNS_FOR_LESSON} lượt nói (${userTurns}/${MIN_CALL_TURNS_FOR_LESSON}) nên chưa tính hoàn thành bài để giữ chuỗi hôm nay.`}
+                      ? `Hoàn thành buổi học — Đã giữ chuỗi ${callReward.streakDays} ngày liên tiếp`
+                      : `Chưa đủ ${MIN_CALL_TURNS_FOR_LESSON} lượt nói (${userTurns}/${MIN_CALL_TURNS_FOR_LESSON}) nên chưa tính giữ chuỗi hôm nay.`}
                   </span>
-                  <div className="flex items-center gap-1.5 font-extrabold">
-                    <span className="rounded-lg bg-indigo-500/30 px-2 py-0.5 text-indigo-200">
+                  <div className="flex items-center gap-1.5 font-semibold tabular-nums">
+                    <span className="rounded-lg bg-[#1C1917] border border-[#38312C] px-2 py-0.5 text-[#FDE68A]">
                       +{callReward.xpEarned} XP
                     </span>
                     {callReward.gemsEarned > 0 && (
-                      <span className="rounded-lg bg-cyan-500/30 px-2 py-0.5 text-cyan-200">
-                        +{callReward.gemsEarned} 💎
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-[#1C1917] border border-[#38312C] px-2 py-0.5 text-[#A7F3D0]">
+                        +{callReward.gemsEarned}
+                        <GemSvg className="h-3 w-3" />
                       </span>
                     )}
                   </div>
@@ -1320,10 +1340,10 @@ function CallStudioInner() {
                 {callReward.newlyClaimableMilestones.length > 0 && (
                   <Link
                     href="/history#rewards"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 text-[11px] font-extrabold text-white hover:from-amber-600 hover:to-orange-600"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#C2410C] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-[#9A3412]"
                   >
                     <Award className="h-3.5 w-3.5" />
-                    🎁 Nhận thưởng mốc {callReward.newlyClaimableMilestones[0]} ngày ngay!
+                    Nhận phần thưởng mốc {callReward.newlyClaimableMilestones[0]} ngày
                   </Link>
                 )}
               </div>
@@ -1331,13 +1351,13 @@ function CallStudioInner() {
 
             {reportLoading ? (
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
-                <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
+                <Loader2 className="h-7 w-7 animate-spin text-[#FDBA74]" />
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-white">
-                    AI đang tổng hợp báo cáo đánh giá buổi học...
+                  <p className="font-serif-display text-base font-medium text-[#FBF9F5]">
+                    Đang tổng hợp nhận xét chi tiết cho buổi hội thoại...
                   </p>
-                  <p className="text-xs text-slate-400">
-                    Phân tích phát âm, độ trôi chảy, ngữ pháp & gợi ý cụm từ cho bạn
+                  <p className="text-xs text-[#A8A29E]">
+                    Phân tích phát âm, độ trôi chảy, ngữ pháp và gợi ý cụm từ cho bạn
                   </p>
                 </div>
               </div>
@@ -1355,7 +1375,7 @@ function CallStudioInner() {
                           elapsedSeconds
                         )
                       }
-                      className="inline-flex items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-amber-500 cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-lg bg-[#C2410C] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#9A3412] cursor-pointer"
                     >
                       <RotateCcw className="h-3 w-3" />
                       Thử lại
@@ -1377,26 +1397,26 @@ function CallStudioInner() {
               </>
             )}
 
-            <div className="flex flex-col gap-2.5 sm:flex-row border-t border-slate-800 pt-4">
+            <div className="flex flex-col gap-2.5 sm:flex-row border-t border-[#38312C] pt-4">
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-700 cursor-pointer"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#38312C] bg-[#1C1917] px-4 py-2.5 text-xs font-semibold text-[#FBF9F5] hover:bg-[#2E2925] cursor-pointer"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                Gọi lại tình huống này
+                Hội thoại lại tình huống này
               </button>
               <Link
                 href="/history"
-                className="flex-1 text-center rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-700"
+                className="flex-1 text-center rounded-xl border border-[#38312C] bg-[#1C1917] px-4 py-2.5 text-xs font-semibold text-[#FBF9F5] hover:bg-[#2E2925]"
               >
-                Xem lịch sử & báo cáo
+                Xem tiến độ &amp; sổ nhận xét
               </Link>
               <Link
                 href="/"
-                className="flex-1 text-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700"
+                className="flex-1 text-center rounded-xl bg-[#14532D] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#166534]"
               >
-                Về trang chủ
+                Về giáo trình học
               </Link>
             </div>
           </div>
@@ -1410,8 +1430,8 @@ export default function CallPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
-          <Loader2 className="h-7 w-7 animate-spin text-cyan-400" />
+        <div className="min-h-screen flex items-center justify-center bg-[#1C1917] text-[#FBF9F5]">
+          <Loader2 className="h-6 w-6 animate-spin text-[#FDBA74]" />
         </div>
       }
     >

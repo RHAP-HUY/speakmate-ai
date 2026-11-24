@@ -20,17 +20,19 @@ export function AppShell({
   children,
 }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-[#FAF9F6] flex flex-col">
+    <div className="min-h-screen bg-[#FBF9F5] flex flex-col">
       <AppNav profile={profile} authenticated={authenticated} variant="app" />
 
-      <div className="flex-1 lg:pl-60 pb-24 lg:pb-12">
+      <div className="flex-1 pb-24 lg:pb-16">
         {rightRail ? (
-          <div className="mx-auto w-full max-w-[1140px] px-4 sm:px-6 py-7 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-7 items-start">
-            <main className="min-w-0 space-y-6">{children}</main>
-            <aside className="xl:sticky xl:top-6 space-y-4">{rightRail}</aside>
+          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_330px] gap-10 items-start">
+            <main className="min-w-0 space-y-8">{children}</main>
+            <aside className="lg:sticky lg:top-24 space-y-6">{rightRail}</aside>
           </div>
         ) : (
-          <main className={`mx-auto w-full ${maxWidthClass} px-4 sm:px-6 py-7 space-y-6`}>
+          <main
+            className={`mx-auto w-full ${maxWidthClass} px-4 sm:px-6 py-8 space-y-8`}
+          >
             {children}
           </main>
         )}

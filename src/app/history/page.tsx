@@ -2,27 +2,15 @@
 
 import {
   Award,
-  Calendar,
   ChevronDown,
   ChevronUp,
-  Clock,
-  Gamepad2,
   Loader2,
-  MessageSquare,
-  Sparkles,
-  Trophy,
   Volume2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
-import {
-  GemSvg,
-  NovaCompanion,
-  ShieldFreezeSvg,
-  StreakFlameSvg,
-} from '@/components/BrandArt';
 import { CallReportView } from '@/components/CallReportView';
 import {
   PronunciationBadge,
@@ -157,9 +145,8 @@ export default function HistoryPage() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FAF9F6]">
-        <NovaCompanion mood="fire" className="h-12 w-12" />
-        <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+      <div className="min-h-screen flex items-center justify-center bg-[#FBF9F5]">
+        <Loader2 className="h-5 w-5 animate-spin text-[#78716C]" />
       </div>
     );
   }
@@ -175,85 +162,67 @@ export default function HistoryPage() {
 
   return (
     <AppShell profile={profile} authenticated={authenticated}>
-      {/* Clean Editorial Header */}
-      <section className="card-duo-elevated p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="font-mono text-[11px] font-semibold tracking-wider text-amber-700">
-            TIẾN ĐỘ &amp; KỶ LUẬT HỌC TẬP
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950 mt-0.5">
-            Lịch chuỗi, phần thưởng &amp; nhật ký hội thoại
-          </h1>
-          <p className="text-xs sm:text-sm text-zinc-600 mt-1">
-            Theo dõi chuỗi ngày học liên tiếp, nhận phần thưởng cột mốc và xem lại báo cáo phân tích từng buổi gọi.
+      {/* Open Editorial Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-[#E7E2D8]">
+        <div className="space-y-1">
+          <p className="font-serif-display italic text-sm text-[#C2410C]">
+            Nhật ký rèn luyện &amp; Thành tựu
           </p>
+          <h1 className="font-serif-display text-2xl sm:text-3xl font-semibold text-[#1C1917]">
+            Lịch chuỗi ngày học, phần thưởng &amp; lưu trữ hội thoại
+          </h1>
         </div>
 
         <Link
           href="/play"
           className="btn-duo btn-duo-primary shrink-0 px-5 py-2.5 text-xs"
         >
-          <Gamepad2 className="h-4 w-4" />
-          Học 1 bài giữ chuỗi
+          Thực hành bài hôm nay →
         </Link>
-      </section>
+      </div>
 
-      {/* Summary KPIs */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 tabular-nums">
-        <div className="card-duo p-4 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-            <StreakFlameSvg active={profile.streakDays > 0} className="h-4 w-4" />
-            Chuỗi hiện tại
-          </div>
-          <div className="text-2xl font-bold text-zinc-950">
+      {/* Editorial Metrics Ledger (Divided by Hairlines, Not 4 Separate Boxes) */}
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-6 py-2 border-b border-[#E7E2D8] pb-6 tabular-nums">
+        <div>
+          <dt className="text-xs text-[#78716C]">Chuỗi ngày hiện tại</dt>
+          <dd className="font-serif-display text-3xl font-semibold text-[#1C1917] mt-1">
             {profile.streakDays} ngày
-          </div>
-          <div className="text-[11px] text-zinc-500">
+          </dd>
+          <div className="text-[11px] text-[#78716C] mt-0.5">
             Kỷ lục: {Math.max(profile.streakDays, profile.longestStreak)} ngày
           </div>
         </div>
 
-        <div className="card-duo p-4 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-            <Trophy className="h-4 w-4 text-amber-600" />
-            Cấp độ &amp; XP
-          </div>
-          <div className="text-2xl font-bold text-zinc-950">
+        <div>
+          <dt className="text-xs text-[#78716C]">Cấp độ &amp; Kinh nghiệm</dt>
+          <dd className="font-serif-display text-3xl font-semibold text-[#1C1917] mt-1">
             Cấp {levelInfo.level}
-          </div>
-          <div className="text-[11px] text-zinc-500">
+          </dd>
+          <div className="text-[11px] text-[#78716C] mt-0.5">
             {profile.xp} XP · {profile.totalLessonsCompleted} bài hoàn thành
           </div>
         </div>
 
-        <div className="card-duo p-4 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-            <GemSvg className="h-4 w-4" />
-            Ngọc &amp; Khiên
-          </div>
-          <div className="text-2xl font-bold text-zinc-950">
-            {profile.gems} Ngọc
-          </div>
-          <div className="text-[11px] text-zinc-500 flex items-center gap-1">
-            <ShieldFreezeSvg className="h-3.5 w-3.5" />
-            {profile.streakFreezes} Khiên bảo vệ
+        <div>
+          <dt className="text-xs text-[#78716C]">Điểm thưởng &amp; Khiên</dt>
+          <dd className="font-serif-display text-3xl font-semibold text-[#1C1917] mt-1">
+            {profile.gems}
+          </dd>
+          <div className="text-[11px] text-[#78716C] mt-0.5">
+            {profile.streakFreezes} Khiên bảo vệ chuỗi
           </div>
         </div>
 
-        <div className="card-duo p-4 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-            <Clock className="h-4 w-4 text-emerald-600" />
-            Tổng thời lượng
-          </div>
-          <div className="text-2xl font-bold text-zinc-950">
+        <div>
+          <dt className="text-xs text-[#78716C]">Tổng thời lượng nói</dt>
+          <dd className="font-serif-display text-3xl font-semibold text-[#1C1917] mt-1">
             {totalMinutesAll} phút
-          </div>
-          <div className="text-[11px] text-zinc-500 flex items-center gap-1">
-            <MessageSquare className="h-3 w-3" />
-            {conversations.length} buổi hội thoại
+          </dd>
+          <div className="text-[11px] text-[#78716C] mt-0.5">
+            {conversations.length} buổi hội thoại đã lưu
           </div>
         </div>
-      </div>
+      </dl>
 
       {/* Monthly Interactive Streak Calendar */}
       <StreakCalendar
@@ -267,7 +236,7 @@ export default function HistoryPage() {
         }}
       />
 
-      {/* Streak Milestone Rewards & Gem Shop */}
+      {/* Streak Milestone Rewards & Shop */}
       <div id="rewards">
         <StreakRewardsPanel
           profile={profile}
@@ -286,22 +255,24 @@ export default function HistoryPage() {
         />
       </div>
 
-      {/* 7-day Progress Bar Chart */}
-      <section className="card-duo-elevated p-5 sm:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-black uppercase tracking-wide text-slate-800 flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-[#1CB0F6]" />
-            Thời lượng 7 ngày gần nhất (Mục tiêu: {goalMinutes} phút/ngày)
+      {/* 7-day Practice Bar Chart */}
+      <section className="card-duo p-5 sm:p-6 space-y-4 tabular-nums">
+        <div className="flex items-baseline justify-between">
+          <h2 className="font-serif-display text-lg font-semibold text-[#1C1917]">
+            Thời lượng 7 ngày gần nhất
           </h2>
+          <span className="text-xs text-[#78716C]">
+            Mục tiêu: {goalMinutes} phút/ngày
+          </span>
         </div>
 
-        <div className="grid grid-cols-7 gap-2.5 items-end h-36 pt-4">
+        <div className="grid grid-cols-7 gap-3 items-end h-32 pt-2">
           {days.map((d) => {
             const st = statByDate.get(d.date);
             const mins = Math.round((st?.secondsPracticed ?? 0) / 60);
             const heightPct = Math.min(
               100,
-              Math.max(8, Math.round((mins / Math.max(1, goalMinutes)) * 100))
+              Math.max(6, Math.round((mins / Math.max(1, goalMinutes)) * 100))
             );
             const metGoal = mins >= goalMinutes;
 
@@ -310,22 +281,22 @@ export default function HistoryPage() {
                 key={d.date}
                 className="flex flex-col items-center justify-end h-full gap-1.5"
               >
-                <span className="text-[11px] font-black text-slate-600">
+                <span className="text-[11px] font-medium text-[#57534E]">
                   {mins}p
                 </span>
-                <div className="w-full max-w-11 flex-1 flex items-end bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
+                <div className="w-full max-w-10 flex-1 flex items-end bg-[#F3EFE6] rounded-md overflow-hidden">
                   <div
-                    className={`progress-gloss w-full rounded-xl transition-all ${
+                    className={`w-full rounded-md transition-all ${
                       metGoal
-                        ? 'bg-gradient-to-t from-emerald-600 to-teal-400'
+                        ? 'bg-[#14532D]'
                         : mins > 0
-                          ? 'bg-gradient-to-t from-indigo-600 to-cyan-400'
-                          : 'bg-slate-200'
+                          ? 'bg-[#C2410C]'
+                          : 'bg-[#E7E2D8]'
                     }`}
                     style={{ height: `${heightPct}%` }}
                   />
                 </div>
-                <span className="text-[11px] font-extrabold text-slate-400">
+                <span className="text-[11px] text-[#78716C]">
                   {d.shortLabel}
                 </span>
               </div>
@@ -335,28 +306,28 @@ export default function HistoryPage() {
       </section>
 
       {/* Conversation List & Reports */}
-      <section className="space-y-3">
-        <h2 className="text-base font-black uppercase tracking-wide text-slate-800">
-          Lịch sử Cuộc gọi AI &amp; Báo cáo Đánh giá
+      <section className="space-y-4">
+        <h2 className="font-serif-display text-xl font-semibold text-[#1C1917]">
+          Lưu trữ các buổi hội thoại &amp; Báo cáo đánh giá
         </h2>
 
         {conversations.length === 0 ? (
-          <div className="card-duo p-10 text-center space-y-3">
-            <p className="text-sm font-bold text-zinc-900">
-              Chưa có nhật ký cuộc gọi nào
+          <div className="rounded-2xl border border-[#E7E2D8] bg-[#F3EFE6]/50 p-10 text-center space-y-3">
+            <p className="font-serif-display text-lg font-semibold text-[#1C1917]">
+              Chưa có buổi hội thoại nào được ghi nhận
             </p>
-            <p className="text-xs text-zinc-500">
-              Hoàn thành 1 buổi hội thoại từ 3 lượt nói trở lên để nhận báo cáo đánh giá 4 kỹ năng và giữ chuỗi.
+            <p className="text-xs text-[#57534E]">
+              Hoàn thành một cuộc trò chuyện từ 3 lượt nói trở lên để nhận bản phân tích 4 kỹ năng.
             </p>
             <Link
               href="/call"
               className="btn-duo btn-duo-primary px-5 py-2.5 text-xs"
             >
-              Bắt đầu hội thoại
+              Mở phòng hội thoại
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="card-duo overflow-hidden divide-y divide-[#E7E2D8]">
             {conversations.map((conv) => {
               const isOpen = expandedId === conv.id;
               const msgs = detailCache[conv.id] ?? [];
@@ -367,23 +338,23 @@ export default function HistoryPage() {
                   : null;
 
               return (
-                <div key={conv.id} className="card-duo overflow-hidden">
+                <div key={conv.id}>
                   <button
                     type="button"
                     onClick={() => void toggleConversation(conv)}
-                    className="flex w-full items-center justify-between p-4 text-left hover:bg-slate-50 transition cursor-pointer"
+                    className="flex w-full items-center justify-between p-4 sm:px-5 text-left hover:bg-[#FBF9F5] transition cursor-pointer"
                   >
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-black text-slate-900">
+                        <span className="text-sm font-semibold text-[#1C1917]">
                           {conv.scenarioTitle}
                         </span>
-                        <span className="rounded-xl bg-[#DDF4FF] px-2.5 py-0.5 text-[11px] font-extrabold text-[#1899D6]">
+                        <span className="rounded-full bg-[#F3EFE6] px-2.5 py-0.5 text-[11px] font-medium text-[#57534E]">
                           {conv.aiPersona} · {conv.accent}
                         </span>
                         {parsedReport && scoreTone && (
                           <span
-                            className={`inline-flex items-center gap-1 rounded-xl border px-2 py-0.5 text-[11px] font-extrabold ${scoreTone.pillLight}`}
+                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold tabular-nums ${scoreTone.pillLight}`}
                           >
                             <Award className="h-3 w-3" />
                             {parsedReport.overallScore}/100 ·{' '}
@@ -391,31 +362,31 @@ export default function HistoryPage() {
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 flex items-center gap-3 text-xs font-semibold text-slate-500">
+                      <div className="mt-1 flex items-center gap-3 text-xs text-[#78716C] tabular-nums">
                         <span>
                           {new Date(conv.startedAt).toLocaleString('vi-VN')}
                         </span>
-                        <span>•</span>
+                        <span>·</span>
                         <span>
                           {Math.max(1, Math.round(conv.durationSeconds / 60))} phút
                         </span>
-                        <span>•</span>
-                        <span>{conv.messageCount} lượt thoại</span>
+                        <span>·</span>
+                        <span>{conv.messageCount} lượt trao đổi</span>
                       </div>
                     </div>
                     {isOpen ? (
-                      <ChevronUp className="h-5 w-5 text-slate-400" />
+                      <ChevronUp className="h-4 w-4 text-[#78716C]" />
                     ) : (
-                      <ChevronDown className="h-5 w-5 text-slate-400" />
+                      <ChevronDown className="h-4 w-4 text-[#78716C]" />
                     )}
                   </button>
 
                   {isOpen && (
-                    <div className="border-t-2 border-slate-100 bg-[#F7F9FC] p-4 space-y-4">
+                    <div className="border-t border-[#E7E2D8] bg-[#FBF9F5] p-4 sm:p-5 space-y-5">
                       {parsedReport && (
                         <div className="space-y-2">
-                          <div className="text-xs font-black uppercase tracking-wider text-[#1899D6]">
-                            Báo cáo đánh giá buổi gọi
+                          <div className="text-xs font-semibold text-[#14532D]">
+                            Báo cáo tổng kết buổi hội thoại
                           </div>
                           <CallReportView
                             report={parsedReport}
@@ -434,18 +405,18 @@ export default function HistoryPage() {
                       )}
 
                       <div className="space-y-3">
-                        <div className="text-xs font-black uppercase tracking-wider text-slate-500">
-                          Nội dung hội thoại &amp; Chấm phát âm
+                        <div className="text-xs font-semibold text-[#57534E]">
+                          Bản ghi chi tiết lời thoại
                         </div>
 
                         {loadingDetail === conv.id ? (
-                          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                          <div className="flex items-center gap-2 text-xs text-[#78716C]">
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Đang tải nội dung cuộc gọi...
+                            Đang tải nội dung...
                           </div>
                         ) : msgs.length === 0 ? (
-                          <p className="text-xs text-slate-500">
-                            Không có tin nhắn chi tiết trong cuộc gọi này.
+                          <p className="text-xs text-[#78716C]">
+                            Chưa có bản ghi chi tiết cho buổi này.
                           </p>
                         ) : (
                           msgs.map((m) => (
@@ -456,14 +427,16 @@ export default function HistoryPage() {
                               }`}
                             >
                               <div
-                                className={`w-full sm:max-w-[85%] rounded-2xl p-3.5 text-sm ${
+                                className={`w-full sm:max-w-[85%] rounded-xl p-3.5 text-sm ${
                                   m.role === 'user'
-                                    ? 'bg-[#1CB0F6] text-white'
-                                    : 'bg-white border-2 border-slate-200 text-slate-900'
+                                    ? 'bg-[#14532D] text-white'
+                                    : 'bg-white border border-[#E7E2D8] text-[#1C1917]'
                                 }`}
                               >
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className="font-bold">{m.englishText}</p>
+                                  <p className="font-serif-display text-[15px] leading-relaxed">
+                                    {m.englishText}
+                                  </p>
                                   <button
                                     type="button"
                                     onClick={() =>
@@ -472,10 +445,10 @@ export default function HistoryPage() {
                                         conv.accent
                                       )
                                     }
-                                    className={`shrink-0 rounded-xl p-1.5 cursor-pointer ${
+                                    className={`shrink-0 rounded-full p-1.5 cursor-pointer ${
                                       m.role === 'user'
-                                        ? 'bg-white/20 text-white hover:bg-white/30'
-                                        : 'bg-slate-100 text-[#1899D6] hover:bg-slate-200'
+                                        ? 'bg-white/15 text-white hover:bg-white/25'
+                                        : 'bg-[#F3EFE6] text-[#1C1917] hover:bg-[#E7E2D8]'
                                     }`}
                                   >
                                     <Volume2 className="h-3.5 w-3.5" />
@@ -486,8 +459,8 @@ export default function HistoryPage() {
                                   <p
                                     className={`mt-1 text-xs ${
                                       m.role === 'user'
-                                        ? 'text-white/90'
-                                        : 'text-zinc-500'
+                                        ? 'text-white/85'
+                                        : 'text-[#57534E]'
                                     }`}
                                   >
                                     {m.vietnameseTranslation}
@@ -495,12 +468,9 @@ export default function HistoryPage() {
                                 )}
 
                                 {m.naturalRewrite && (
-                                  <div className="mt-2 rounded-lg bg-black/15 px-2.5 py-1.5 text-xs text-white flex items-center gap-1.5">
-                                    <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                                    <span>
-                                      Diễn đạt tự nhiên hơn:{' '}
-                                      <strong>{m.naturalRewrite}</strong>
-                                    </span>
+                                  <div className="mt-2 rounded-lg bg-black/15 px-3 py-1.5 text-xs text-white">
+                                    Cách diễn đạt tự nhiên hơn:{' '}
+                                    <strong>{m.naturalRewrite}</strong>
                                   </div>
                                 )}
 

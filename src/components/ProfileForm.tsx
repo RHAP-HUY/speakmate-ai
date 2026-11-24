@@ -2,7 +2,7 @@
 
 import { Check, Loader2, Plus, X } from 'lucide-react';
 import { useState } from 'react';
-import { JOB_SUGGESTIONS, HOBBY_SUGGESTIONS } from '@/lib/scenarios';
+import { HOBBY_SUGGESTIONS, JOB_SUGGESTIONS } from '@/lib/scenarios';
 import type {
   AccentPreference,
   EnglishLevel,
@@ -19,27 +19,27 @@ interface ProfileFormProps {
 const LEVELS: { value: EnglishLevel; title: string; desc: string }[] = [
   {
     value: 'A0-A1',
-    title: 'A0–A1 (Mất gốc / Mới bắt đầu)',
-    desc: 'Nói chậm rãi, có phụ đề song ngữ Anh–Việt và 3 gợi ý câu trả lời sẵn.',
+    title: 'A0–A1 · Mới bắt đầu',
+    desc: 'Tốc độ chậm 0.85x, có phụ đề song ngữ Anh–Việt và 3 câu gợi ý sẵn.',
   },
   {
     value: 'A2-B1',
-    title: 'A2–B1 (Cơ bản / Trung cấp)',
+    title: 'A2–B1 · Cơ bản – Trung cấp',
     desc: 'Tốc độ vừa phải, tập trung sửa cách diễn đạt cho tự nhiên hơn.',
   },
   {
     value: 'B2+',
-    title: 'B2+ (Khá – Giỏi)',
-    desc: 'Nói tự nhiên như người bản xứ, dùng nhiều idioms, slang & phản xạ nhanh.',
+    title: 'B2+ · Khá – Giỏi',
+    desc: 'Tốc độ bản xứ 1.0x, nhiều cụm từ tự nhiên và phản xạ linh hoạt.',
   },
 ];
 
-const ACCENTS: { value: AccentPreference; label: string; flag: string }[] = [
-  { value: 'US', label: 'Mỹ (American)', flag: 'US' },
-  { value: 'UK', label: 'Anh (British)', flag: 'UK' },
-  { value: 'AU', label: 'Úc (Australian)', flag: 'AU' },
-  { value: 'CA', label: 'Canada', flag: 'CA' },
-  { value: 'MIXED', label: 'Đa dạng giọng', flag: 'ALL' },
+const ACCENTS: { value: AccentPreference; label: string; code: string }[] = [
+  { value: 'US', label: 'Mỹ (American)', code: 'US' },
+  { value: 'UK', label: 'Anh (British)', code: 'UK' },
+  { value: 'AU', label: 'Úc (Australian)', code: 'AU' },
+  { value: 'CA', label: 'Canada', code: 'CA' },
+  { value: 'MIXED', label: 'Đa dạng giọng', code: 'ALL' },
 ];
 
 export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) {
@@ -88,7 +88,7 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
     setSavedNotice(false);
 
     if (!displayName.trim()) {
-      setError('Hãy nhập tên bạn muốn AI gọi nhé (ví dụ: Minh, Nam, Alex...).');
+      setError('Vui lòng nhập tên gọi của bạn.');
       return;
     }
 
@@ -116,29 +116,24 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-7">
-      {/* Name */}
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-          Bạn muốn AI gọi bạn bằng tên gì? <span className="text-rose-500">*</span>
+        <label className="block text-sm font-medium text-[#1C1917] mb-1">
+          Tên gọi trong buổi hội thoại <span className="text-[#C2410C]">*</span>
         </label>
-        <p className="text-xs text-slate-500 mb-2">
-          AI sẽ chào và trò chuyện thân mật với bạn bằng tên này trong mỗi cuộc gọi.
-        </p>
         <input
           type="text"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder="Ví dụ: Minh, Thảo, Alex..."
           maxLength={40}
-          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+          className="w-full rounded-xl border border-[#D6CFC2] bg-white px-4 py-2.5 text-sm text-[#1C1917] focus:border-[#14532D] focus:outline-none"
         />
       </div>
 
-      {/* Native Language */}
       <div>
-        <label className="block text-sm font-semibold text-slate-800 mb-2">
-          Ngôn ngữ mẹ đẻ / giải thích
+        <label className="block text-sm font-medium text-[#1C1917] mb-2">
+          Ngôn ngữ phụ đề &amp; giải thích
         </label>
         <div className="flex flex-wrap gap-2">
           {(
@@ -154,23 +149,22 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
               key={lang.val}
               type="button"
               onClick={() => setNativeLanguage(lang.val)}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition cursor-pointer ${
                 nativeLanguage === lang.val
-                  ? 'border-zinc-900 bg-zinc-900 text-white'
-                  : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+                  ? 'border-[#14532D] bg-[#14532D] text-white'
+                  : 'border-[#D6CFC2] bg-white text-[#57534E] hover:border-[#1C1917]'
               }`}
             >
-              <span className="font-mono text-[10px] opacity-70">{lang.code}</span>
+              <span className="font-mono text-[10px] opacity-75">{lang.code}</span>
               <span>{lang.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* English Level */}
       <div>
-        <label className="block text-sm font-semibold text-slate-800 mb-2">
-          Trình độ tiếng Anh hiện tại của bạn
+        <label className="block text-sm font-medium text-[#1C1917] mb-2">
+          Trình độ tiếng Anh hiện tại
         </label>
         <div className="grid gap-3 sm:grid-cols-3">
           {LEVELS.map((lvl) => {
@@ -191,20 +185,21 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                     );
                   }
                 }}
-                className={`rounded-2xl border p-3.5 text-left transition cursor-pointer ${selected
-                    ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-100'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
-                  }`}
+                className={`rounded-xl border p-3.5 text-left transition cursor-pointer ${
+                  selected
+                    ? 'border-[#14532D] bg-[#14532D]/[0.04]'
+                    : 'border-[#E7E2D8] bg-white hover:border-[#D6CFC2]'
+                }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-bold text-slate-900">
+                  <span className="text-sm font-semibold text-[#1C1917]">
                     {lvl.title}
                   </span>
                   {selected && (
-                    <Check className="h-4 w-4 shrink-0 text-indigo-600" />
+                    <Check className="h-4 w-4 shrink-0 text-[#14532D]" />
                   )}
                 </div>
-                <p className="text-xs leading-relaxed text-slate-600">
+                <p className="text-xs leading-relaxed text-[#57534E]">
                   {lvl.desc}
                 </p>
               </button>
@@ -213,14 +208,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
         </div>
       </div>
 
-      {/* Job / Field */}
       <div>
-        <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-          Công việc / Lĩnh vực của bạn là gì?
+        <label className="block text-sm font-medium text-[#1C1917] mb-1.5">
+          Công việc / Lĩnh vực chuyên môn
         </label>
-        <p className="text-xs text-slate-500 mb-2.5">
-          Giúp AI thiết kế tình huống giao tiếp công sở (Business English) và giới thiệu bản thân sát nghề của bạn.
-        </p>
         <div className="flex flex-wrap gap-2 mb-2.5">
           {JOB_SUGGESTIONS.map((job) => {
             const active = jobField === job;
@@ -229,10 +220,11 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                 key={job}
                 type="button"
                 onClick={() => setJobField(active ? '' : job)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition cursor-pointer ${active
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                  active
+                    ? 'border-[#1C1917] bg-[#1C1917] text-white'
+                    : 'border-[#E7E2D8] bg-[#FBF9F5] text-[#57534E] hover:border-[#D6CFC2]'
+                }`}
               >
                 {job}
               </button>
@@ -243,20 +235,16 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
           type="text"
           value={jobField}
           onChange={(e) => setJobField(e.target.value)}
-          placeholder="Hoặc tự nhập nghề nghiệp của bạn (vd: Chủ shop online, Kỹ sư xây dựng...)"
+          placeholder="Hoặc nhập lĩnh vực công việc của bạn..."
           maxLength={80}
-          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+          className="w-full rounded-xl border border-[#D6CFC2] bg-white px-4 py-2.5 text-sm text-[#1C1917] focus:border-[#14532D] focus:outline-none"
         />
       </div>
 
-      {/* Hobbies */}
       <div>
-        <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-          Sở thích & Chủ đề bạn hay nói chuyện
+        <label className="block text-sm font-medium text-[#1C1917] mb-1.5">
+          Sở thích &amp; Chủ đề thường trò chuyện
         </label>
-        <p className="text-xs text-slate-500 mb-2.5">
-          Chọn nhiều mục để AI gợi ý câu chuyện Small talk đúng gu của bạn.
-        </p>
         <div className="flex flex-wrap gap-2 mb-3">
           {HOBBY_SUGGESTIONS.map((hobby) => {
             const selected = hobbies.includes(hobby);
@@ -265,10 +253,11 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                 key={hobby}
                 type="button"
                 onClick={() => toggleHobby(hobby)}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition cursor-pointer ${selected
-                    ? 'bg-cyan-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
+                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                  selected
+                    ? 'border-[#14532D] bg-[#14532D] text-white'
+                    : 'border-[#E7E2D8] bg-[#FBF9F5] text-[#57534E] hover:border-[#D6CFC2]'
+                }`}
               >
                 {selected && <Check className="h-3 w-3" />}
                 {hobby}
@@ -280,13 +269,13 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
             .map((custom) => (
               <span
                 key={custom}
-                className="inline-flex items-center gap-1 rounded-full bg-cyan-600 px-3 py-1.5 text-xs font-medium text-white"
+                className="inline-flex items-center gap-1 rounded-full bg-[#14532D] px-3 py-1 text-xs font-medium text-white"
               >
                 {custom}
                 <button
                   type="button"
                   onClick={() => toggleHobby(custom)}
-                  className="hover:text-cyan-100 cursor-pointer"
+                  className="hover:opacity-75 cursor-pointer"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -305,13 +294,13 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                 addCustomHobby();
               }
             }}
-            placeholder="Thêm sở thích khác (vd: Nuôi mèo, Chạy bộ...)"
-            className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+            placeholder="Thêm sở thích khác..."
+            className="flex-1 rounded-xl border border-[#D6CFC2] bg-white px-3.5 py-2 text-sm focus:border-[#14532D] focus:outline-none"
           />
           <button
             type="button"
             onClick={addCustomHobby}
-            className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+            className="btn-duo btn-duo-white px-3.5 py-2 text-xs"
           >
             <Plus className="h-4 w-4" />
             Thêm
@@ -319,11 +308,10 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
         </div>
       </div>
 
-      {/* Accent, Speed & Daily Goal */}
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2 tabular-nums">
         <div>
-          <label className="block text-sm font-semibold text-slate-800 mb-2">
-            Giọng (Accent) mặc định muốn nghe
+          <label className="block text-sm font-medium text-[#1C1917] mb-2">
+            Giọng đọc mặc định
           </label>
           <div className="grid grid-cols-2 gap-2">
             {ACCENTS.map((acc) => {
@@ -333,13 +321,14 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                   key={acc.value}
                   type="button"
                   onClick={() => setPreferredAccent(acc.value)}
-                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition cursor-pointer ${selected
-                      ? 'border-indigo-600 bg-indigo-50 text-indigo-800'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
+                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition cursor-pointer ${
+                    selected
+                      ? 'border-[#14532D] bg-[#14532D]/[0.05] text-[#14532D] font-semibold'
+                      : 'border-[#E7E2D8] bg-white text-[#57534E] hover:border-[#D6CFC2]'
+                  }`}
                 >
-                  <span className="font-mono text-[10px] font-semibold rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-600">
-                    {acc.flag}
+                  <span className="font-mono text-[10px] rounded bg-[#F3EFE6] px-1.5 py-0.5 text-[#57534E]">
+                    {acc.code}
                   </span>
                   <span className="truncate">{acc.label}</span>
                 </button>
@@ -350,8 +339,8 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-slate-800 mb-2">
-              Tốc độ nói mặc định của AI
+            <label className="block text-sm font-medium text-[#1C1917] mb-2">
+              Tốc độ giọng đọc
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
@@ -363,10 +352,11 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                   key={s.val}
                   type="button"
                   onClick={() => setPreferredSpeed(s.val)}
-                  className={`rounded-xl border px-2.5 py-2 text-xs font-semibold transition cursor-pointer ${Math.abs(preferredSpeed - s.val) < 0.04
-                      ? 'border-indigo-600 bg-indigo-50 text-indigo-800'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
+                  className={`rounded-xl border px-2.5 py-2 text-xs font-medium transition cursor-pointer ${
+                    Math.abs(preferredSpeed - s.val) < 0.04
+                      ? 'border-[#14532D] bg-[#14532D]/[0.05] text-[#14532D] font-semibold'
+                      : 'border-[#E7E2D8] bg-white text-[#57534E]'
+                  }`}
                 >
                   {s.label}
                 </button>
@@ -375,8 +365,8 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-800 mb-2">
-              Mục tiêu luyện mỗi ngày
+            <label className="block text-sm font-medium text-[#1C1917] mb-2">
+              Mục tiêu luyện tập mỗi ngày
             </label>
             <div className="grid grid-cols-4 gap-2">
               {[10, 15, 20, 30].map((mins) => (
@@ -384,10 +374,11 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
                   key={mins}
                   type="button"
                   onClick={() => setDailyGoalMinutes(mins)}
-                  className={`rounded-xl border px-2 py-2 text-xs font-semibold transition cursor-pointer ${dailyGoalMinutes === mins
-                      ? 'border-indigo-600 bg-indigo-50 text-indigo-800'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
+                  className={`rounded-xl border px-2 py-2 text-xs font-medium transition cursor-pointer ${
+                    dailyGoalMinutes === mins
+                      ? 'border-[#14532D] bg-[#14532D]/[0.05] text-[#14532D] font-semibold'
+                      : 'border-[#E7E2D8] bg-white text-[#57534E]'
+                  }`}
                 >
                   {mins} phút
                 </button>
@@ -404,8 +395,8 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
       )}
 
       {savedNotice && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          Đã lưu hồ sơ học tập của bạn và đồng bộ thành công!
+        <div className="rounded-xl border border-[#14532D]/25 bg-[#14532D]/[0.05] px-4 py-3 text-sm text-[#14532D]">
+          Đã lưu thay đổi hồ sơ học tập của bạn.
         </div>
       )}
 
@@ -417,13 +408,13 @@ export function ProfileForm({ initialProfile, mode, onSave }: ProfileFormProps) 
         {saving ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Đang lưu hồ sơ...
+            Đang lưu...
           </>
         ) : (
           <>
             <Check className="h-4 w-4" />
             {mode === 'onboarding'
-              ? 'Hoàn tất & Bắt đầu luyện tập'
+              ? 'Hoàn tất thiết lập'
               : 'Lưu thay đổi hồ sơ'}
           </>
         )}

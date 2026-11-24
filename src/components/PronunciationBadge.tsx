@@ -81,10 +81,10 @@ export function PronunciationBadge({
 
   return (
     <div
-      className={`mt-1.5 max-w-[92%] sm:max-w-[82%] rounded-2xl border px-3 py-2 text-xs ${
+      className={`mt-1.5 max-w-[92%] sm:max-w-[82%] rounded-2xl border px-3.5 py-2 text-xs ${
         isDark
-          ? 'border-slate-800 bg-slate-900/90 text-slate-200'
-          : 'border-slate-200 bg-white text-slate-800'
+          ? 'border-[#38312C] bg-[#26221E] text-[#E7E2D8]'
+          : 'border-[#E7E2D8] bg-white text-[#1C1917]'
       }`}
     >
       <button
@@ -198,7 +198,7 @@ export function PronunciationBadge({
                     {w.word}
                   </span>
                   {w.ipa && (
-                    <span className={isDark ? 'text-cyan-300' : 'text-cyan-700'}>
+                    <span className={isDark ? 'text-amber-200' : 'text-[#14532D]'}>
                       /{w.ipa.replace(/^\/|\/$/g, '')}/
                     </span>
                   )}
