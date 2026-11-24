@@ -35,13 +35,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = (await request.json()) as {
-      text?: string;
-      voice?: string;
-      speed?: number;
+    let body: {
+      text?: unknown;
+      voice?: unknown;
+      speed?: unknown;
     };
+    try {
+      body = (await request.json()) as {
+        text?: unknown;
+        voice?: unknown;
+        speed?: unknown;
+      };
+    } catch {
+      return NextResponse.json(
+        { error: 'Dữ liệu yêu cầu đọc giọng không hợp lệ.' },
+        { status: 400 }
+      );
+    }
 
-    const cleanedText = sanitizeTextForTts(body.text ?? '');
+    const rawText = typeof body?.text === 'string' ? body.text : '';
+    const cleanedText = sanitizeTextForTts(rawText);
     if (!cleanedText) {
       return NextResponse.json(
         { error: 'Thiếu nội dung văn bản để đọc.' },
@@ -49,8 +62,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const voice = resolveEdgeVoice(body.voice);
-    const rate = speedToEdgeRate(body.speed);
+    const voice = resolveEdgeVoice(
+      typeof body?.voice === 'string' ? body.voice : undefined
+    );
+    const rate = speedToEdgeRate(
+      typeof body?.speed === 'number' ? body.speed : undefined
+    );
     const cacheKey = buildTtsCacheKey(voice, rate, cleanedText);
 
     const cached = getCachedTtsAudio(cacheKey);

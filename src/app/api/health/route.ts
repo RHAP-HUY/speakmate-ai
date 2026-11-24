@@ -29,7 +29,7 @@ export async function GET() {
   return NextResponse.json(
     {
       ok: true,
-      version: '9.0.0-luminous-craft',
+      version: '10.0.0-precision-polish',
       uptimeSeconds: Math.max(0, Math.round((Date.now() - BOOT_TIME_MS) / 1000)),
       storageMode,
       googleAuthConfigured: googleCfg.configured,
@@ -44,6 +44,9 @@ export async function GET() {
       openGraphCardEnabled: true,
       srsSpacedRepetitionEnabled: true,
       cefrPlacementEnabled: true,
+      ssrLandingEnabled: true,
+      imageOptimizationEnabled: true,
+      audioPreloadEnabled: true,
       privacyPolicyUrl: 'https://speakmate-ai-nu.vercel.app/privacy',
       termsUrl: 'https://speakmate-ai-nu.vercel.app/terms',
       primaryModel: process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL,

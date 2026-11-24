@@ -24,6 +24,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
+import { WorkspacePageSkeleton } from '@/components/PageSkeleton';
 import {
   GemSvg,
   NovaCompanion,
@@ -39,6 +40,7 @@ import { getScoreTone } from '@/components/PronunciationBadge';
 import {
   createSpeechRecorder,
   playNaturalVoice,
+  preloadNaturalVoice,
   stopVoicePlayback,
 } from '@/lib/audio';
 import {
@@ -768,6 +770,61 @@ function PlayPageInner() {
     setupBuildTiles(buildItems[nextIdx], persona);
   }
 
+  const buildKeyboardRef = useRef<{
+    check: () => void;
+    next: () => void;
+    replay: () => void;
+    canCheck: boolean;
+    checked: boolean;
+  }>({
+    check: () => {},
+    next: () => {},
+    replay: () => {},
+    canCheck: false,
+    checked: false,
+  });
+
+  useEffect(() => {
+    buildKeyboardRef.current = {
+      check: handleCheckBuildSentence,
+      next: handleNextBuildQuestion,
+      replay: () => {
+        const cur = buildItems[buildIdx];
+        if (cur) speakText(cur.sentenceEn, 0.88);
+      },
+      canCheck: buildChecked === 'idle' && chosenTiles.length > 0,
+      checked: buildChecked !== 'idle',
+    };
+  });
+
+  useEffect(() => {
+    if (mode !== 'build') return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      if (e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        buildKeyboardRef.current.replay();
+        return;
+      }
+      if (e.key === 'Enter') {
+        if (buildKeyboardRef.current.checked) {
+          e.preventDefault();
+          buildKeyboardRef.current.next();
+        } else if (buildKeyboardRef.current.canCheck) {
+          e.preventDefault();
+          buildKeyboardRef.current.check();
+        }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mode]);
+
   async function submitPronArenaAudio(blob: Blob) {
     const current = pronItems[pronIdx];
     if (!current) return;
@@ -946,12 +1003,40 @@ function PlayPageInner() {
     setPronError(null);
   }
 
+  // Preload upcoming TTS audio for instantaneous playback on next question
+  useEffect(() => {
+    if (mode === 'speed') {
+      const next = speedItems[speedIdx + 1];
+      if (next) {
+        void preloadNaturalVoice({
+          text: next.correctEn,
+          voice: persona.edgeVoice,
+          speed: 0.9,
+        });
+      }
+    } else if (mode === 'listen') {
+      const next = listenItems[listenIdx + 1];
+      if (next) {
+        void preloadNaturalVoice({
+          text: next.spokenEn,
+          voice: persona.edgeVoice,
+          speed: 0.88,
+        });
+      }
+    } else if (mode === 'build') {
+      const next = buildItems[buildIdx + 1];
+      if (next) {
+        void preloadNaturalVoice({
+          text: next.sentenceEn,
+          voice: persona.edgeVoice,
+          speed: 0.88,
+        });
+      }
+    }
+  }, [mode, speedItems, speedIdx, listenItems, listenIdx, buildItems, buildIdx, persona.edgeVoice]);
+
   if (loading || !profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
-        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-      </div>
-    );
+    return <WorkspacePageSkeleton title="Luyện tập phản xạ" />;
   }
 
   const levelInfo = getLevelInfo(profile.xp);

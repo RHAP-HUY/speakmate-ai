@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   Download,
   ExternalLink,
-  Loader2,
   LogOut,
   RefreshCw,
   Trash2,
@@ -14,6 +13,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
+import { WorkspacePageSkeleton } from '@/components/PageSkeleton';
 import { ProfileForm } from '@/components/ProfileForm';
 import {
   exportLocalProgressBackup,
@@ -193,11 +193,7 @@ export default function SettingsPage() {
   }
 
   if (loading || !profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
-        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-      </div>
-    );
+    return <WorkspacePageSkeleton title="Cài đặt hồ sơ" />;
   }
 
   return (

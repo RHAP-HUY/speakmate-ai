@@ -9,6 +9,7 @@ import {
   Mail,
   User,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
@@ -227,11 +228,13 @@ function AuthPageInner() {
     <div className="min-h-screen bg-white flex">
       {/* Left Split Lifestyle Photo Panel (Airbnb / Preply Craft) */}
       <aside className="hidden lg:relative lg:flex lg:w-[48%] xl:w-[50%] flex-col justify-between overflow-hidden bg-gray-900 p-10 text-white">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src="/images/auth-lifestyle.jpg"
           alt="Không gian học tiếng Anh buổi sáng với tai nghe và sổ tay"
-          className="absolute inset-0 h-full w-full object-cover"
+          fill
+          priority
+          sizes="50vw"
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/30" />
 

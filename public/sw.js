@@ -1,4 +1,4 @@
-const CACHE_NAME = 'speakmate-luminous-v9';
+const CACHE_NAME = 'speakmate-precision-v10';
 const PRECACHE_URLS = ['/', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -67,9 +67,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for immutable Next.js static bundles and app icons
+  // Stale-while-revalidate for static bundles, optimized images, and icons
   if (
     url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/_next/image') ||
+    url.pathname.startsWith('/images/') ||
     url.pathname === '/icon.svg' ||
     url.pathname === '/manifest.webmanifest'
   ) {

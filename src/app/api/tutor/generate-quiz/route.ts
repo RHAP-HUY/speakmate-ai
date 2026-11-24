@@ -128,12 +128,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = (await request.json()) as {
+    let body: {
       hobbies?: string[];
       jobField?: string;
       englishLevel?: string;
       customTopic?: string;
     };
+    try {
+      body = (await request.json()) as {
+        hobbies?: string[];
+        jobField?: string;
+        englishLevel?: string;
+        customTopic?: string;
+      };
+    } catch {
+      return NextResponse.json(
+        { error: 'Dữ liệu tạo bài tập JSON không hợp lệ.' },
+        { status: 400 }
+      );
+    }
 
     const { userId, userPersonalKey, profile } = await resolveTutorRequestAuth(
       request,
@@ -167,7 +180,7 @@ export async function POST(request: NextRequest) {
       userPersonalKey,
       parts: [{ text: prompt }],
       systemInstruction:
-        'You are SpeakMate AI (Nova), a world-class interactive English speaking coach for Vietnamese learners. Always output crisp, natural spoken English and warm, concise Vietnamese prompts & phonetic reading guides.',
+        'You are SpeakMate, a dedicated interactive English speaking coach for Vietnamese learners. Always output crisp, natural spoken English and warm, concise Vietnamese prompts & phonetic reading guides.',
       responseSchema: AI_QUIZ_SCHEMA,
       temperature: 0.85,
       maxOutputTokens: 1100,

@@ -62,7 +62,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const payload = JSON.parse(rawJson) as PronunciationPayload;
+    let payload: PronunciationPayload;
+    try {
+      payload = JSON.parse(rawJson) as PronunciationPayload;
+    } catch {
+      return NextResponse.json(
+        { error: 'Dữ liệu câu mẫu JSON không hợp lệ.' },
+        { status: 400 }
+      );
+    }
     const targetSentence = sanitizePromptField(payload.targetSentence, 220);
     if (!targetSentence) {
       return NextResponse.json(

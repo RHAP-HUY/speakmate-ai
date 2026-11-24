@@ -5,7 +5,6 @@ import {
   Check,
   Clock,
   Download,
-  Loader2,
   Mic,
   Plus,
   RotateCw,
@@ -21,11 +20,16 @@ import {
   CelebrationModal,
   type CelebrationPayload,
 } from '@/components/CelebrationModal';
+import { WorkspacePageSkeleton } from '@/components/PageSkeleton';
 import {
   PronunciationPracticeModal,
   type PronunciationPracticeTarget,
 } from '@/components/PronunciationPracticeModal';
-import { playNaturalVoice } from '@/lib/audio';
+import {
+  playNaturalVoice,
+  preloadNaturalVoice,
+  stopVoicePlayback,
+} from '@/lib/audio';
 import {
   deletePhrase,
   getCurrentProfile,
@@ -126,6 +130,7 @@ export default function PhrasesPage() {
     void load();
     return () => {
       active = false;
+      stopVoicePlayback();
     };
   }, [router]);
 
@@ -314,12 +319,29 @@ export default function PhrasesPage() {
     });
   }, [phrases, notebookFilter, searchQuery]);
 
+  // Preload audio for active & upcoming SRS flashcard for zero-latency playback
+  useEffect(() => {
+    if (tab !== 'flashcards' || flashcardDeck.length === 0) return;
+    const cur = flashcardDeck[cardIndex % flashcardDeck.length];
+    const next = flashcardDeck[(cardIndex + 1) % flashcardDeck.length];
+    if (cur) {
+      void preloadNaturalVoice({
+        text: cur.englishPhrase,
+        voice: activePersona.edgeVoice,
+        speed: 0.88,
+      });
+    }
+    if (next && next.id !== cur?.id) {
+      void preloadNaturalVoice({
+        text: next.englishPhrase,
+        voice: activePersona.edgeVoice,
+        speed: 0.88,
+      });
+    }
+  }, [tab, flashcardDeck, cardIndex, activePersona.edgeVoice]);
+
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
-        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-      </div>
-    );
+    return <WorkspacePageSkeleton title="Sổ mẫu câu & Ôn tập SRS" />;
   }
 
   const savedSet = new Set(phrases.map((p) => p.englishPhrase.toLowerCase()));

@@ -59,7 +59,14 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      payload = JSON.parse(rawJson) as TurnPayload;
+      try {
+        payload = JSON.parse(rawJson) as TurnPayload;
+      } catch {
+        return NextResponse.json(
+          { error: 'Dữ liệu hội thoại JSON không hợp lệ.' },
+          { status: 400 }
+        );
+      }
       const audioFile = formData.get('audio');
       if (audioFile instanceof Blob && audioFile.size > 0) {
         if (audioFile.size > 10 * 1024 * 1024) {
@@ -73,8 +80,25 @@ export async function POST(request: NextRequest) {
         audioMimeType = audioFile.type || 'audio/webm';
       }
     } else {
-      payload = (await request.json()) as TurnPayload;
+      try {
+        payload = (await request.json()) as TurnPayload;
+      } catch {
+        return NextResponse.json(
+          { error: 'Dữ liệu hội thoại JSON không hợp lệ.' },
+          { status: 400 }
+        );
+      }
     }
+
+    if (!payload || typeof payload !== 'object') {
+      return NextResponse.json(
+        { error: 'Thiếu dữ liệu phiên hội thoại.' },
+        { status: 400 }
+      );
+    }
+    const safeHistory = Array.isArray(payload.history)
+      ? payload.history.slice(-40)
+      : [];
 
     const { userId, userPersonalKey, profile } = await resolveTutorRequestAuth(
       request,
@@ -102,7 +126,7 @@ export async function POST(request: NextRequest) {
     });
 
     const promptText = buildConversationTurnPrompt({
-      history: payload.history ?? [],
+      history: safeHistory,
       userText: payload.userText,
       isStart: payload.isStart,
       isAudio: Boolean(audioBase64),
@@ -183,8 +207,7 @@ export async function POST(request: NextRequest) {
           : {
               userTranscript: userSaid,
               naturalRewrite: userSaid || null,
-              coachingTip:
-                'Cụm máy chủ Gemini đang cao điểm thoáng qua — Nova đã giữ nhịp hội thoại giúp bạn, hãy tiếp tục trả lời nhé!',
+              coachingTip: `${persona.name} đã giữ nhịp hội thoại giúp bạn trong lúc kết nối cao điểm — hãy tiếp tục trả lời tự nhiên nhé!`,
               aiReplyEn: `Got it, ${learnerName}! That sounds clear. Could you tell me a bit more about what you'd prefer next?`,
               aiReplyVi: `Rõ rồi ${learnerName} ơi! Nghe rất ổn. Bạn có thể chia sẻ thêm chút nữa điều bạn muốn tiếp theo không?`,
               replyHints: [

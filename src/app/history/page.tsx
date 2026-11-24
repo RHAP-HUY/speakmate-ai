@@ -13,13 +13,14 @@ import { useEffect, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { TutorAvatar } from '@/components/BrandArt';
 import { CallReportView } from '@/components/CallReportView';
+import { WorkspacePageSkeleton } from '@/components/PageSkeleton';
 import {
   PronunciationBadge,
   getScoreTone,
 } from '@/components/PronunciationBadge';
 import { StreakCalendar } from '@/components/StreakCalendar';
 import { StreakRewardsPanel } from '@/components/StreakRewardsPanel';
-import { playNaturalVoice } from '@/lib/audio';
+import { playNaturalVoice, stopVoicePlayback } from '@/lib/audio';
 import {
   applyStreakFreezeForYesterday,
   claimStreakMilestone,
@@ -99,6 +100,7 @@ export default function HistoryPage() {
     void load();
     return () => {
       active = false;
+      stopVoicePlayback();
     };
   }, [router]);
 
@@ -145,11 +147,7 @@ export default function HistoryPage() {
   }
 
   if (loading || !profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
-        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-      </div>
-    );
+    return <WorkspacePageSkeleton title="Nhật ký học tập" />;
   }
 
   const todayStr = getTodayLocalDate();

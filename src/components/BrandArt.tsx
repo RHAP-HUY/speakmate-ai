@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import {
   Flame,
   Gem,
@@ -82,21 +83,29 @@ export function NovaCompanion({
 export function TutorAvatar({
   personaId,
   className = 'h-11 w-11',
+  sizes = '64px',
+  priority = false,
 }: {
   personaId: string;
   className?: string;
+  sizes?: string;
+  priority?: boolean;
 }) {
   const photo = TUTOR_PHOTO_MAP[personaId] ?? TUTOR_PHOTO_MAP['emma-us'];
 
   return (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img
-      src={photo.src}
-      alt={photo.alt}
-      loading="lazy"
-      decoding="async"
-      className={`${className} rounded-full object-cover object-top shrink-0 bg-[#F3F4F6] ring-1 ring-black/8`}
-    />
+    <span
+      className={`${className} relative inline-block overflow-hidden rounded-full shrink-0 bg-[#F3F4F6] ring-1 ring-black/8`}
+    >
+      <Image
+        src={photo.src}
+        alt={photo.alt}
+        fill
+        sizes={sizes}
+        priority={priority}
+        className="object-cover object-top"
+      />
+    </span>
   );
 }
 

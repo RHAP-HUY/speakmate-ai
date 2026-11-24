@@ -28,7 +28,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://speakmate-ai-nu.vercel.app'),
-  title: 'SpeakMate — Luyện nói tiếng Anh tự nhiên qua hội thoại thực tế',
+  title: {
+    default: 'SpeakMate — Luyện nói tiếng Anh tự nhiên qua hội thoại thực tế',
+    template: '%s · SpeakMate',
+  },
   description:
     'Rèn phản xạ giao tiếp tiếng Anh mỗi ngày cùng 6 người hướng dẫn bản xứ, phân tích phát âm IPA từng âm tiết, lặp lại ngắt quãng SRS và đồng bộ Google Drive.',
   applicationName: 'SpeakMate',
@@ -85,6 +88,12 @@ export default function RootLayout({
       className={`${beVietnamPro.variable} ${plusJakarta.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-white text-[#111827] flex flex-col selection:bg-[#E5483F]/15 selection:text-[#B91C1C]">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-full focus:bg-[#111827] focus:px-4 focus:py-2 focus:text-xs focus:font-semibold focus:text-white focus:shadow-lg"
+        >
+          Chuyển tới nội dung chính
+        </a>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

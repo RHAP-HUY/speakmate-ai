@@ -4,7 +4,6 @@ import {
   ArrowRight,
   ArrowUp,
   Crown,
-  Loader2,
   Users,
   Zap,
 } from 'lucide-react';
@@ -21,6 +20,7 @@ import {
   CelebrationModal,
   type CelebrationPayload,
 } from '@/components/CelebrationModal';
+import { WorkspacePageSkeleton } from '@/components/PageSkeleton';
 import { getCurrentProfile, purchaseShopReward } from '@/lib/data-store';
 import {
   getLeagueInfo,
@@ -107,11 +107,7 @@ export default function LeaderboardPage() {
   }
 
   if (loading || !profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
-        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-      </div>
-    );
+    return <WorkspacePageSkeleton title="Bảng xếp hạng" />;
   }
 
   const league = getLeagueInfo(profile.xp);

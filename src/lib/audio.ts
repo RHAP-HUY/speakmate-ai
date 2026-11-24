@@ -1,9 +1,62 @@
+const MAX_CLIENT_TTS_CACHE = 50;
 const ttsCache = new Map<string, string>();
+const pendingPreloads = new Set<string>();
 let currentAudio: HTMLAudioElement | null = null;
+let currentAbortController: AbortController | null = null;
 let playbackToken = 0;
+
+function evictOldestCacheIfNeeded(): void {
+  while (ttsCache.size >= MAX_CLIENT_TTS_CACHE) {
+    const oldestKey = ttsCache.keys().next().value;
+    if (!oldestKey) break;
+    const oldUrl = ttsCache.get(oldestKey);
+    if (oldUrl && typeof URL !== 'undefined') {
+      try {
+        URL.revokeObjectURL(oldUrl);
+      } catch {
+        // ignore revoke errors
+      }
+    }
+    ttsCache.delete(oldestKey);
+  }
+}
+
+export function buildClientTtsCacheKey(
+  voice: string,
+  speed: number,
+  text: string
+): string {
+  return `${voice}|${speed.toFixed(2)}|${text.trim()}`;
+}
+
+export function getClientTtsCacheSize(): number {
+  return ttsCache.size;
+}
+
+export function clearClientTtsCache(): void {
+  for (const url of ttsCache.values()) {
+    if (typeof URL !== 'undefined') {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {
+        // ignore
+      }
+    }
+  }
+  ttsCache.clear();
+  pendingPreloads.clear();
+}
 
 export function stopVoicePlayback(): void {
   playbackToken += 1;
+  if (currentAbortController) {
+    try {
+      currentAbortController.abort();
+    } catch {
+      // ignore
+    }
+    currentAbortController = null;
+  }
   if (currentAudio) {
     try {
       currentAudio.pause();
@@ -61,6 +114,51 @@ function speakWithBrowserFallback(params: {
   window.speechSynthesis.speak(utterance);
 }
 
+/**
+ * Quietly pre-fetches upcoming lesson/flashcard TTS audio into the client LRU cache
+ * so clicking Play or advancing to the next question feels instantaneous.
+ */
+export async function preloadNaturalVoice(params: {
+  text: string;
+  voice: string;
+  speed: number;
+}): Promise<void> {
+  if (typeof window === 'undefined' || typeof fetch === 'undefined') return;
+  const cleanText = params.text.trim();
+  if (!cleanText) return;
+
+  const cacheKey = buildClientTtsCacheKey(params.voice, params.speed, cleanText);
+  if (ttsCache.has(cacheKey) || pendingPreloads.has(cacheKey)) return;
+
+  pendingPreloads.add(cacheKey);
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 8_000);
+
+  try {
+    const response = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: cleanText,
+        voice: params.voice,
+        speed: params.speed,
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) return;
+    const blob = await response.blob();
+    if (blob.size === 0) return;
+
+    evictOldestCacheIfNeeded();
+    ttsCache.set(cacheKey, URL.createObjectURL(blob));
+  } catch {
+    // Silent background preload failure is completely safe
+  } finally {
+    window.clearTimeout(timer);
+    pendingPreloads.delete(cacheKey);
+  }
+}
+
 export async function playNaturalVoice(params: {
   text: string;
   voice: string;
@@ -77,41 +175,53 @@ export async function playNaturalVoice(params: {
     return;
   }
 
-  const cacheKey = `${params.voice}|${params.speed.toFixed(2)}|${cleanText}`;
+  const cacheKey = buildClientTtsCacheKey(params.voice, params.speed, cleanText);
 
   try {
     let audioUrl = ttsCache.get(cacheKey);
-    if (!audioUrl) {
-      const response = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: cleanText,
-          voice: params.voice,
-          speed: params.speed,
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+    if (audioUrl) {
+      // Refresh LRU position
+      ttsCache.delete(cacheKey);
+      ttsCache.set(cacheKey, audioUrl);
+    } else {
+      const controller = new AbortController();
+      currentAbortController = controller;
+      const timeoutId =
+        typeof window !== 'undefined'
+          ? window.setTimeout(() => controller.abort(), 10_000)
+          : null;
 
-      if (!response.ok) {
-        throw new Error('TTS API fallback');
-      }
+      try {
+        const response = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: cleanText,
+            voice: params.voice,
+            speed: params.speed,
+          }),
+          signal: controller.signal,
+        });
 
-      const blob = await response.blob();
-      if (blob.size === 0) {
-        throw new Error('Empty TTS audio');
-      }
-      audioUrl = URL.createObjectURL(blob);
+        if (!response.ok) {
+          throw new Error('TTS API fallback');
+        }
 
-      if (ttsCache.size >= 40) {
-        const oldestKey = ttsCache.keys().next().value;
-        if (oldestKey) {
-          const oldUrl = ttsCache.get(oldestKey);
-          if (oldUrl) URL.revokeObjectURL(oldUrl);
-          ttsCache.delete(oldestKey);
+        const blob = await response.blob();
+        if (blob.size === 0) {
+          throw new Error('Empty TTS audio');
+        }
+        audioUrl = URL.createObjectURL(blob);
+        evictOldestCacheIfNeeded();
+        ttsCache.set(cacheKey, audioUrl);
+      } finally {
+        if (timeoutId !== null && typeof window !== 'undefined') {
+          window.clearTimeout(timeoutId);
+        }
+        if (currentAbortController === controller) {
+          currentAbortController = null;
         }
       }
-      ttsCache.set(cacheKey, audioUrl);
     }
 
     if (playbackToken !== token) return;

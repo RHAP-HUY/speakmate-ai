@@ -45,7 +45,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const payload = (await request.json()) as SummaryPayload;
+    let payload: SummaryPayload;
+    try {
+      payload = (await request.json()) as SummaryPayload;
+    } catch {
+      return NextResponse.json(
+        { error: 'Dữ liệu tạo báo cáo JSON không hợp lệ.' },
+        { status: 400 }
+      );
+    }
     const { userId, userPersonalKey, profile } = await resolveTutorRequestAuth(
       request,
       payload.profileOverride
