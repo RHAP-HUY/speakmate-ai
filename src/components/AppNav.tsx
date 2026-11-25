@@ -28,6 +28,7 @@ import {
   type DriveSyncStatus,
 } from '@/lib/data-store';
 import {
+  BADGE_DIRECTORY,
   getClaimableMilestones,
   isXpBoostActive,
 } from '@/lib/gamification';
@@ -64,6 +65,7 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
   const [sessionInfo, setSessionInfo] = useState<AuthSessionInfo | null>(null);
   const [muted, setMuted] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const [syncStatus, setSyncStatus] = useState<DriveSyncStatus>(() =>
     getDriveSyncStatus()
   );
@@ -111,15 +113,11 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
     };
   }, []);
 
-  const currentProfile =
-    profile && liveProfile && profile.id === liveProfile.id
-      ? liveProfile.xp >= profile.xp &&
-        liveProfile.gems === profile.gems &&
-        liveProfile.displayName === profile.displayName &&
-        liveProfile.claimedMilestones.length === profile.claimedMilestones.length
-        ? profile
-        : liveProfile
-      : liveProfile ?? profile;
+  const currentProfile = liveProfile ?? profile;
+  const activeBadgeLabel =
+    currentProfile?.activeBadge && BADGE_DIRECTORY[currentProfile.activeBadge]
+      ? BADGE_DIRECTORY[currentProfile.activeBadge]
+      : null;
 
   const resolvedVariant = variant ?? (authenticated ? 'app' : 'landing');
   const claimableCount = currentProfile
@@ -329,10 +327,22 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
                   }
                   className="inline-flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 hover:bg-gray-100 transition"
                 >
-                  <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
-                    {(currentProfile.displayName || 'H')
-                      .slice(0, 1)
-                      .toUpperCase()}
+                  <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white shrink-0">
+                    {currentProfile.avatarUrl && !avatarFailed ? (
+                      // External OAuth avatar URL (Google profile picture)
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={currentProfile.avatarUrl}
+                        alt=""
+                        referrerPolicy="no-referrer"
+                        onError={() => setAvatarFailed(true)}
+                        className="h-full w-full rounded-full object-cover"
+                      />
+                    ) : (
+                      (currentProfile.displayName || 'H')
+                        .slice(0, 1)
+                        .toUpperCase()
+                    )}
                     {isDriveActive && (
                       <span
                         className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${
@@ -343,8 +353,15 @@ export function AppNav({ profile, authenticated, variant }: AppNavProps) {
                       />
                     )}
                   </span>
-                  <span className="hidden md:inline text-xs font-semibold text-gray-900 max-w-28 truncate">
-                    {currentProfile.displayName || 'Học viên'}
+                  <span className="hidden md:flex flex-col text-left leading-tight max-w-28">
+                    <span className="text-xs font-semibold text-gray-900 truncate">
+                      {currentProfile.displayName || 'Học viên'}
+                    </span>
+                    {activeBadgeLabel && (
+                      <span className="text-[10px] font-medium text-[#E5483F] truncate">
+                        {activeBadgeLabel}
+                      </span>
+                    )}
                   </span>
                   <Settings className="h-3.5 w-3.5 text-gray-500 md:hidden" />
                 </Link>

@@ -46,6 +46,7 @@ import {
   listSavedPhrases,
 } from '@/lib/data-store';
 import {
+  BADGE_DIRECTORY,
   computeStrictStreak,
   DAILY_QUEST_DEFS,
   getClaimableMilestones,
@@ -633,7 +634,11 @@ export function HomeClient({
     });
   }
 
-  function startCall(scenarioId: string, customTopic?: string) {
+  function startCall(
+    scenarioId: string,
+    customTopic?: string,
+    stationId?: string
+  ) {
     playTapSound();
     const resolvedPersona =
       selectedPersonaId === 'auto'
@@ -645,6 +650,9 @@ export function HomeClient({
     });
     if (customTopic?.trim()) {
       params.set('customTopic', customTopic.trim());
+    }
+    if (stationId) {
+      params.set('station', stationId);
     }
     router.push(`/call?${params.toString()}`);
   }
@@ -1212,14 +1220,31 @@ export function HomeClient({
   const claimedQuestsToday = profile.claimedDailyQuests?.[todayStr] ?? [];
 
   const currentUnit = LEARNING_UNITS[activeUnitIdx] ?? LEARNING_UNITS[0];
-  const completedInUnit = Math.min(
-    currentUnit.stations.length,
-    Math.max(0, profile.totalLessonsCompleted - activeUnitIdx * 5)
+  const explicitCompletedSet = new Set(profile.completedStationIds ?? []);
+
+  // Backward-compatible fallback for lessons finished before per-station IDs were tracked
+  const allLearnableIds = LEARNING_UNITS.flatMap((u) =>
+    u.stations.filter((s) => s.kind !== 'chest').map((s) => s.id)
   );
-  const activeStationIndex = Math.min(
-    currentUnit.stations.length - 1,
-    completedInUnit
+  const legacyInferredCount = Math.max(
+    0,
+    profile.totalLessonsCompleted - explicitCompletedSet.size
   );
+  for (let i = 0; i < allLearnableIds.length && i < legacyInferredCount; i++) {
+    explicitCompletedSet.add(allLearnableIds[i]);
+  }
+
+  const learnableStationsInUnit = currentUnit.stations.filter(
+    (s) => s.kind !== 'chest'
+  );
+  const completedInUnit = learnableStationsInUnit.filter((s) =>
+    explicitCompletedSet.has(s.id)
+  ).length;
+  const firstPendingIdx = currentUnit.stations.findIndex(
+    (s) => s.kind !== 'chest' && !explicitCompletedSet.has(s.id)
+  );
+  const activeStationIndex =
+    firstPendingIdx >= 0 ? firstPendingIdx : currentUnit.stations.length - 1;
 
   const miniWeek = Array.from({ length: 7 }).map((_, idx) => {
     const dateStr = shiftDateString(todayStr, idx - 6);
@@ -1256,11 +1281,12 @@ export function HomeClient({
       return;
     }
     if (station.href) {
-      router.push(station.href);
+      const sep = station.href.includes('?') ? '&' : '?';
+      router.push(`${station.href}${sep}station=${encodeURIComponent(station.id)}`);
       return;
     }
     if (station.scenarioId) {
-      startCall(station.scenarioId);
+      startCall(station.scenarioId, undefined, station.id);
     }
   }
 
@@ -1509,7 +1535,7 @@ export function HomeClient({
   );
 
   const unitPct = Math.round(
-    (completedInUnit / Math.max(1, currentUnit.stations.length)) * 100
+    (completedInUnit / Math.max(1, learnableStationsInUnit.length)) * 100
   );
 
   return (
@@ -1518,6 +1544,11 @@ export function HomeClient({
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
+            {profile.activeBadge && BADGE_DIRECTORY[profile.activeBadge] && (
+              <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-[#FFF1F0] px-3 py-0.5 text-[11px] font-semibold text-[#E5483F]">
+                <span>Danh hiệu: {BADGE_DIRECTORY[profile.activeBadge]}</span>
+              </div>
+            )}
             <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
               Chào {profile.displayName || 'bạn'}, sẵn sàng luyện nói hôm nay?
             </h1>
@@ -1601,7 +1632,7 @@ export function HomeClient({
                 <span>{currentUnit.roman}</span>
                 <span>·</span>
                 <span className="tabular-nums">
-                  {completedInUnit}/{currentUnit.stations.length} mục đã xong ({unitPct}%)
+                  {completedInUnit}/{learnableStationsInUnit.length} bài đã xong ({unitPct}%)
                 </span>
               </div>
               <h2 className="font-display text-xl sm:text-2xl font-bold leading-snug">
@@ -1638,7 +1669,7 @@ export function HomeClient({
           {currentUnit.stations.map((station, idx) => {
             const Icon = getStationIcon(station.kind);
             const isChest = station.kind === 'chest';
-            const isDone = !isChest && idx < completedInUnit;
+            const isDone = !isChest && explicitCompletedSet.has(station.id);
             const isActive = idx === activeStationIndex;
             const chestReady = isChest && claimableMilestones.length > 0;
 

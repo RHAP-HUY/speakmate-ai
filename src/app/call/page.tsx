@@ -92,6 +92,7 @@ function CallStudioInner() {
   const searchParams = useSearchParams();
   const scenarioId = searchParams.get('scenario') || 'daily-small-talk';
   const personaParam = searchParams.get('persona') || '';
+  const stationParam = searchParams.get('station') || undefined;
   const customTopic = (searchParams.get('customTopic') || '').trim().slice(0, 140);
 
   const scenario = useMemo(() => {
@@ -309,7 +310,7 @@ function CallStudioInner() {
       const optimisticText =
         !opts.isStart
           ? (opts.userText || opts.clientTranscript || '').trim() ||
-            (opts.audioBlob ? 'Đang gửi đoạn ghi âm giọng nói...' : null)
+          (opts.audioBlob ? 'Đang gửi đoạn ghi âm giọng nói...' : null)
           : null;
       setPendingUserText(optimisticText);
 
@@ -537,7 +538,7 @@ function CallStudioInner() {
         setMessages([aiMsg]);
         setReplyHints(opening.replyHints);
         setLastTurnMeta({ latencyMs: 0, modelUsed: 'instant-opening' });
-        void appendConversationMessages(conv.id, [aiMsg]).catch(() => {});
+        void appendConversationMessages(conv.id, [aiMsg]).catch(() => { });
         await speakAiSentence(opening.aiReplyEn, undefined, true);
         return;
       }
@@ -868,6 +869,7 @@ function CallStudioInner() {
         durationSeconds: elapsedSeconds,
         messageCount: snapshotMessages.length,
         userMessagesSent: userSentCount,
+        stationId: stationParam,
       });
       setCallReward(reward);
     }
@@ -973,11 +975,10 @@ function CallStudioInner() {
                   key={spd}
                   type="button"
                   onClick={() => setSpeed(spd)}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
-                    Math.abs(speed - spd) < 0.03
-                      ? 'bg-white text-gray-900'
-                      : 'text-gray-300 hover:text-white'
-                  }`}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${Math.abs(speed - spd) < 0.03
+                    ? 'bg-white text-gray-900'
+                    : 'text-gray-300 hover:text-white'
+                    }`}
                 >
                   {spd}x
                 </button>
@@ -1018,11 +1019,10 @@ function CallStudioInner() {
         {/* Lesson Quest Progress Bar */}
         <div className="mx-auto mt-2.5 max-w-5xl">
           <div
-            className={`flex items-center justify-between gap-3 rounded-full px-4 py-1.5 text-[11px] font-medium border ${
-              userTurns >= MIN_CALL_TURNS_FOR_LESSON
-                ? 'border-emerald-500/35 bg-emerald-500/15 text-emerald-200'
-                : 'border-white/10 bg-white/[0.04] text-gray-300'
-            }`}
+            className={`flex items-center justify-between gap-3 rounded-full px-4 py-1.5 text-[11px] font-medium border ${userTurns >= MIN_CALL_TURNS_FOR_LESSON
+              ? 'border-emerald-500/35 bg-emerald-500/15 text-emerald-200'
+              : 'border-white/10 bg-white/[0.04] text-gray-300'
+              }`}
           >
             <span className="inline-flex items-center gap-1.5">
               <StreakFlameSvg
@@ -1031,18 +1031,16 @@ function CallStudioInner() {
               />
               {userTurns >= MIN_CALL_TURNS_FOR_LESSON
                 ? 'Đã hoàn thành mục tiêu buổi hội thoại — Chuỗi hôm nay đã được giữ (+60 XP · +15 Ngọc)'
-                : `Để giữ chuỗi ngày học: trao đổi thêm ${
-                    MIN_CALL_TURNS_FOR_LESSON - userTurns
-                  } lượt nói nữa cùng ${persona.name}`}
+                : `Để giữ chuỗi ngày học: trao đổi thêm ${MIN_CALL_TURNS_FOR_LESSON - userTurns
+                } lượt nói nữa cùng ${persona.name}`}
             </span>
             <div className="flex items-center gap-2 shrink-0 tabular-nums">
               <div className="hidden sm:block h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
                 <div
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    userTurns >= MIN_CALL_TURNS_FOR_LESSON
-                      ? 'bg-emerald-400'
-                      : 'bg-[#E5483F]'
-                  }`}
+                  className={`h-full rounded-full transition-all duration-300 ${userTurns >= MIN_CALL_TURNS_FOR_LESSON
+                    ? 'bg-emerald-400'
+                    : 'bg-[#E5483F]'
+                    }`}
                   style={{
                     width: `${Math.min(
                       100,
@@ -1088,11 +1086,10 @@ function CallStudioInner() {
               className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
             >
               <div
-                className={`max-w-[92%] sm:max-w-[82%] rounded-2xl px-4 py-3.5 ${
-                  isUser
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-[#181B22] border border-white/10 text-white'
-                }`}
+                className={`max-w-[92%] sm:max-w-[82%] rounded-2xl px-4 py-3.5 ${isUser
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-[#181B22] border border-white/10 text-white'
+                  }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-sm sm:text-base font-medium leading-relaxed">
@@ -1372,11 +1369,10 @@ function CallStudioInner() {
                   onClick={() =>
                     setMicMode((m) => (m === 'tap' ? 'handsfree' : 'tap'))
                   }
-                  className={`rounded-full border px-3.5 py-2.5 text-xs font-semibold transition cursor-pointer ${
-                    micMode === 'handsfree'
-                      ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300'
-                      : 'border-white/15 bg-white/8 text-gray-300'
-                  }`}
+                  className={`rounded-full border px-3.5 py-2.5 text-xs font-semibold transition cursor-pointer ${micMode === 'handsfree'
+                    ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300'
+                    : 'border-white/15 bg-white/8 text-gray-300'
+                    }`}
                 >
                   {micMode === 'handsfree' ? 'Rảnh tay (Tự động)' : 'Chạm để nói'}
                 </button>
@@ -1391,11 +1387,10 @@ function CallStudioInner() {
                       void startRecording();
                     }
                   }}
-                  className={`relative flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold shadow-md transition disabled:opacity-50 cursor-pointer ${
-                    phase === 'recording'
-                      ? 'bg-rose-600 text-white hover:bg-rose-700'
-                      : 'bg-[#E5483F] text-white hover:bg-[#cf3a31]'
-                  }`}
+                  className={`relative flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold shadow-md transition disabled:opacity-50 cursor-pointer ${phase === 'recording'
+                    ? 'bg-rose-600 text-white hover:bg-rose-700'
+                    : 'bg-[#E5483F] text-white hover:bg-[#cf3a31]'
+                    }`}
                 >
                   {phase === 'recording' ? (
                     <>
@@ -1495,11 +1490,10 @@ function CallStudioInner() {
 
             {callReward && (
               <div
-                className={`rounded-2xl border p-4 text-xs space-y-2 ${
-                  callReward.lessonCompleted
-                    ? 'border-emerald-500/35 bg-emerald-500/15 text-emerald-100'
-                    : 'border-amber-500/35 bg-amber-500/15 text-amber-100'
-                }`}
+                className={`rounded-2xl border p-4 text-xs space-y-2 ${callReward.lessonCompleted
+                  ? 'border-emerald-500/35 bg-emerald-500/15 text-emerald-100'
+                  : 'border-amber-500/35 bg-amber-500/15 text-amber-100'
+                  }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-bold flex items-center gap-1.5">

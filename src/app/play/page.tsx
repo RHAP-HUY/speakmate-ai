@@ -125,6 +125,7 @@ function PlayPageInner() {
   const searchParams = useSearchParams();
   const initialModeParam = searchParams.get('mode');
   const initialCategoryParam = searchParams.get('category') as GameCategoryFilter;
+  const stationParam = searchParams.get('station') || undefined;
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -515,6 +516,7 @@ function PlayPageInner() {
           xpEarned: params.xpEarned,
           gemsEarned: params.gemsEarned,
           sessionsDelta: 1,
+          stationId: stationParam,
         });
         setVictoryReward(reward);
         if (reward.lessonCompleted) {
@@ -525,7 +527,7 @@ function PlayPageInner() {
         setSavingVictory(false);
       }
     },
-    [roundStartTs, refreshProgress]
+    [roundStartTs, refreshProgress, stationParam]
   );
 
   const handleSelectSpeedOption = useCallback(

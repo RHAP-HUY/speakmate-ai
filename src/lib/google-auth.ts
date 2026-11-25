@@ -229,11 +229,15 @@ export async function fetchGoogleUserInfo(accessToken: string): Promise<{
   };
 }
 
+const EPHEMERAL_FALLBACK_COOKIE_SECRET = crypto
+  .randomBytes(32)
+  .toString('hex');
+
 function getSessionCookieKey(): Buffer {
   const seed =
     process.env.APP_ENCRYPTION_SECRET?.trim() ||
     process.env.GOOGLE_CLIENT_SECRET?.trim() ||
-    'speakmate-ai-default-cookie-key-v1';
+    EPHEMERAL_FALLBACK_COOKIE_SECRET;
   return crypto.createHash('sha256').update(seed).digest();
 }
 

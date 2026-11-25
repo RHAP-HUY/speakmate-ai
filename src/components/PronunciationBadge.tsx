@@ -81,11 +81,10 @@ export function PronunciationBadge({
 
   return (
     <div
-      className={`mt-1.5 max-w-[92%] sm:max-w-[82%] rounded-2xl border px-3.5 py-2 text-xs ${
-        isDark
-          ? 'border-white/10 bg-[#181B22] text-gray-100'
-          : 'border-gray-200 bg-white text-[#111827]'
-      }`}
+      className={`mt-1.5 max-w-[92%] sm:max-w-[82%] rounded-2xl border px-3.5 py-2 text-xs ${isDark
+        ? 'border-white/10 bg-[#181B22] text-gray-100'
+        : 'border-gray-200 bg-white text-[#111827]'
+        }`}
     >
       <button
         type="button"

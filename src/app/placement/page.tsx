@@ -15,7 +15,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { NovaCompanion, TutorAvatar } from '@/components/BrandArt';
-import { playNaturalVoice, stopVoicePlayback } from '@/lib/audio';
+import { WorkspacePageSkeleton } from '@/components/PageSkeleton';
+import {
+  playNaturalVoice,
+  preloadNaturalVoice,
+  stopVoicePlayback,
+} from '@/lib/audio';
 import { getCurrentProfile, saveProfile } from '@/lib/data-store';
 import {
   evaluatePlacementTest,
@@ -86,18 +91,39 @@ export default function PlacementPage() {
     }
   }, [loading, evaluation, currentQ, playQuestionAudio]);
 
-  function handleSelectOption(optId: string) {
-    if (pickedOption !== null || !currentQ) return;
-    setPickedOption(optId);
-    if (optId === currentQ.correctOptionId) {
-      playCorrectSound();
-    } else {
-      playWrongSound();
+  // Preload upcoming listening question audio so transitions feel instantaneous
+  useEffect(() => {
+    if (loading || evaluation) return;
+    for (let i = stepIdx + 1; i < PLACEMENT_QUESTIONS.length; i++) {
+      const upcoming = PLACEMENT_QUESTIONS[i];
+      if (upcoming?.spokenAudioEn) {
+        const persona =
+          AI_PERSONAS.find((p) => p.id === upcoming.voiceId) ?? AI_PERSONAS[0];
+        void preloadNaturalVoice({
+          text: upcoming.spokenAudioEn,
+          voice: persona.edgeVoice,
+          speed: 0.92,
+        });
+        break;
+      }
     }
-    setAnswers((prev) => ({ ...prev, [currentQ.id]: optId }));
-  }
+  }, [loading, evaluation, stepIdx]);
 
-  function handleNextQuestion() {
+  const handleSelectOption = useCallback(
+    (optId: string) => {
+      if (pickedOption !== null || !currentQ) return;
+      setPickedOption(optId);
+      if (optId === currentQ.correctOptionId) {
+        playCorrectSound();
+      } else {
+        playWrongSound();
+      }
+      setAnswers((prev) => ({ ...prev, [currentQ.id]: optId }));
+    },
+    [pickedOption, currentQ]
+  );
+
+  const handleNextQuestion = useCallback(() => {
     if (!currentQ || pickedOption === null) return;
     playTapSound();
     stopVoicePlayback();
@@ -123,7 +149,47 @@ export default function PlacementPage() {
 
     setPickedOption(null);
     setStepIdx((i) => i + 1);
-  }
+  }, [answers, currentQ, pickedOption, stepIdx]);
+
+  // Keyboard shortcuts: 1-4 / A-D to answer, Enter/Space to advance, R to replay audio
+  useEffect(() => {
+    if (loading || evaluation || !currentQ) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      if (e.key.toLowerCase() === 'r' && currentQ.spokenAudioEn) {
+        e.preventDefault();
+        playQuestionAudio(0.92);
+        return;
+      }
+      if (pickedOption === null) {
+        const numIdx = Number(e.key) - 1;
+        const charIdx = 'abcd'.indexOf(e.key.toLowerCase());
+        const idx = numIdx >= 0 ? numIdx : charIdx;
+        if (idx >= 0 && idx < currentQ.options.length) {
+          e.preventDefault();
+          handleSelectOption(currentQ.options[idx].id);
+        }
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleNextQuestion();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    loading,
+    evaluation,
+    currentQ,
+    pickedOption,
+    handleSelectOption,
+    handleNextQuestion,
+    playQuestionAudio,
+  ]);
 
   async function handleApplyLevel() {
     if (!evaluation) return;
@@ -156,11 +222,7 @@ export default function PlacementPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
-        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-      </div>
-    );
+    return <WorkspacePageSkeleton title="Kiểm tra trình độ CEFR" />;
   }
 
   const progressPct = evaluation

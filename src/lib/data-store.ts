@@ -217,6 +217,8 @@ function defaultLocalProfile(seed?: {
     unlockedBadges: [],
     activeBadge: null,
     totalLessonsCompleted: 0,
+    completedStationIds: [],
+    deletedPhraseKeys: [],
     xpBoostUntil: null,
     claimedDailyQuests: {},
   };
@@ -270,6 +272,25 @@ function normalizeProfile(
     totalLessonsCompleted: Number.isFinite(Number(raw.totalLessonsCompleted))
       ? Math.max(0, Number(raw.totalLessonsCompleted))
       : 0,
+    completedStationIds: Array.isArray(raw.completedStationIds)
+      ? Array.from(
+          new Set(
+            raw.completedStationIds.filter(
+              (id): id is string => typeof id === 'string' && id.trim().length > 0
+            )
+          )
+        ).slice(0, 200)
+      : [],
+    deletedPhraseKeys: Array.isArray(raw.deletedPhraseKeys)
+      ? Array.from(
+          new Set(
+            raw.deletedPhraseKeys
+              .filter((k): k is string => typeof k === 'string')
+              .map((k) => k.trim().toLowerCase())
+              .filter(Boolean)
+          )
+        ).slice(-200)
+      : [],
     xpBoostUntil:
       typeof raw.xpBoostUntil === 'number' && Number.isFinite(raw.xpBoostUntil)
         ? raw.xpBoostUntil
@@ -939,7 +960,29 @@ export async function createConversationRecord(params: {
       endedAt: null,
     };
     const existing = readLocalJson<ConversationRecord[]>(keys.conversations, []);
-    writeLocalJson(keys.conversations, [record, ...existing]);
+    const staleCutoffMs = Date.now() - 2 * 3_600_000;
+    const pruned: ConversationRecord[] = [];
+    for (const c of existing) {
+      const startedMs = Date.parse(c.startedAt || '') || 0;
+      const isAbandonedDraft =
+        !c.endedAt &&
+        c.messageCount === 0 &&
+        c.durationSeconds === 0 &&
+        startedMs > 0 &&
+        startedMs < staleCutoffMs;
+      if (isAbandonedDraft || pruned.length >= 99) {
+        if (typeof window !== 'undefined') {
+          try {
+            window.localStorage.removeItem(`${keys.messagesPrefix}${c.id}`);
+          } catch {
+            // ignore
+          }
+        }
+        continue;
+      }
+      pruned.push(c);
+    }
+    writeLocalJson(keys.conversations, [record, ...pruned]);
     return record;
   }
 
@@ -1046,12 +1089,14 @@ export async function recordLessonProgress(params: {
   xpEarned: number;
   gemsEarned: number;
   sessionsDelta?: number;
+  stationId?: string;
 }): Promise<LessonRewardSummary> {
   const today = getTodayLocalDate();
   const safeDuration = Math.max(0, Math.round(params.durationSeconds));
   const msgDelta = Math.max(0, Math.round(params.userMessagesSent ?? 0));
   const lessonDelta = params.completedLesson ? 1 : 0;
   const sessionDelta = params.sessionsDelta ?? 1;
+  const cleanStationId = params.stationId?.trim() || '';
   const session = await getAuthSessionInfo();
 
   if (
@@ -1118,6 +1163,13 @@ export async function recordLessonProgress(params: {
     const nextLongest = Math.max(profile.longestStreak, strict.longestStreak);
     const nextLevel = getLevelInfo(nextXp).level;
 
+    const nextCompletedStations =
+      params.completedLesson && cleanStationId
+        ? Array.from(
+            new Set([...(profile.completedStationIds ?? []), cleanStationId])
+          ).slice(0, 200)
+        : profile.completedStationIds ?? [];
+
     const nextProfile: UserProfile = {
       ...profile,
       xp: nextXp,
@@ -1126,6 +1178,7 @@ export async function recordLessonProgress(params: {
       longestStreak: nextLongest,
       lastPracticeDate: strict.studiedToday ? today : profile.lastPracticeDate,
       totalLessonsCompleted: profile.totalLessonsCompleted + lessonDelta,
+      completedStationIds: nextCompletedStations,
     };
     writeLocalJson(keys.profile, nextProfile);
     emitDataUpdated(nextProfile);
@@ -1308,6 +1361,7 @@ export async function finishConversationRecord(params: {
   messageCount: number;
   userMessagesSent: number;
   summaryVi?: string | null;
+  stationId?: string;
 }): Promise<LessonRewardSummary> {
   const safeDuration = Math.max(0, Math.round(params.durationSeconds));
   const completedLesson = params.userMessagesSent >= MIN_CALL_TURNS_FOR_LESSON;
@@ -1325,6 +1379,36 @@ export async function finishConversationRecord(params: {
       session.provider === 'google' ? session.user?.id : null;
     const keys = getScopedKeys(accountId);
     const convs = readLocalJson<ConversationRecord[]>(keys.conversations, []);
+
+    // Drop zero-turn empty drafts (<5s and 0 user messages) so History stays clean
+    if (params.userMessagesSent === 0 && safeDuration < 5) {
+      writeLocalJson(
+        keys.conversations,
+        convs.filter((c) => c.id !== params.conversationId)
+      );
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.removeItem(
+            `${keys.messagesPrefix}${params.conversationId}`
+          );
+        } catch {
+          // ignore
+        }
+      }
+      const { profile } = await getCurrentProfile();
+      return {
+        lessonCompleted: false,
+        streakKeptToday: false,
+        streakDays: profile?.streakDays ?? 0,
+        longestStreak: profile?.longestStreak ?? 0,
+        xpEarned: 0,
+        gemsEarned: 0,
+        leveledUp: false,
+        newLevel: getLevelInfo(profile?.xp ?? 0).level,
+        newlyClaimableMilestones: [],
+      };
+    }
+
     writeLocalJson(
       keys.conversations,
       convs.map((c) =>
@@ -1370,7 +1454,48 @@ export async function finishConversationRecord(params: {
     xpEarned,
     gemsEarned,
     sessionsDelta: 1,
+    stationId: params.stationId,
   });
+}
+
+export async function deleteConversationRecord(
+  conversationId: string
+): Promise<void> {
+  const session = await getAuthSessionInfo();
+
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    const convs = readLocalJson<ConversationRecord[]>(keys.conversations, []);
+    writeLocalJson(
+      keys.conversations,
+      convs.filter((c) => c.id !== conversationId)
+    );
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.removeItem(`${keys.messagesPrefix}${conversationId}`);
+      } catch {
+        // ignore
+      }
+    }
+    if (session.provider === 'google' && session.authenticated) {
+      void syncGoogleDriveIfActive(session);
+    }
+    return;
+  }
+
+  const supabase = createSupabaseBrowserClient()!;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from('messages').delete().eq('conversation_id', conversationId).eq('user_id', user.id);
+  await supabase.from('conversations').delete().eq('id', conversationId).eq('user_id', user.id);
 }
 
 export async function updateConversationSummary(
@@ -1505,6 +1630,21 @@ export async function claimDailyQuestReward(questId: string): Promise<{
   if (!profile) throw new Error('Vui lòng đăng nhập.');
 
   const today = getTodayLocalDate();
+  const stats = await getDailyStats(14);
+  const todayStats = stats.find((s) => s.practiceDate === today);
+
+  const meetsRequirement =
+    questId === 'lesson_1'
+      ? (todayStats?.lessonsCompleted ?? 0) >= 1
+      : questId === 'xp_60'
+        ? (todayStats?.xpEarned ?? 0) >= 60
+        : Math.round((todayStats?.secondsPracticed ?? 0) / 60) >=
+          Math.max(1, profile.dailyGoalMinutes);
+
+  if (!meetsRequirement) {
+    throw new Error('Bạn chưa hoàn thành đủ tiến độ của nhiệm vụ này hôm nay.');
+  }
+
   const prevMap = profile.claimedDailyQuests ?? {};
   const todayClaimed = prevMap[today] ?? [];
   if (todayClaimed.includes(questId)) {
@@ -1632,7 +1772,11 @@ export async function listConversations(): Promise<ConversationRecord[]> {
     const accountId =
       session.provider === 'google' ? session.user?.id : null;
     const keys = getScopedKeys(accountId);
-    return readLocalJson<ConversationRecord[]>(keys.conversations, []);
+    const all = readLocalJson<ConversationRecord[]>(keys.conversations, []);
+    // Hide unended zero-message abandoned drafts from History UI
+    return all.filter(
+      (c) => Boolean(c.endedAt) || c.messageCount > 0 || c.durationSeconds > 0
+    );
   }
 
   const supabase = createSupabaseBrowserClient()!;
@@ -1663,6 +1807,66 @@ export async function listConversations(): Promise<ConversationRecord[]> {
     summaryVi: row.summary_vi,
     startedAt: row.started_at,
     endedAt: row.ended_at,
+  }));
+}
+
+export async function listRecentAssessedMessages(
+  maxConversations = 25
+): Promise<TutorMessage[]> {
+  const session = await getAuthSessionInfo();
+
+  if (
+    (session.provider === 'google' && session.authenticated && session.user) ||
+    !isSupabaseConfigured()
+  ) {
+    const accountId =
+      session.provider === 'google' ? session.user?.id : null;
+    const keys = getScopedKeys(accountId);
+    const convs = readLocalJson<ConversationRecord[]>(
+      keys.conversations,
+      []
+    ).slice(0, maxConversations);
+    const out: TutorMessage[] = [];
+    for (const c of convs) {
+      const msgs = readLocalJson<TutorMessage[]>(
+        `${keys.messagesPrefix}${c.id}`,
+        []
+      );
+      for (const m of msgs) {
+        if (m.role === 'user' && m.pronunciation) {
+          out.push(m);
+        }
+      }
+    }
+    return out;
+  }
+
+  const supabase = createSupabaseBrowserClient()!;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('role', 'user')
+    .not('pronunciation', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  return (data ?? []).map((m) => ({
+    id: m.id,
+    role: 'user' as const,
+    englishText: m.english_text,
+    naturalRewrite: m.natural_rewrite,
+    coachingTip: m.coaching_tip,
+    pronunciation:
+      m.pronunciation && typeof m.pronunciation === 'object'
+        ? m.pronunciation
+        : null,
+    createdAt: m.created_at,
   }));
 }
 
@@ -1820,6 +2024,14 @@ export async function savePhrase(input: {
       createdAt: new Date().toISOString(),
     };
     writeLocalJson(keys.phrases, [item, ...existing]);
+    const lowerKey = cleanEn.toLowerCase();
+    const curProf = readLocalJson<Partial<UserProfile> | null>(keys.profile, null);
+    if (curProf?.deletedPhraseKeys?.includes(lowerKey)) {
+      writeLocalJson(keys.profile, {
+        ...curProf,
+        deletedPhraseKeys: curProf.deletedPhraseKeys.filter((k) => k !== lowerKey),
+      });
+    }
     if (session.provider === 'google' && session.authenticated) {
       void syncGoogleDriveIfActive(session);
     }
@@ -1944,10 +2156,24 @@ export async function deletePhrase(id: string): Promise<void> {
       session.provider === 'google' ? session.user?.id : null;
     const keys = getScopedKeys(accountId);
     const existing = readLocalJson<SavedPhrase[]>(keys.phrases, []);
+    const target = existing.find((p) => p.id === id);
     writeLocalJson(
       keys.phrases,
       existing.filter((p) => p.id !== id)
     );
+    if (target?.englishPhrase) {
+      const lowerKey = target.englishPhrase.trim().toLowerCase();
+      const curProf = normalizeProfile(
+        readLocalJson<Partial<UserProfile> | null>(keys.profile, null)
+      );
+      const nextTombstones = Array.from(
+        new Set([...(curProf.deletedPhraseKeys ?? []), lowerKey])
+      ).slice(-200);
+      writeLocalJson(keys.profile, {
+        ...curProf,
+        deletedPhraseKeys: nextTombstones,
+      });
+    }
     if (session.provider === 'google' && session.authenticated) {
       void syncGoogleDriveIfActive(session);
     }

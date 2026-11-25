@@ -7,15 +7,22 @@ import {
   Cloud,
   Loader2,
   Plus,
+  Volume2,
   X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { NovaCompanion } from '@/components/BrandArt';
+import { NovaCompanion, TutorAvatar } from '@/components/BrandArt';
+import { WorkspacePageSkeleton } from '@/components/PageSkeleton';
+import { playNaturalVoice, stopVoicePlayback } from '@/lib/audio';
 import { getCurrentProfile, saveProfile } from '@/lib/data-store';
 import { PLACEMENT_RESULT_STORAGE_KEY } from '@/lib/placement-test';
-import { HOBBY_SUGGESTIONS, JOB_SUGGESTIONS } from '@/lib/scenarios';
+import {
+  AI_PERSONAS,
+  HOBBY_SUGGESTIONS,
+  JOB_SUGGESTIONS,
+} from '@/lib/scenarios';
 import { playCorrectSound, playTapSound } from '@/lib/sound-fx';
 import type {
   AccentPreference,
@@ -43,12 +50,49 @@ const TARGET_ACCENTS: {
   label: string;
   code: string;
   desc: string;
+  personaId: string;
+  sampleEn: string;
 }[] = [
-  { value: 'US', label: 'Tiếng Anh Mỹ (US)', code: 'US', desc: 'Tự nhiên, phổ biến toàn cầu' },
-  { value: 'UK', label: 'Tiếng Anh Anh (UK)', code: 'UK', desc: 'Lịch sự, chuẩn British' },
-  { value: 'AU', label: 'Tiếng Anh Úc (AU)', code: 'AU', desc: 'Cởi mở, gần gũi thực tế' },
-  { value: 'CA', label: 'Tiếng Anh Canada (CA)', code: 'CA', desc: 'Êm ái, dễ nghe cho người mới' },
-  { value: 'MIXED', label: 'Đa dạng giọng đọc', code: 'ALL', desc: 'Luyện phản xạ nhiều giọng' },
+  {
+    value: 'US',
+    label: 'Tiếng Anh Mỹ (US)',
+    code: 'US',
+    desc: 'Tự nhiên, phổ biến toàn cầu',
+    personaId: 'emma-us',
+    sampleEn: "Hey there! Let's practice natural everyday American English together.",
+  },
+  {
+    value: 'UK',
+    label: 'Tiếng Anh Anh (UK)',
+    code: 'UK',
+    desc: 'Lịch sự, chuẩn British',
+    personaId: 'sonia-uk',
+    sampleEn: "Hello! Lovely to meet you — let's have a chat in British English.",
+  },
+  {
+    value: 'AU',
+    label: 'Tiếng Anh Úc (AU)',
+    code: 'AU',
+    desc: 'Cởi mở, gần gũi thực tế',
+    personaId: 'natasha-au',
+    sampleEn: "G'day! No worries at all, we'll take it step by step today.",
+  },
+  {
+    value: 'CA',
+    label: 'Tiếng Anh Canada (CA)',
+    code: 'CA',
+    desc: 'Êm ái, dễ nghe cho người mới',
+    personaId: 'clara-ca',
+    sampleEn: "Hi there! Let's build your speaking confidence at a comfortable pace.",
+  },
+  {
+    value: 'MIXED',
+    label: 'Đa dạng giọng đọc',
+    code: 'ALL',
+    desc: 'Luân phiên 6 người hướng dẫn',
+    personaId: 'andrew-us',
+    sampleEn: "Awesome! Practicing with multiple accents makes your listening super sharp.",
+  },
 ];
 
 const LEVELS: { value: EnglishLevel; title: string; badge: string; desc: string }[] = [
@@ -157,8 +201,20 @@ export default function OnboardingPage() {
     void load();
     return () => {
       active = false;
+      stopVoicePlayback();
     };
   }, [router]);
+
+  function previewAccentVoice(personaId: string, sampleEn: string) {
+    const persona =
+      AI_PERSONAS.find((p) => p.id === personaId) ?? AI_PERSONAS[0];
+    void playNaturalVoice({
+      text: sampleEn,
+      voice: persona.edgeVoice,
+      browserLang: persona.browserLang,
+      speed: 0.9,
+    });
+  }
 
   function toggleHobby(hobby: string) {
     playTapSound();
@@ -211,11 +267,7 @@ export default function OnboardingPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F7F9]">
-        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-      </div>
-    );
+    return <WorkspacePageSkeleton title="Thiết lập lộ trình cá nhân" />;
   }
 
   const isDrive =
@@ -320,9 +372,8 @@ export default function OnboardingPage() {
                 {TARGET_ACCENTS.map((acc) => {
                   const selected = preferredAccent === acc.value;
                   return (
-                    <button
+                    <div
                       key={acc.value}
-                      type="button"
                       onClick={() => {
                         playTapSound();
                         setPreferredAccent(acc.value);
@@ -333,9 +384,10 @@ export default function OnboardingPage() {
                           : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                     >
-                      <span className="font-mono text-xs font-bold rounded-lg bg-gray-100 px-2 py-1 text-gray-700">
-                        {acc.code}
-                      </span>
+                      <TutorAvatar
+                        personaId={acc.personaId}
+                        className="h-10 w-10 shrink-0"
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-bold text-gray-900">
                           {acc.label}
@@ -344,10 +396,23 @@ export default function OnboardingPage() {
                           {acc.desc}
                         </div>
                       </div>
+                      <button
+                        type="button"
+                        title="Nghe thử giọng"
+                        aria-label={`Nghe thử ${acc.label}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreferredAccent(acc.value);
+                          previewAccentVoice(acc.personaId, acc.sampleEn);
+                        }}
+                        className="rounded-full border border-gray-200 bg-white p-2 text-gray-600 hover:border-gray-300 hover:text-[#E5483F] shrink-0 cursor-pointer"
+                      >
+                        <Volume2 className="h-3.5 w-3.5" />
+                      </button>
                       {selected && (
                         <Check className="h-4 w-4 text-emerald-600 shrink-0" />
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>

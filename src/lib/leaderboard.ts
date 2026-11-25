@@ -37,6 +37,7 @@ export function buildWeeklyLeaderboard(params: {
     englishLevel: string;
     streakDays: number;
     xp: number;
+    activeBadge?: string | null;
   } | null;
   weekSeed?: number;
 }): {
@@ -61,22 +62,31 @@ export function buildWeeklyLeaderboard(params: {
     });
   }
 
-  // Ensure current user always appears even if not yet written to accounts_index
-  if (
-    params.currentUserId &&
-    !map.has(params.currentUserId) &&
-    params.currentUserFallback
-  ) {
-    const xp = Math.max(0, Math.floor(params.currentUserFallback.xp || 0));
+  // Ensure current user always appears with freshest local progress (even within 30s Drive cache TTL)
+  if (params.currentUserId && params.currentUserFallback) {
+    const existing = map.get(params.currentUserId);
+    const rawFallbackXp = Math.max(0, Math.floor(params.currentUserFallback.xp || 0));
+    // Cap unverified client query fallback XP unless backed by Drive roster within +2500 XP delta
+    const safeClientXp = existing
+      ? Math.min(existing.xp + 2_500, Math.max(existing.xp, rawFallbackXp))
+      : Math.min(50_000, rawFallbackXp);
+    const safeStreak = existing
+      ? Math.min(existing.streakDays + 5, Math.max(existing.streakDays, Math.floor(params.currentUserFallback.streakDays || 0)))
+      : Math.min(365, Math.max(0, Math.floor(params.currentUserFallback.streakDays || 0)));
+
     map.set(params.currentUserId, {
       id: params.currentUserId,
-      displayName: sanitizeDisplayName(params.currentUserFallback.displayName),
-      englishLevel: params.currentUserFallback.englishLevel || 'A0-A1',
-      streakDays: Math.max(0, Math.floor(params.currentUserFallback.streakDays || 0)),
-      xp,
+      displayName: sanitizeDisplayName(
+        params.currentUserFallback.displayName || existing?.displayName
+      ),
+      englishLevel:
+        params.currentUserFallback.englishLevel || existing?.englishLevel || 'A0-A1',
+      streakDays: safeStreak,
+      xp: safeClientXp,
+      activeBadge: params.currentUserFallback.activeBadge ?? null,
       isCurrentUser: true,
       isBot: false,
-      leagueTier: getLeagueInfo(xp).tier,
+      leagueTier: getLeagueInfo(safeClientXp).tier,
     });
   }
 

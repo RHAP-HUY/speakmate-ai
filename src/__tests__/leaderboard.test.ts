@@ -72,4 +72,58 @@ describe('weekly leaderboard & privacy guarantees', () => {
     expect(me?.displayName).toBe('Tân Binh');
     expect(me?.isBot).toBe(false);
   });
+
+  it('refreshes currentUser XP immediately past stale 30s Drive cache while capping implausible spoofing', () => {
+    const res = buildWeeklyLeaderboard({
+      realUsers: [
+        {
+          accountId: 'google_me',
+          displayName: 'Minh Huy',
+          englishLevel: 'A2-B1',
+          streakDays: 4,
+          xp: 500,
+          updatedAt: '2026-11-24T00:00:00Z',
+        },
+      ],
+      currentUserId: 'google_me',
+      currentUserFallback: {
+        displayName: 'Minh Huy',
+        englishLevel: 'A2-B1',
+        streakDays: 5,
+        xp: 620,
+        activeBadge: 'warrior-7',
+      },
+      weekSeed: 10,
+    });
+
+    const me = res.entries.find((e) => e.id === 'google_me');
+    expect(me?.xp).toBe(620);
+    expect(me?.streakDays).toBe(5);
+    expect(me?.activeBadge).toBe('warrior-7');
+
+    // Spoofed +999999 XP should be bounded safely
+    const capped = buildWeeklyLeaderboard({
+      realUsers: [
+        {
+          accountId: 'google_me',
+          displayName: 'Minh Huy',
+          englishLevel: 'A2-B1',
+          streakDays: 4,
+          xp: 500,
+          updatedAt: '2026-11-24T00:00:00Z',
+        },
+      ],
+      currentUserId: 'google_me',
+      currentUserFallback: {
+        displayName: 'Minh Huy',
+        englishLevel: 'A2-B1',
+        streakDays: 999,
+        xp: 999_999,
+      },
+      weekSeed: 10,
+    });
+    const cappedMe = capped.entries.find((e) => e.id === 'google_me');
+    expect(cappedMe?.xp).toBe(3000);
+    expect(cappedMe?.streakDays).toBe(9);
+  });
 });

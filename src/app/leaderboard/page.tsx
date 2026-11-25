@@ -23,6 +23,7 @@ import {
 import { WorkspacePageSkeleton } from '@/components/PageSkeleton';
 import { getCurrentProfile, purchaseShopReward } from '@/lib/data-store';
 import {
+  BADGE_DIRECTORY,
   getLeagueInfo,
   getXpBoostRemainingMinutes,
   isXpBoostActive,
@@ -67,6 +68,7 @@ export default function LeaderboardPage() {
           streak: String(prof.streakDays),
           name: prof.displayName || 'Bạn',
           level: prof.englishLevel || 'A0-A1',
+          ...(prof.activeBadge ? { badge: prof.activeBadge } : {}),
         });
         const res = await fetch(`/api/leaderboard?${params.toString()}`, {
           cache: 'no-store',
@@ -318,7 +320,7 @@ export default function LeaderboardPage() {
                     </div>
 
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-bold text-gray-900 truncate">
                           {entry.displayName}
                         </span>
@@ -327,6 +329,12 @@ export default function LeaderboardPage() {
                             Bạn
                           </span>
                         )}
+                        {entry.activeBadge &&
+                          BADGE_DIRECTORY[entry.activeBadge] && (
+                            <span className="rounded-full border border-rose-200 bg-[#FFF1F0] px-2 py-0.5 text-[10px] font-semibold text-[#E5483F]">
+                              {BADGE_DIRECTORY[entry.activeBadge]}
+                            </span>
+                          )}
                       </div>
                       <div className="text-[11px] text-gray-500">
                         Trình độ {entry.englishLevel}

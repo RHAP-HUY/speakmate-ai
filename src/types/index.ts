@@ -41,6 +41,8 @@ export interface UserProfile {
   unlockedBadges: string[];
   activeBadge: string | null;
   totalLessonsCompleted: number;
+  completedStationIds?: string[];
+  deletedPhraseKeys?: string[];
   xpBoostUntil?: number | null;
   claimedDailyQuests?: Record<string, string[]>;
 }
@@ -221,6 +223,7 @@ export interface LeaderboardEntry {
   englishLevel: string;
   streakDays: number;
   xp: number;
+  activeBadge?: string | null;
   isCurrentUser?: boolean;
   isBot?: boolean;
   leagueTier: 'bronze' | 'silver' | 'gold' | 'emerald' | 'diamond';

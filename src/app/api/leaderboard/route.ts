@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     const qStreak = Number(request.nextUrl.searchParams.get('streak') ?? '');
     const qName = request.nextUrl.searchParams.get('name') ?? '';
     const qLevel = request.nextUrl.searchParams.get('level') ?? 'A0-A1';
+    const qBadge = request.nextUrl.searchParams.get('badge') || null;
 
     const currentUserId = session?.userId ?? (qName ? 'local-current-user' : null);
 
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
             englishLevel: qLevel,
             streakDays: Number.isFinite(qStreak) ? qStreak : 0,
             xp: Number.isFinite(qXp) ? qXp : 0,
+            activeBadge: qBadge,
           }
         : null,
     });

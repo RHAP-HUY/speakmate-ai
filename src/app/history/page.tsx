@@ -5,11 +5,14 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Mic,
+  Trash2,
+  TrendingUp,
   Volume2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { TutorAvatar } from '@/components/BrandArt';
 import { CallReportView } from '@/components/CallReportView';
@@ -18,23 +21,30 @@ import {
   PronunciationBadge,
   getScoreTone,
 } from '@/components/PronunciationBadge';
+import {
+  PronunciationPracticeModal,
+  type PronunciationPracticeTarget,
+} from '@/components/PronunciationPracticeModal';
 import { StreakCalendar } from '@/components/StreakCalendar';
 import { StreakRewardsPanel } from '@/components/StreakRewardsPanel';
 import { playNaturalVoice, stopVoicePlayback } from '@/lib/audio';
 import {
   applyStreakFreezeForYesterday,
   claimStreakMilestone,
+  deleteConversationRecord,
   equipBadge,
   getConversationDetail,
   getCurrentProfile,
   getDailyStats,
   getTodayLocalDate,
   listConversations,
+  listRecentAssessedMessages,
   purchaseShopReward,
   savePhrase,
 } from '@/lib/data-store';
 import { getLevelInfo } from '@/lib/gamification';
-import { AI_PERSONAS } from '@/lib/scenarios';
+import { analyzePronunciationInsights } from '@/lib/pronunciation-insights';
+import { AI_PERSONAS, pickPersona } from '@/lib/scenarios';
 import { parseConversationReport } from '@/lib/tutor-prompt';
 import type {
   ConcreteAccent,
@@ -75,6 +85,10 @@ export default function HistoryPage() {
     {}
   );
   const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
+  const [assessedMsgs, setAssessedMsgs] = useState<TutorMessage[]>([]);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [practiceTarget, setPracticeTarget] =
+    useState<PronunciationPracticeTarget | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -88,13 +102,15 @@ export default function HistoryPage() {
       setProfile(prof);
       setAuthenticated(true);
 
-      const [convs, daily] = await Promise.all([
+      const [convs, daily, recentAssessed] = await Promise.all([
         listConversations(),
         getDailyStats(180),
+        listRecentAssessedMessages(25),
       ]);
       if (!active) return;
       setConversations(convs);
       setStats(daily);
+      setAssessedMsgs(recentAssessed);
       setLoading(false);
     }
     void load();
@@ -145,6 +161,20 @@ export default function HistoryPage() {
     });
     setSavedKeys((prev) => new Set(prev).add(key));
   }
+
+  async function handleDeleteConversation(id: string) {
+    setConversations((prev) => prev.filter((c) => c.id !== id));
+    if (expandedId === id) setExpandedId(null);
+    setConfirmDeleteId(null);
+    await deleteConversationRecord(id);
+    const refreshed = await listRecentAssessedMessages(25);
+    setAssessedMsgs(refreshed);
+  }
+
+  const pronInsights = useMemo(
+    () => analyzePronunciationInsights(assessedMsgs),
+    [assessedMsgs]
+  );
 
   if (loading || !profile) {
     return <WorkspacePageSkeleton title="Nhật ký học tập" />;
@@ -304,6 +334,116 @@ export default function HistoryPage() {
         </div>
       </section>
 
+      {/* Personal Pronunciation Profile & Weak-Word Drill */}
+      {pronInsights.totalAssessedTurns > 0 && (
+        <section className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-xs space-y-5 tabular-nums">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-lg font-bold text-gray-900">
+                Hồ sơ phát âm &amp; Từ cần luyện kỹ
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Tổng hợp từ {pronInsights.totalAssessedTurns} lượt nói có chấm âm vị gần đây — chạm vào từ để đọc lại và chấm điểm ngay.
+              </p>
+            </div>
+
+            {pronInsights.trendDelta !== null && (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${
+                  pronInsights.trendDelta >= 0
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-amber-200 bg-amber-50 text-amber-800'
+                }`}
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+                {pronInsights.trendDelta >= 0
+                  ? `+${pronInsights.trendDelta} điểm so với giai đoạn đầu`
+                  : `${pronInsights.trendDelta} điểm · Hãy nói chậm rõ âm cuối`}
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Điểm tổng thể', val: pronInsights.avgOverall },
+              { label: 'Độ rõ âm vị', val: pronInsights.avgAccuracy },
+              { label: 'Độ trôi chảy', val: pronInsights.avgFluency },
+              { label: 'Ngữ điệu câu', val: pronInsights.avgIntonation },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-gray-200/80 bg-[#F6F7F9] px-4 py-3"
+              >
+                <div className="text-[11px] font-medium text-gray-500">
+                  {item.label}
+                </div>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <span className="font-display text-2xl font-bold text-gray-900">
+                    {item.val}
+                  </span>
+                  <span className="text-xs text-gray-400">/100</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {pronInsights.weakWords.length > 0 && (
+            <div className="space-y-2.5 pt-1">
+              <div className="text-xs font-bold text-gray-700">
+                Các từ bạn hay phát âm thiếu âm cuối hoặc lệch trọng âm:
+              </div>
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                {pronInsights.weakWords.map((w) => (
+                  <div
+                    key={w.word}
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200/80 bg-[#F6F7F9] px-3.5 py-2.5"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-bold text-gray-900">
+                          {w.word}
+                        </span>
+                        {w.ipa && (
+                          <span className="font-mono text-xs text-emerald-700">
+                            /{w.ipa.replace(/^\/|\/$/g, '')}/
+                          </span>
+                        )}
+                        {w.count > 1 && (
+                          <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-[#E5483F]">
+                            {w.count} lần
+                          </span>
+                        )}
+                      </div>
+                      {w.tipVi && (
+                        <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                          {w.tipVi}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        stopVoicePlayback();
+                        setPracticeTarget({
+                          sentence: w.sampleSentence || w.word,
+                          phonetic: w.ipa ?? undefined,
+                          vietnamese: w.tipVi ? `Lưu ý: ${w.tipVi}` : undefined,
+                        });
+                      }}
+                      className="btn-duo btn-duo-white shrink-0 px-3 py-1.5 text-xs"
+                    >
+                      <Mic className="h-3.5 w-3.5 text-[#E5483F]" />
+                      Đọc lại
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Conversation Archive & Reports */}
       <section className="space-y-4">
         <h2 className="font-display text-xl font-bold text-gray-900">
@@ -416,9 +556,42 @@ export default function HistoryPage() {
                       )}
 
                       <div className="space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="text-xs font-bold text-gray-700">
                           Bản ghi chi tiết lời thoại
                         </div>
+
+                        {confirmDeleteId === conv.id ? (
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <span className="text-gray-500">Xóa buổi này?</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void handleDeleteConversation(conv.id)
+                              }
+                              className="rounded-full bg-[#E5483F] px-3 py-1 font-semibold text-white hover:bg-[#cf3a31] cursor-pointer"
+                            >
+                              Xác nhận xóa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="rounded-full border border-gray-200 bg-white px-3 py-1 font-medium text-gray-600 hover:bg-gray-50 cursor-pointer"
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(conv.id)}
+                            className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-[11px] font-medium text-gray-500 hover:border-rose-200 hover:text-[#E5483F] transition cursor-pointer"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Xóa nhật ký này
+                          </button>
+                        )}
+                      </div>
 
                         {loadingDetail === conv.id ? (
                           <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -510,6 +683,13 @@ export default function HistoryPage() {
           </div>
         )}
       </section>
+
+      <PronunciationPracticeModal
+        target={practiceTarget}
+        persona={pickPersona(profile.preferredAccent)}
+        profile={profile}
+        onClose={() => setPracticeTarget(null)}
+      />
     </AppShell>
   );
 }

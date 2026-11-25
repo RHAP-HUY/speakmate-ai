@@ -201,4 +201,41 @@ describe('mergeAccountBundles (Zero-data-loss offline/cloud sync)', () => {
     expect(merged.profile.xp).toBe(600);
     expect(merged.profile.totalLessonsCompleted).toBe(10);
   });
+
+  it('prevents deleted phrases from resurrecting via deletedPhraseKeys tombstones and merges completedStationIds', () => {
+    const remote = makeBundle({
+      updatedAt: '2026-11-24T01:00:00.000Z',
+      profile: makeProfile({
+        completedStationIds: ['u1-1', 'u1-2'],
+        deletedPhraseKeys: [],
+      }),
+      phrases: [
+        {
+          id: 'p-old',
+          englishPhrase: 'Delete me please',
+          vietnameseMeaning: 'Xóa câu này',
+          phonetic: null,
+          exampleSentence: null,
+          category: 'daily',
+          accent: 'US',
+          masteryLevel: 1,
+          createdAt: '2026-11-23T10:00:00.000Z',
+        },
+      ],
+    });
+
+    const local = makeBundle({
+      updatedAt: '2026-11-24T02:00:00.000Z',
+      profile: makeProfile({
+        completedStationIds: ['u1-2', 'u2-1'],
+        deletedPhraseKeys: ['delete me please'],
+      }),
+      phrases: [],
+    });
+
+    const { merged, localHadNewerProgress } = mergeAccountBundles(local, remote);
+    expect(localHadNewerProgress).toBe(true);
+    expect(merged.phrases).toEqual([]);
+    expect(merged.profile.completedStationIds).toEqual(['u1-1', 'u1-2', 'u2-1']);
+  });
 });

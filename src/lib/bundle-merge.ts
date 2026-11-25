@@ -39,12 +39,16 @@ function mergeDailyStats(localStats: DailyStat[], remoteStats: DailyStat[]): Dai
   );
 }
 
-function mergePhrases(localPhrases: SavedPhrase[], remotePhrases: SavedPhrase[]): SavedPhrase[] {
+function mergePhrases(
+  localPhrases: SavedPhrase[],
+  remotePhrases: SavedPhrase[],
+  deletedKeys: Set<string>
+): SavedPhrase[] {
   const byKey = new Map<string, SavedPhrase>();
 
   for (const item of [...remotePhrases, ...localPhrases]) {
     const key = (item?.englishPhrase || '').trim().toLowerCase();
-    if (!key) continue;
+    if (!key || deletedKeys.has(key)) continue;
     const prev = byKey.get(key);
     if (!prev) {
       byKey.set(key, { ...item });
@@ -175,6 +179,29 @@ export function mergeAccountBundles(
     ])
   );
 
+  const mergedCompletedStations = Array.from(
+    new Set([
+      ...(remote.profile.completedStationIds ?? []),
+      ...(local.profile.completedStationIds ?? []),
+    ])
+  ).slice(0, 200);
+
+  const localPhraseKeys = new Set(
+    (local.phrases ?? [])
+      .map((p) => (p?.englishPhrase || '').trim().toLowerCase())
+      .filter(Boolean)
+  );
+  const mergedDeletedPhraseKeys = Array.from(
+    new Set([
+      ...(remote.profile.deletedPhraseKeys ?? []),
+      ...(local.profile.deletedPhraseKeys ?? []),
+    ])
+  )
+    .map((k) => k.trim().toLowerCase())
+    .filter((k) => Boolean(k) && (!localIsNewer || !localPhraseKeys.has(k)))
+    .slice(-200);
+  const deletedSet = new Set(mergedDeletedPhraseKeys);
+
   const mergedDailyQuests = mergeClaimedDailyQuests(
     remote.profile.claimedDailyQuests,
     local.profile.claimedDailyQuests
@@ -217,6 +244,8 @@ export function mergeAccountBundles(
       : remote.profile.streakFreezes,
     claimedMilestones: mergedClaimedMilestones,
     unlockedBadges: mergedUnlockedBadges,
+    completedStationIds: mergedCompletedStations,
+    deletedPhraseKeys: mergedDeletedPhraseKeys,
     claimedDailyQuests: mergedDailyQuests,
     xpBoostUntil: xpBoostUntil > 0 ? xpBoostUntil : null,
   };
@@ -225,7 +254,11 @@ export function mergeAccountBundles(
     local.dailyStats ?? [],
     remote.dailyStats ?? []
   );
-  const mergedPhrases = mergePhrases(local.phrases ?? [], remote.phrases ?? []);
+  const mergedPhrases = mergePhrases(
+    local.phrases ?? [],
+    remote.phrases ?? [],
+    deletedSet
+  );
   const mergedConversations = mergeConversations(
     local.conversations ?? [],
     remote.conversations ?? []
@@ -238,6 +271,8 @@ export function mergeAccountBundles(
   const localHadNewerProgress =
     mergedProfile.xp > (remote.profile.xp ?? 0) ||
     mergedProfile.totalLessonsCompleted > (remote.profile.totalLessonsCompleted ?? 0) ||
+    mergedCompletedStations.length > (remote.profile.completedStationIds?.length ?? 0) ||
+    mergedDeletedPhraseKeys.length > (remote.profile.deletedPhraseKeys?.length ?? 0) ||
     mergedClaimedMilestones.length > (remote.profile.claimedMilestones?.length ?? 0) ||
     mergedUnlockedBadges.length > (remote.profile.unlockedBadges?.length ?? 0) ||
     mergedStats.length > (remote.dailyStats?.length ?? 0) ||
