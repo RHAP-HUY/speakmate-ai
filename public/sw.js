@@ -1,4 +1,4 @@
-const CACHE_NAME = 'speakmate-precision-v10';
+const CACHE_NAME = 'speakmate-adaptive-v12';
 const PRECACHE_URLS = ['/', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (event) => {

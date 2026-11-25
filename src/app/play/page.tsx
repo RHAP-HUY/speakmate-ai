@@ -10,6 +10,7 @@ import {
   Mic,
   MicOff,
   PhoneCall,
+  Play,
   Puzzle,
   RotateCcw,
   Timer,
@@ -43,6 +44,7 @@ import {
   preloadNaturalVoice,
   stopVoicePlayback,
 } from '@/lib/audio';
+import { analyzeConnectedSpeech } from '@/lib/connected-speech';
 import {
   claimStreakMilestone,
   getCurrentProfile,
@@ -177,6 +179,7 @@ function PlayPageInner() {
   const [pronResult, setPronResult] =
     useState<PronunciationPracticeResult | null>(null);
   const [pronError, setPronError] = useState<string | null>(null);
+  const [pronUserAudioUrl, setPronUserAudioUrl] = useState<string | null>(null);
   const [micLevel, setMicLevel] = useState(0);
 
   // Victory & Celebration state
@@ -200,7 +203,21 @@ function PlayPageInner() {
   const recordStartRef = useRef<number>(0);
   const rafRef = useRef<number | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const pronUserAudioUrlRef = useRef<string | null>(null);
+  const pronUserAudioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const autoLaunchedRef = useRef(false);
+
+  const clearPronUserAudio = useCallback(() => {
+    if (pronUserAudioPlayerRef.current) {
+      pronUserAudioPlayerRef.current.pause();
+      pronUserAudioPlayerRef.current = null;
+    }
+    if (pronUserAudioUrlRef.current) {
+      URL.revokeObjectURL(pronUserAudioUrlRef.current);
+      pronUserAudioUrlRef.current = null;
+    }
+    setPronUserAudioUrl(null);
+  }, []);
 
   const stopMedia = useCallback(() => {
     if (rafRef.current !== null) {
@@ -223,8 +240,9 @@ function PlayPageInner() {
     return () => {
       stopVoicePlayback();
       stopMedia();
+      clearPronUserAudio();
     };
-  }, [stopMedia]);
+  }, [clearPronUserAudio, stopMedia]);
 
   const refreshProgress = useCallback(async () => {
     const [{ profile: prof }, stats] = await Promise.all([
@@ -356,19 +374,23 @@ function PlayPageInner() {
     [setupBuildTiles]
   );
 
-  const launchPronunciationArena = useCallback((cat: GameCategoryFilter = null) => {
-    stopVoicePlayback();
-    const picked = pickByCategory(PRONUNCIATION_CHALLENGES, 3, cat);
-    setPronItems(picked);
-    setPronIdx(0);
-    setPronScores([]);
-    setPronResult(null);
-    setPronError(null);
-    setPronStatus('idle');
-    setRoundStartTs(Date.now());
-    setClaimedInVictory([]);
-    setMode('pronounce');
-  }, []);
+  const launchPronunciationArena = useCallback(
+    (cat: GameCategoryFilter = null) => {
+      stopVoicePlayback();
+      clearPronUserAudio();
+      const picked = pickByCategory(PRONUNCIATION_CHALLENGES, 3, cat);
+      setPronItems(picked);
+      setPronIdx(0);
+      setPronScores([]);
+      setPronResult(null);
+      setPronError(null);
+      setPronStatus('idle');
+      setRoundStartTs(Date.now());
+      setClaimedInVictory([]);
+      setMode('pronounce');
+    },
+    [clearPronUserAudio]
+  );
 
   const launchAiCustomQuiz = useCallback(
     async (prof: UserProfile | null, topicOverride?: string) => {
@@ -840,31 +862,52 @@ function PlayPageInner() {
         headers['x-user-gemini-key'] = personalKey;
       }
 
-      const fd = new FormData();
-      fd.append(
-        'payload',
-        JSON.stringify({
-          targetSentence: current.sentence,
-          personaId: persona.id,
-          accentLabel: persona.accentLabel,
-          englishLevel: profile?.englishLevel ?? 'A0-A1',
-          profileOverride: profile
-            ? {
-                displayName: profile.displayName,
-                englishLevel: profile.englishLevel,
-                jobField: profile.jobField,
-                hobbies: profile.hobbies,
-              }
-            : undefined,
-        })
-      );
-      fd.append('audio', blob, 'arena.webm');
+      const postArenaAudioOnce = async () => {
+        const fd = new FormData();
+        fd.append(
+          'payload',
+          JSON.stringify({
+            targetSentence: current.sentence,
+            personaId: persona.id,
+            accentLabel: persona.accentLabel,
+            englishLevel: profile?.englishLevel ?? 'A0-A1',
+            profileOverride: profile
+              ? {
+                  displayName: profile.displayName,
+                  englishLevel: profile.englishLevel,
+                  jobField: profile.jobField,
+                  hobbies: profile.hobbies,
+                }
+              : undefined,
+          })
+        );
+        fd.append('audio', blob, 'arena.webm');
 
-      const res = await fetch('/api/tutor/pronunciation', {
-        method: 'POST',
-        headers,
-        body: fd,
-      });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 22_000);
+        try {
+          return await fetch('/api/tutor/pronunciation', {
+            method: 'POST',
+            headers,
+            body: fd,
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      };
+
+      let res: Response;
+      try {
+        res = await postArenaAudioOnce();
+        if (res.status >= 500) {
+          await new Promise((r) => setTimeout(r, 450));
+          res = await postArenaAudioOnce();
+        }
+      } catch {
+        await new Promise((r) => setTimeout(r, 450));
+        res = await postArenaAudioOnce();
+      }
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Không thể chấm điểm phát âm lúc này.');
@@ -927,6 +970,12 @@ function PlayPageInner() {
           setPronStatus('idle');
           return;
         }
+        if (pronUserAudioUrlRef.current) {
+          URL.revokeObjectURL(pronUserAudioUrlRef.current);
+        }
+        const nextAudioUrl = URL.createObjectURL(blob);
+        pronUserAudioUrlRef.current = nextAudioUrl;
+        setPronUserAudioUrl(nextAudioUrl);
         void submitPronArenaAudio(blob);
       };
 
@@ -977,9 +1026,21 @@ function PlayPageInner() {
     }
   }
 
+  function playRecordedUserVoice() {
+    if (!pronUserAudioUrl) return;
+    stopVoicePlayback();
+    if (pronUserAudioPlayerRef.current) {
+      pronUserAudioPlayerRef.current.pause();
+    }
+    const audio = new Audio(pronUserAudioUrl);
+    pronUserAudioPlayerRef.current = audio;
+    void audio.play().catch(() => {});
+  }
+
   function handleNextPronChallenge() {
     playTapSound();
     stopVoicePlayback();
+    clearPronUserAudio();
     if (pronIdx + 1 >= pronItems.length) {
       const avg =
         pronScores.length > 0
@@ -1048,6 +1109,9 @@ function PlayPageInner() {
   const currentListen = listenItems[listenIdx];
   const currentBuild = buildItems[buildIdx];
   const currentPron = pronItems[pronIdx];
+  const currentPronSpeechGuide = currentPron
+    ? analyzeConnectedSpeech(currentPron.sentence)
+    : null;
 
   // ACTIVE DISTRACTION-FREE PRACTICE SCREEN
   if (
@@ -1425,7 +1489,7 @@ function PlayPageInner() {
           )}
 
           {/* GAME 4: PRONUNCIATION ARENA */}
-          {mode === 'pronounce' && currentPron && (
+          {mode === 'pronounce' && currentPron && currentPronSpeechGuide && (
             <div className="space-y-6">
               <div className="rounded-3xl border border-gray-200 bg-white p-6 text-center shadow-xs space-y-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3.5 py-1 text-xs font-semibold text-emerald-700">
@@ -1445,7 +1509,25 @@ function PlayPageInner() {
                   Lưu ý phát âm: {currentPron.focusTipVi}
                 </p>
 
-                <div className="flex items-center justify-center gap-2.5 pt-2">
+                {/* Connected Speech & Sentence Stress Visual Map */}
+                <div className="mx-auto max-w-xl rounded-2xl border border-gray-200/80 bg-[#F6F7F9]/75 px-4 py-3 text-left space-y-1">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                    Nhịp nối âm bản xứ (‿)
+                  </div>
+                  <div className="font-display text-sm sm:text-base font-semibold text-gray-900">
+                    {currentPronSpeechGuide.linkedDisplay.split('‿').map((part, idx, arr) => (
+                      <span key={idx}>
+                        {part}
+                        {idx < arr.length - 1 && (
+                          <span className="mx-0.5 font-bold text-[#E5483F]">‿</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">{currentPronSpeechGuide.coachNoteVi}</p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
                   <button
                     type="button"
                     onClick={() => speakText(currentPron.sentence, 0.88)}
@@ -1461,6 +1543,16 @@ function PlayPageInner() {
                   >
                     Nghe chậm 0.7x
                   </button>
+                  {pronUserAudioUrl && (
+                    <button
+                      type="button"
+                      onClick={playRecordedUserVoice}
+                      className="btn-duo btn-duo-white px-4 py-2 text-xs text-[#E5483F]"
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                      Nghe lại giọng bạn
+                    </button>
+                  )}
                 </div>
               </div>
 

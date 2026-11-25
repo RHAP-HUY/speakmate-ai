@@ -34,6 +34,11 @@ import {
   CelebrationModal,
   type CelebrationPayload,
 } from '@/components/CelebrationModal';
+import {
+  PronunciationPracticeModal,
+  type PronunciationPracticeTarget,
+} from '@/components/PronunciationPracticeModal';
+import { buildDailySmartFocus } from '@/lib/adaptive-coach';
 import { playNaturalVoice, stopVoicePlayback } from '@/lib/audio';
 import {
   applyStreakFreezeForYesterday,
@@ -43,8 +48,13 @@ import {
   getCurrentProfile,
   getDailyStats,
   getTodayLocalDate,
+  listRecentAssessedMessages,
   listSavedPhrases,
 } from '@/lib/data-store';
+import {
+  analyzePronunciationInsights,
+  type PronunciationInsightsSummary,
+} from '@/lib/pronunciation-insights';
 import {
   BADGE_DIRECTORY,
   computeStrictStreak,
@@ -558,6 +568,10 @@ export function HomeClient({
   // Authenticated state
   const [activeUnitIdx, setActiveUnitIdx] = useState(0);
   const [duePhraseCount, setDuePhraseCount] = useState(0);
+  const [pronInsights, setPronInsights] =
+    useState<PronunciationInsightsSummary | null>(null);
+  const [smartPracticeTarget, setSmartPracticeTarget] =
+    useState<PronunciationPracticeTarget | null>(null);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('auto');
   const [showScenarioDrawer, setShowScenarioDrawer] = useState(false);
   const [customRoleplayInput, setCustomRoleplayInput] = useState('');
@@ -583,13 +597,15 @@ export function HomeClient({
       }
 
       if (isAuth) {
-        const [daily, savedPhrases] = await Promise.all([
+        const [daily, savedPhrases, recentAssessed] = await Promise.all([
           getDailyStats(90),
           listSavedPhrases(),
+          listRecentAssessedMessages(20),
         ]);
         if (!active) return;
         setStats(daily);
         setDuePhraseCount(getPhraseReviewSummary(savedPhrases).dueCount);
+        setPronInsights(analyzePronunciationInsights(recentAssessed));
       }
 
       setLoading(false);
@@ -1537,6 +1553,12 @@ export function HomeClient({
   const unitPct = Math.round(
     (completedInUnit / Math.max(1, learnableStationsInUnit.length)) * 100
   );
+  const smartFocus = buildDailySmartFocus({
+    profile,
+    studiedToday: strict.studiedToday,
+    duePhraseCount,
+    pronInsights,
+  });
 
   return (
     <AppShell profile={profile} authenticated={authenticated} rightRail={rightRail}>
@@ -1586,6 +1608,48 @@ export function HomeClient({
               </button>
             );
           })}
+        </div>
+
+        {/* Smart Adaptive Coach Priority Card */}
+        <div className="rounded-2xl border border-gray-200/80 bg-white p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1 min-w-0">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF1F0] px-2.5 py-0.5 text-[11px] font-semibold text-[#E5483F]">
+              <Zap className="h-3 w-3" />
+              {smartFocus.badgeVi}
+            </span>
+            <h2 className="font-display text-base sm:text-lg font-bold text-gray-900">
+              {smartFocus.titleVi}
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
+              {smartFocus.reasonVi}
+            </p>
+          </div>
+
+          {smartFocus.kind === 'weak-word' && smartFocus.weakWordTarget ? (
+            <button
+              type="button"
+              onClick={() => {
+                playTapSound();
+                setSmartPracticeTarget({
+                  sentence: smartFocus.weakWordTarget!.sampleSentence,
+                  phonetic: smartFocus.weakWordTarget!.ipa,
+                });
+              }}
+              className="btn-duo btn-duo-coral shrink-0 px-4 py-2.5 text-xs sm:text-sm"
+            >
+              <Mic className="h-4 w-4" />
+              {smartFocus.ctaLabelVi}
+            </button>
+          ) : (
+            <Link
+              href={smartFocus.href || '/play'}
+              onClick={() => playTapSound()}
+              className="btn-duo btn-duo-primary shrink-0 px-4 py-2.5 text-xs sm:text-sm"
+            >
+              {smartFocus.ctaLabelVi}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
         </div>
       </div>
 
@@ -1847,6 +1911,13 @@ export function HomeClient({
           </div>
         </div>
       </section>
+
+      <PronunciationPracticeModal
+        target={smartPracticeTarget}
+        persona={activeTutor}
+        profile={profile}
+        onClose={() => setSmartPracticeTarget(null)}
+      />
 
       <CelebrationModal
         payload={celebration}

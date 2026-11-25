@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Send,
   Volume2,
+  X,
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -51,6 +52,11 @@ import {
   buildInstantScenarioOpening,
   serializeConversationReport,
 } from '@/lib/tutor-prompt';
+import {
+  lookupEnglishWord,
+  tokenizeInteractiveSentence,
+  type WordLookupEntry,
+} from '@/lib/word-lookup';
 import type {
   AiPersona,
   ConversationReport,
@@ -136,6 +142,12 @@ function CallStudioInner() {
   } | null>(null);
   const [practiceTarget, setPracticeTarget] =
     useState<PronunciationPracticeTarget | null>(null);
+  const [activeLookup, setActiveLookup] = useState<{
+    messageId: string;
+    word: string;
+    loading: boolean;
+    entry: WordLookupEntry | null;
+  } | null>(null);
 
   // Post-call evaluation report & strict streak reward
   const [callReport, setCallReport] = useState<ConversationReport | null>(null);
@@ -776,6 +788,29 @@ function CallStudioInner() {
     }
   }
 
+  async function handleTapWord(messageId: string, cleanWord: string) {
+    if (
+      activeLookup?.messageId === messageId &&
+      activeLookup.word === cleanWord
+    ) {
+      setActiveLookup(null);
+      return;
+    }
+    void speakAiSentence(cleanWord, 0.85);
+    setActiveLookup({
+      messageId,
+      word: cleanWord,
+      loading: true,
+      entry: null,
+    });
+    const entry = await lookupEnglishWord(cleanWord);
+    setActiveLookup((cur) =>
+      cur && cur.messageId === messageId && cur.word === cleanWord
+        ? { messageId, word: cleanWord, loading: false, entry }
+        : cur
+    );
+  }
+
   const generatePostCallReport = useCallback(
     async (
       convId: string | null,
@@ -1093,7 +1128,31 @@ function CallStudioInner() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-sm sm:text-base font-medium leading-relaxed">
-                    {msg.englishText}
+                    {isUser
+                      ? msg.englishText
+                      : tokenizeInteractiveSentence(msg.englishText).map(
+                          (tok, tokIdx) =>
+                            tok.cleanWord ? (
+                              <button
+                                key={`${msg.id}-w-${tokIdx}`}
+                                type="button"
+                                onClick={() =>
+                                  void handleTapWord(msg.id, tok.cleanWord!)
+                                }
+                                title="Chạm để nghe phát âm & xem nghĩa"
+                                className={`inline rounded-sm px-0.5 -mx-0.5 transition cursor-pointer ${
+                                  activeLookup?.messageId === msg.id &&
+                                  activeLookup.word === tok.cleanWord
+                                    ? 'bg-[#E5483F]/30 text-white underline decoration-[#E5483F] decoration-2 underline-offset-4'
+                                    : 'hover:bg-white/10 hover:underline decoration-white/40 underline-offset-4'
+                                }`}
+                              >
+                                {tok.raw}
+                              </button>
+                            ) : (
+                              <span key={`${msg.id}-p-${tokIdx}`}>{tok.raw}</span>
+                            )
+                        )}
                   </p>
                   {!isUser && (
                     <div className="flex shrink-0 items-center gap-1">
@@ -1118,6 +1177,102 @@ function CallStudioInner() {
                     </div>
                   )}
                 </div>
+
+                {!isUser && msgIdx === 0 && !activeLookup && (
+                  <p className="mt-1.5 text-[11px] text-gray-500">
+                    Mẹo: Chạm vào bất kỳ từ tiếng Anh nào để nghe phát âm &amp; tra nghĩa nhanh.
+                  </p>
+                )}
+
+                {!isUser && activeLookup?.messageId === msg.id && (
+                  <div className="mt-2.5 rounded-xl border border-white/15 bg-white/[0.06] p-3 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-bold text-sm text-white">
+                          {activeLookup.word}
+                        </span>
+                        {activeLookup.entry?.phonetic && (
+                          <span className="font-mono text-[11px] text-amber-300">
+                            /{activeLookup.entry.phonetic}/
+                          </span>
+                        )}
+                        {activeLookup.entry?.partOfSpeech && (
+                          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-gray-300">
+                            {activeLookup.entry.partOfSpeech}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void speakAiSentence(activeLookup.word, 0.8)
+                          }
+                          title="Nghe lại từ này"
+                          className="rounded-full bg-white/10 p-1 text-gray-200 hover:bg-white/20 cursor-pointer"
+                        >
+                          <Volume2 className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void handleSavePhrase(
+                              activeLookup.word,
+                              activeLookup.entry?.meaningVi ||
+                                activeLookup.entry?.definitionEn ||
+                                'Từ vựng trong hội thoại',
+                              activeLookup.entry?.phonetic ?? undefined
+                            )
+                          }
+                          className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 hover:bg-white/20 cursor-pointer"
+                        >
+                          {savedKeys.has(activeLookup.word.toLowerCase()) ? (
+                            <>
+                              <Check className="h-3 w-3" />
+                              Đã lưu từ
+                            </>
+                          ) : (
+                            <>
+                              <Bookmark className="h-3 w-3" />
+                              Lưu từ
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveLookup(null)}
+                          aria-label="Đóng tra từ"
+                          className="rounded-full p-1 text-gray-400 hover:text-white cursor-pointer"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    {activeLookup.loading ? (
+                      <p className="text-[11px] text-gray-400">
+                        Đang tra phiên âm &amp; nghĩa...
+                      </p>
+                    ) : activeLookup.entry?.meaningVi ||
+                      activeLookup.entry?.definitionEn ? (
+                      <div className="space-y-0.5">
+                        {activeLookup.entry.meaningVi && (
+                          <p className="text-emerald-300 font-medium">
+                            {activeLookup.entry.meaningVi}
+                          </p>
+                        )}
+                        {activeLookup.entry.definitionEn && (
+                          <p className="text-gray-300 leading-relaxed">
+                            {activeLookup.entry.definitionEn}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-gray-400">
+                        Bấm biểu tượng loa để nghe khẩu hình chuẩn của từ này.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {!isUser && showVietnamese && msg.vietnameseTranslation && (
                   <p className="mt-2 border-t border-white/10 pt-2 text-xs text-gray-400 leading-relaxed">

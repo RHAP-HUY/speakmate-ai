@@ -2,8 +2,10 @@
 
 import {
   Award,
+  Check,
   ChevronDown,
   ChevronUp,
+  Download,
   Loader2,
   Mic,
   Trash2,
@@ -45,6 +47,7 @@ import {
 import { getLevelInfo } from '@/lib/gamification';
 import { analyzePronunciationInsights } from '@/lib/pronunciation-insights';
 import { AI_PERSONAS, pickPersona } from '@/lib/scenarios';
+import { downloadStreakShareCardPng } from '@/lib/share-card';
 import { parseConversationReport } from '@/lib/tutor-prompt';
 import type {
   ConcreteAccent,
@@ -87,6 +90,7 @@ export default function HistoryPage() {
   const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
   const [assessedMsgs, setAssessedMsgs] = useState<TutorMessage[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [exportedCard, setExportedCard] = useState(false);
   const [practiceTarget, setPracticeTarget] =
     useState<PronunciationPracticeTarget | null>(null);
 
@@ -202,12 +206,37 @@ export default function HistoryPage() {
           </p>
         </div>
 
-        <Link
-          href="/play"
-          className="btn-duo btn-duo-coral shrink-0 px-5 py-2.5 text-sm"
-        >
-          Thực hành bài hôm nay →
-        </Link>
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              if (downloadStreakShareCardPng(profile)) {
+                setExportedCard(true);
+                setTimeout(() => setExportedCard(false), 2600);
+              }
+            }}
+            className="btn-duo btn-duo-white px-4 py-2.5 text-xs sm:text-sm"
+          >
+            {exportedCard ? (
+              <>
+                <Check className="h-4 w-4 text-emerald-600" />
+                Đã tải ảnh PNG
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Tải thẻ thành tích PNG
+              </>
+            )}
+          </button>
+
+          <Link
+            href="/play"
+            className="btn-duo btn-duo-coral px-5 py-2.5 text-xs sm:text-sm"
+          >
+            Thực hành bài hôm nay →
+          </Link>
+        </div>
       </div>
 
       {/* Crisp Metrics Strip */}
